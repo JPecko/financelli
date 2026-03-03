@@ -23,7 +23,12 @@ const navItems = [
   { to: '/settings',     label: 'Settings',     icon: Settings },
 ]
 
-export default function Sidebar() {
+interface Props {
+  open: boolean
+  onClose: () => void
+}
+
+export default function Sidebar({ open, onClose }: Props) {
   const { theme, toggle } = useThemeStore()
   const { user } = useAuth()
   const handleLogout = () => supabase.auth.signOut()
@@ -34,7 +39,14 @@ export default function Sidebar() {
     : (user?.email?.[0] ?? '?').toUpperCase()
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-border bg-sidebar">
+    <aside
+      className={cn(
+        'fixed inset-y-0 left-0 z-50 flex h-screen w-60 flex-col border-r border-border bg-sidebar',
+        'transition-transform duration-300 ease-in-out',
+        'lg:static lg:translate-x-0',
+        open ? 'translate-x-0' : '-translate-x-full',
+      )}
+    >
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5 border-b border-sidebar-border">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -51,6 +63,7 @@ export default function Sidebar() {
               <NavLink
                 to={to}
                 end={end}
+                onClick={onClose}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',

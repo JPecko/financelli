@@ -101,7 +101,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
         {/* Net Worth — breakdown by type */}
         <Card className="sm:col-span-2 lg:col-span-1">
