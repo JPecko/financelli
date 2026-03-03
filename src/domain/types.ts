@@ -10,12 +10,13 @@ export interface Account {
   createdAt: string     // ISO 8601
 }
 
-export type TransactionType = 'income' | 'expense' | 'transfer'
+export type TransactionType = 'income' | 'expense' | 'transfer' | 'revaluation'
 
 export interface Transaction {
   id?: number
-  accountId: number
-  amount: number        // positive = income, negative = expense (cents)
+  accountId: number     // source account (or single account for income/expense)
+  toAccountId?: number  // destination account — only for internal transfers
+  amount: number        // positive = income/credit, negative = expense/debit (cents)
   type: TransactionType
   category: string
   description: string

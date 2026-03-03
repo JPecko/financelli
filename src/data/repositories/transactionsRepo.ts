@@ -2,6 +2,21 @@ import { db } from '@/data/db'
 import type { Transaction } from '@/domain/types'
 import { accountsRepo } from './accountsRepo'
 
+async function applyBalances(tx: Omit<Transaction, 'id'>) {
+  await accountsRepo.adjustBalance(tx.accountId, tx.amount)
+  // Internal transfer: destination gets the opposite (credit)
+  if (tx.toAccountId != null) {
+    await accountsRepo.adjustBalance(tx.toAccountId, -tx.amount)
+  }
+}
+
+async function reverseBalances(tx: Transaction) {
+  await accountsRepo.adjustBalance(tx.accountId, -tx.amount)
+  if (tx.toAccountId != null) {
+    await accountsRepo.adjustBalance(tx.toAccountId, tx.amount)
+  }
+}
+
 export const transactionsRepo = {
   getAll: () => db.transactions.orderBy('date').reverse().toArray(),
 
@@ -17,7 +32,7 @@ export const transactionsRepo = {
   add: async (tx: Omit<Transaction, 'id'>) => {
     return db.transaction('rw', db.transactions, db.accounts, async () => {
       const id = await db.transactions.add({ ...tx, createdAt: new Date().toISOString() })
-      await accountsRepo.adjustBalance(tx.accountId, tx.amount)
+      await applyBalances(tx)
       return id
     })
   },
@@ -26,17 +41,10 @@ export const transactionsRepo = {
     return db.transaction('rw', db.transactions, db.accounts, async () => {
       const existing = await db.transactions.get(id)
       if (!existing) throw new Error(`Transaction ${id} not found`)
-
-      // Reverse the old amount, apply new amount
-      const oldAmount = existing.amount
-      const newAmount = changes.amount ?? oldAmount
-      const delta = newAmount - oldAmount
-
-      if (delta !== 0) {
-        const accountId = changes.accountId ?? existing.accountId
-        await accountsRepo.adjustBalance(accountId, delta)
-      }
-
+      // Full reversal then re-apply — handles toAccountId changes cleanly
+      await reverseBalances(existing)
+      const updated = { ...existing, ...changes }
+      await applyBalances(updated)
       await db.transactions.update(id, changes)
     })
   },
@@ -45,7 +53,7 @@ export const transactionsRepo = {
     return db.transaction('rw', db.transactions, db.accounts, async () => {
       const tx = await db.transactions.get(id)
       if (!tx) return
-      await accountsRepo.adjustBalance(tx.accountId, -tx.amount)
+      await reverseBalances(tx)
       await db.transactions.delete(id)
     })
   },

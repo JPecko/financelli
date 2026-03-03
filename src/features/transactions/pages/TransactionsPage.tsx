@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { format, getYear, getMonth } from 'date-fns'
-import { Plus, Pencil, Trash2, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Plus, Pencil, Trash2, ArrowLeftRight, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { Button } from '@/shared/components/ui/button'
+import { Badge } from '@/shared/components/ui/badge'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
+} from '@/shared/components/ui/table'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/shared/components/ui/dropdown-menu'
 import { useTransactionsByMonth, useMonthSummary, removeTransaction } from '@/shared/hooks/useTransactions'
 import { useAccounts } from '@/shared/hooks/useAccounts'
 import { formatMoney } from '@/domain/money'
@@ -31,6 +31,18 @@ export default function TransactionsPage() {
   const accounts     = useAccounts()
 
   const accountMap = Object.fromEntries(accounts.map(a => [a.id!, a.name]))
+  const accountLabel = (tx: Transaction) => {
+    if (tx.type === 'transfer' && tx.toAccountId != null) {
+      return (
+        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+          <span>{accountMap[tx.accountId] ?? '?'}</span>
+          <ArrowRight className="h-3 w-3 shrink-0" />
+          <span>{accountMap[tx.toAccountId] ?? '?'}</span>
+        </span>
+      )
+    }
+    return <span className="text-sm text-muted-foreground">{accountMap[tx.accountId] ?? '—'}</span>
+  }
 
   const currentDate = new Date(year, month - 1, 1)
 
@@ -149,9 +161,7 @@ export default function TransactionsPage() {
                         {cat.label}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {accountMap[tx.accountId] ?? '—'}
-                    </TableCell>
+                    <TableCell>{accountLabel(tx)}</TableCell>
                     <TableCell className="text-right font-semibold">
                       <span className={tx.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                         {tx.amount >= 0 ? '+' : ''}

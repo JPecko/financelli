@@ -14,11 +14,23 @@ export function useTransactionsByMonth(year: number, month: number) {
   ) ?? []
 }
 
+/** Returns true for transactions that represent real cash flow (not internal moves or capital) */
+export function isCashFlow(t: Transaction): boolean {
+  if (t.type === 'revaluation') return false                        // market fluctuation
+  if (t.type === 'transfer' && t.toAccountId != null) return false  // internal transfer
+  if (t.type === 'transfer' && t.category === 'capital') return false // capital movement
+  return true
+}
+
 export function useMonthSummary(year: number, month: number) {
   const txs = useTransactionsByMonth(year, month)
-  const income   = txs.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)
-  const expenses = txs.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)
-  return { income, expenses, balance: income + expenses }
+  const real       = txs.filter(isCashFlow)
+  const income     = real.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)
+  const expenses   = real.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)
+  const marketGain = txs
+    .filter(t => t.type === 'revaluation')
+    .reduce((s, t) => s + t.amount, 0)
+  return { income, expenses, balance: income + expenses, marketGain }
 }
 
 export async function addTransaction(data: Omit<Transaction, 'id' | 'createdAt'>) {

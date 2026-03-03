@@ -1,17 +1,20 @@
 import { getYear, getMonth, format } from 'date-fns'
 import {
   Wallet, TrendingUp, TrendingDown, DollarSign, RefreshCw,
+  Banknote, PiggyBank, BarChart2, HandCoins, CreditCard,
 } from 'lucide-react'
+import type { AccountType } from '@/domain/types'
+import type { LucideIcon } from 'lucide-react'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Badge } from '@/shared/components/ui/badge'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/data/db'
 import { useAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
-import { useMonthSummary, useTransactionsByMonth } from '@/shared/hooks/useTransactions'
+import { useMonthSummary, useTransactionsByMonth, isCashFlow } from '@/shared/hooks/useTransactions'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
@@ -21,11 +24,34 @@ const now = new Date()
 const YEAR  = getYear(now)
 const MONTH = getMonth(now) + 1
 
+const ACCOUNT_TYPE_META: Record<AccountType, { label: string; icon: LucideIcon; color: string }> = {
+  checking:   { label: 'Checking',    icon: Banknote,   color: '#3b82f6' },
+  savings:    { label: 'Savings',     icon: PiggyBank,  color: '#22c55e' },
+  investment: { label: 'Investments', icon: BarChart2,  color: '#a78bfa' },
+  cash:       { label: 'Cash',        icon: HandCoins,  color: '#f59e0b' },
+  credit:     { label: 'Credit',      icon: CreditCard, color: '#ef4444' },
+}
+
 export default function DashboardPage() {
   const netWorth    = useNetWorth()
   const summary     = useMonthSummary(YEAR, MONTH)
   const transactions = useTransactionsByMonth(YEAR, MONTH)
   const accounts    = useAccounts()
+
+  // Net worth breakdown by account type
+  const netWorthByType = (() => {
+    const map: Partial<Record<AccountType, number>> = {}
+    for (const a of accounts) {
+      map[a.type] = (map[a.type] ?? 0) + a.balance
+    }
+    return (Object.entries(map) as [AccountType, number][])
+      .filter(([, v]) => v !== 0)
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+  })()
+
+  const positiveTotal = netWorthByType
+    .filter(([, v]) => v > 0)
+    .reduce((s, [, v]) => s + v, 0)
 
   // Upcoming recurring rules
   const upcomingRules = useLiveQuery(
@@ -36,11 +62,11 @@ export default function DashboardPage() {
     [],
   ) ?? []
 
-  // Spending by category (expenses only)
+  // Spending by category (real expenses only — no internal transfers or revaluations)
   const categoryData = (() => {
     const map: Record<string, number> = {}
     for (const tx of transactions) {
-      if (tx.amount >= 0) continue
+      if (!isCashFlow(tx) || tx.amount >= 0) continue
       const key = tx.category
       map[key] = (map[key] ?? 0) + Math.abs(tx.amount)
     }
@@ -72,7 +98,7 @@ export default function DashboardPage() {
       const from = `${y}-${String(m).padStart(2, '0')}-01`
       const to   = `${y}-${String(m).padStart(2, '0')}-31`
       const txs = await db.transactions.where('date').between(from, to, true, true).toArray()
-      const monthNet = txs.reduce((s, t) => s + t.amount, 0)
+      const monthNet = txs.filter(isCashFlow).reduce((s, t) => s + t.amount, 0)
       result.push({ month: format(d, 'MMM yy'), net: monthNet })
     }
     return result
@@ -87,12 +113,61 @@ export default function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Net Worth"
-          value={formatMoney(netWorth)}
-          icon={Wallet}
-          subtitle={`${accounts.length} account${accounts.length !== 1 ? 's' : ''}`}
-        />
+
+        {/* Net Worth — breakdown by type */}
+        <Card className="sm:col-span-2 lg:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net Worth</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold mb-3">{formatMoney(netWorth)}</div>
+            {netWorthByType.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No accounts yet</p>
+            ) : (
+              <div className="space-y-2">
+                {netWorthByType.map(([type, balance]) => {
+                  const meta = ACCOUNT_TYPE_META[type]
+                  const Icon = meta.icon
+                  const pct  = positiveTotal > 0 && balance > 0
+                    ? Math.round((balance / positiveTotal) * 100)
+                    : null
+                  return (
+                    <div key={type}>
+                      <div className="flex items-center justify-between text-xs mb-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <Icon className="h-3 w-3 shrink-0" style={{ color: meta.color }} />
+                          <span className="text-muted-foreground">{meta.label}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`font-medium ${balance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}
+                          >
+                            {formatMoney(balance)}
+                          </span>
+                          {pct != null && (
+                            <span className="text-muted-foreground w-7 text-right">{pct}%</span>
+                          )}
+                        </div>
+                      </div>
+                      {pct != null && (
+                        <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${pct}%`, backgroundColor: meta.color }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <StatCard
           title="Monthly Income"
           value={formatMoney(summary.income)}

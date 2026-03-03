@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Plane,
   MoreHorizontal,
+  BarChart2,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -35,8 +36,10 @@ export const CATEGORIES: Category[] = [
   { id: 'travel',        label: 'Travel',         icon: Plane,         color: '#14b8a6', type: 'expense' },
   { id: 'salary',        label: 'Salary',         icon: Briefcase,     color: '#22c55e', type: 'income' },
   { id: 'freelance',     label: 'Freelance',      icon: Briefcase,     color: '#10b981', type: 'income' },
-  { id: 'investment',    label: 'Investment',     icon: TrendingUp,    color: '#84cc16', type: 'income' },
-  { id: 'transfer',      label: 'Transfer',       icon: ArrowLeftRight,color: '#94a3b8', type: 'both' },
+  { id: 'investment',    label: 'Investment Return', icon: TrendingUp,    color: '#84cc16', type: 'income' },
+  { id: 'capital',       label: 'Capital Movement',  icon: BarChart2,     color: '#6366f1', type: 'both' },
+  { id: 'transfer',      label: 'Transfer',           icon: ArrowLeftRight,color: '#94a3b8', type: 'both' },
+  { id: 'revaluation',   label: 'Market Update',  icon: BarChart2,     color: '#a78bfa', type: 'both' },
   { id: 'other',         label: 'Other',          icon: MoreHorizontal,color: '#71717a', type: 'both' },
 ]
 

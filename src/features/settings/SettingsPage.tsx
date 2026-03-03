@@ -2,9 +2,9 @@ import { useRef, useState } from 'react'
 import {
   Download, Upload, Trash2, FileText, Database,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
+import { Separator } from '@/shared/components/ui/separator'
 import { db } from '@/data/db'
 import { transactionsToCSV, downloadFile, exportFilename } from '@/shared/utils/csv'
 

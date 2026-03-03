@@ -1,5 +1,5 @@
 import { RouterProvider } from 'react-router-dom'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import { TooltipProvider } from '@/shared/components/ui/tooltip'
 import { router } from './router'
 
 export default function Providers() {

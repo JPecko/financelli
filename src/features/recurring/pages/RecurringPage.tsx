@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, RefreshCw, Play, Pause } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
+import { Badge } from '@/shared/components/ui/badge'
+import { Card, CardContent } from '@/shared/components/ui/card'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/shared/components/ui/dropdown-menu'
 import { db } from '@/data/db'
 import { recurringRepo } from '@/data/repositories/recurringRepo'
 import { formatMoney } from '@/domain/money'

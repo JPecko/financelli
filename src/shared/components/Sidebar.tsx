@@ -6,8 +6,11 @@ import {
   RefreshCw,
   Settings,
   TrendingUp,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useThemeStore } from '@/shared/store/themeStore'
 
 const navItems = [
   { to: '/',             label: 'Dashboard',    icon: LayoutDashboard, end: true },
@@ -18,6 +21,8 @@ const navItems = [
 ]
 
 export default function Sidebar() {
+  const { theme, toggle } = useThemeStore()
+
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-sidebar">
       {/* Logo */}
@@ -54,8 +59,19 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border px-6 py-3">
+      <div className="flex items-center justify-between border-t border-sidebar-border px-4 py-3">
         <p className="text-xs text-muted-foreground">Personal Finance</p>
+        <button
+          onClick={toggle}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+        </button>
       </div>
     </aside>
   )
