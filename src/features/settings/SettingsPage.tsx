@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react'
 import {
-  Download, Upload, Trash2, FileText, Database, LogOut,
+  Download, Upload, Trash2, FileText, Database, LogOut, User,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
+import { Label } from '@/shared/components/ui/label'
 import { Separator } from '@/shared/components/ui/separator'
 import { supabase } from '@/data/supabase'
+import { useAuth } from '@/features/auth/AuthContext'
 import { accountsRepo } from '@/data/repositories/accountsRepo'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { recurringRepo } from '@/data/repositories/recurringRepo'
@@ -13,12 +16,24 @@ import { emitRefresh } from '@/shared/hooks/useRefresh'
 import { transactionsToCSV, downloadFile, exportFilename } from '@/shared/utils/csv'
 
 export default function SettingsPage() {
+  const { user } = useAuth()
   const importRef  = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState(user?.user_metadata?.full_name ?? '')
+  const [savingName, setSavingName] = useState(false)
 
   const showStatus = (msg: string) => {
     setStatus(msg)
     setTimeout(() => setStatus(null), 3000)
+  }
+
+  /* ---- Update display name ---- */
+  const handleSaveName = async () => {
+    setSavingName(true)
+    const { error } = await supabase.auth.updateUser({ data: { full_name: displayName.trim() } })
+    setSavingName(false)
+    if (error) showStatus(`Error: ${error.message}`)
+    else showStatus('Name updated successfully.')
   }
 
   /* ---- Export JSON ---- */
@@ -145,6 +160,42 @@ export default function SettingsPage() {
           {status}
         </div>
       )}
+
+      {/* Profile */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <User className="h-4 w-4" />
+            Profile
+          </CardTitle>
+          <CardDescription>
+            Your display name is shown in the sidebar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="display-name">Display Name</Label>
+            <div className="flex gap-2">
+              <Input
+                id="display-name"
+                placeholder="Your name"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveName}
+                disabled={savingName}
+              >
+                {savingName ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Backup & Restore */}
       <Card>

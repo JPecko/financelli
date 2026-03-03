@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/shared/store/themeStore'
+import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
 
 const navItems = [
@@ -24,7 +25,13 @@ const navItems = [
 
 export default function Sidebar() {
   const { theme, toggle } = useThemeStore()
+  const { user } = useAuth()
   const handleLogout = () => supabase.auth.signOut()
+
+  const displayName = user?.user_metadata?.full_name as string | undefined
+  const initials = displayName
+    ? displayName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+    : (user?.email?.[0] ?? '?').toUpperCase()
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-sidebar">
@@ -62,25 +69,37 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-sidebar-border px-4 py-3">
-        <button
-          onClick={handleLogout}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          aria-label="Sign out"
-        >
-          <LogOut className="h-4 w-4" />
-        </button>
-        <button
-          onClick={toggle}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-        </button>
+      <div className="border-t border-sidebar-border px-3 py-3 space-y-2">
+        {/* User info */}
+        <div className="flex items-center gap-2 px-1">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+            {initials}
+          </div>
+          <span className="truncate text-xs font-medium text-sidebar-foreground">
+            {displayName ?? user?.email}
+          </span>
+        </div>
+        {/* Actions */}
+        <div className="flex items-center justify-between px-1">
+          <button
+            onClick={handleLogout}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+          <button
+            onClick={toggle}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </button>
+        </div>
       </div>
     </aside>
   )
