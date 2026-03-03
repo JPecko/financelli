@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/domain/categories'
 import { useAccounts } from '@/shared/hooks/useAccounts'
-import { recurringRepo } from '@/data/repositories/recurringRepo'
+import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
 import type { RecurringRule, TransactionType, RecurringFrequency } from '@/domain/types'
 
 interface FormValues {
@@ -98,9 +98,9 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
     }
 
     if (isEdit && rule?.id != null) {
-      await recurringRepo.update(rule.id, payload)
+      await updateRule(rule.id, payload)
     } else {
-      await recurringRepo.add({ ...payload, createdAt: new Date().toISOString() })
+      await addRule(payload)
     }
     onClose()
   }

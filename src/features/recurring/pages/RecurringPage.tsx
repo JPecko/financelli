@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, RefreshCw, Play, Pause } from 'lucide-react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
-import { db } from '@/data/db'
-import { recurringRepo } from '@/data/repositories/recurringRepo'
+import { useRecurringRules, removeRule, updateRule } from '@/shared/hooks/useRecurringRules'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
@@ -17,7 +15,7 @@ import RecurringFormModal from '../components/RecurringFormModal'
 import type { RecurringRule } from '@/domain/types'
 
 export default function RecurringPage() {
-  const rules = useLiveQuery(() => db.recurringRules.orderBy('nextDue').toArray(), []) ?? []
+  const rules = useRecurringRules()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing]     = useState<RecurringRule | undefined>()
 
@@ -34,13 +32,13 @@ export default function RecurringPage() {
   const handleDelete = async (id: number | undefined) => {
     if (id == null) return
     if (confirm('Delete this recurring rule?')) {
-      await recurringRepo.remove(id)
+      await removeRule(id)
     }
   }
 
   const handleToggle = async (rule: RecurringRule) => {
     if (rule.id == null) return
-    await recurringRepo.update(rule.id, { active: !rule.active })
+    await updateRule(rule.id, { active: !rule.active })
   }
 
   const FREQ_COLORS: Record<string, string> = {

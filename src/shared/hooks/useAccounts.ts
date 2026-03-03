@@ -1,32 +1,41 @@
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '@/data/db'
+import { useState, useEffect } from 'react'
+import { useRefresh, emitRefresh } from '@/shared/hooks/useRefresh'
 import { accountsRepo } from '@/data/repositories/accountsRepo'
 import type { Account } from '@/domain/types'
 
-export function useAccounts() {
-  return useLiveQuery(() => db.accounts.orderBy('createdAt').toArray(), []) ?? []
+export function useAccounts(): Account[] {
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const key = useRefresh()
+  useEffect(() => { accountsRepo.getAll().then(setAccounts) }, [key])
+  return accounts
 }
 
-export function useAccount(id: number | undefined) {
-  return useLiveQuery(
-    () => (id != null ? db.accounts.get(id) : undefined),
-    [id],
-  )
+export function useAccount(id: number | undefined): Account | undefined {
+  const [account, setAccount] = useState<Account | undefined>()
+  const key = useRefresh()
+  useEffect(() => {
+    if (id == null) { setAccount(undefined); return }
+    accountsRepo.getById(id).then(setAccount)
+  }, [id, key])
+  return account
 }
 
-export function useNetWorth() {
+export function useNetWorth(): number {
   const accounts = useAccounts()
   return accounts.reduce((sum, a) => sum + a.balance, 0)
 }
 
 export async function addAccount(data: Omit<Account, 'id' | 'createdAt'>) {
-  return accountsRepo.add({ ...data, createdAt: new Date().toISOString() })
+  await accountsRepo.add(data)
+  emitRefresh()
 }
 
 export async function updateAccount(id: number, data: Partial<Account>) {
-  return accountsRepo.update(id, data)
+  await accountsRepo.update(id, data)
+  emitRefresh()
 }
 
 export async function removeAccount(id: number) {
-  return accountsRepo.remove(id)
+  await accountsRepo.remove(id)
+  emitRefresh()
 }

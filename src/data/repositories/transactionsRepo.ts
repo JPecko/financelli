@@ -1,10 +1,50 @@
-import { db } from '@/data/db'
+import { supabase } from '@/data/supabase'
 import type { Transaction } from '@/domain/types'
 import { accountsRepo } from './accountsRepo'
 
-async function applyBalances(tx: Omit<Transaction, 'id'>) {
+type TransactionRow = {
+  id: number
+  account_id: number
+  to_account_id: number | null
+  amount: number
+  type: string
+  category: string
+  description: string
+  date: string
+  recurring_rule_id: number | null
+  created_at: string
+}
+
+function toTransaction(row: TransactionRow): Transaction {
+  return {
+    id:              row.id,
+    accountId:       row.account_id,
+    toAccountId:     row.to_account_id ?? undefined,
+    amount:          row.amount,
+    type:            row.type as Transaction['type'],
+    category:        row.category,
+    description:     row.description,
+    date:            row.date,
+    recurringRuleId: row.recurring_rule_id ?? undefined,
+    createdAt:       row.created_at,
+  }
+}
+
+function toRow(tx: Omit<Transaction, 'id' | 'createdAt'>): Record<string, unknown> {
+  return {
+    account_id:        tx.accountId,
+    to_account_id:     tx.toAccountId ?? null,
+    amount:            tx.amount,
+    type:              tx.type,
+    category:          tx.category,
+    description:       tx.description,
+    date:              tx.date,
+    recurring_rule_id: tx.recurringRuleId ?? null,
+  }
+}
+
+async function applyBalances(tx: Omit<Transaction, 'id' | 'createdAt'>) {
   await accountsRepo.adjustBalance(tx.accountId, tx.amount)
-  // Internal transfer: destination gets the opposite (credit)
   if (tx.toAccountId != null) {
     await accountsRepo.adjustBalance(tx.toAccountId, -tx.amount)
   }
@@ -18,43 +58,74 @@ async function reverseBalances(tx: Transaction) {
 }
 
 export const transactionsRepo = {
-  getAll: () => db.transactions.orderBy('date').reverse().toArray(),
+  getAll: async (): Promise<Transaction[]> => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false })
+    if (error) throw error
+    return (data as TransactionRow[]).map(toTransaction)
+  },
 
-  getByMonth: (year: number, month: number) => {
+  getByMonth: async (year: number, month: number): Promise<Transaction[]> => {
     const from = `${year}-${String(month).padStart(2, '0')}-01`
     const to   = `${year}-${String(month).padStart(2, '0')}-31`
-    return db.transactions.where('date').between(from, to, true, true).reverse().sortBy('date')
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: false })
+    if (error) throw error
+    return (data as TransactionRow[]).map(toTransaction)
   },
 
-  getByAccount: (accountId: number) =>
-    db.transactions.where('accountId').equals(accountId).reverse().sortBy('date'),
-
-  add: async (tx: Omit<Transaction, 'id'>) => {
-    return db.transaction('rw', db.transactions, db.accounts, async () => {
-      const id = await db.transactions.add({ ...tx, createdAt: new Date().toISOString() })
-      await applyBalances(tx)
-      return id
-    })
+  getByAccount: async (accountId: number): Promise<Transaction[]> => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('account_id', accountId)
+      .order('date', { ascending: false })
+    if (error) throw error
+    return (data as TransactionRow[]).map(toTransaction)
   },
 
-  update: async (id: number, changes: Partial<Transaction>) => {
-    return db.transaction('rw', db.transactions, db.accounts, async () => {
-      const existing = await db.transactions.get(id)
-      if (!existing) throw new Error(`Transaction ${id} not found`)
-      // Full reversal then re-apply — handles toAccountId changes cleanly
-      await reverseBalances(existing)
-      const updated = { ...existing, ...changes }
-      await applyBalances(updated)
-      await db.transactions.update(id, changes)
-    })
+  add: async (tx: Omit<Transaction, 'id' | 'createdAt'>): Promise<number> => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert(toRow(tx))
+      .select('id')
+      .single()
+    if (error) throw error
+    await applyBalances(tx)
+    return (data as { id: number }).id
   },
 
-  remove: async (id: number) => {
-    return db.transaction('rw', db.transactions, db.accounts, async () => {
-      const tx = await db.transactions.get(id)
-      if (!tx) return
-      await reverseBalances(tx)
-      await db.transactions.delete(id)
-    })
+  update: async (id: number, changes: Partial<Transaction>): Promise<void> => {
+    const { data: existing, error: fetchError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (fetchError) throw fetchError
+    const existingTx = toTransaction(existing as TransactionRow)
+    await reverseBalances(existingTx)
+    const updated = { ...existingTx, ...changes }
+    const { error } = await supabase.from('transactions').update(toRow(updated)).eq('id', id)
+    if (error) throw error
+    await applyBalances(updated)
+  },
+
+  remove: async (id: number): Promise<void> => {
+    const { data: existing, error: fetchError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (fetchError) throw fetchError
+    const tx = toTransaction(existing as TransactionRow)
+    await reverseBalances(tx)
+    const { error } = await supabase.from('transactions').delete().eq('id', id)
+    if (error) throw error
   },
 }

@@ -1,24 +1,83 @@
-import { db } from '@/data/db'
+import { supabase } from '@/data/supabase'
 import type { Account } from '@/domain/types'
 
+type AccountRow = {
+  id: number
+  name: string
+  type: string
+  balance: number
+  currency: string
+  color: string
+  created_at: string
+}
+
+function toAccount(row: AccountRow): Account {
+  return {
+    id:        row.id,
+    name:      row.name,
+    type:      row.type as Account['type'],
+    balance:   row.balance,
+    currency:  row.currency,
+    color:     row.color,
+    createdAt: row.created_at,
+  }
+}
+
 export const accountsRepo = {
-  getAll: () => db.accounts.orderBy('createdAt').toArray(),
+  getAll: async (): Promise<Account[]> => {
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .order('created_at')
+    if (error) throw error
+    return (data as AccountRow[]).map(toAccount)
+  },
 
-  getById: (id: number) => db.accounts.get(id),
+  getById: async (id: number): Promise<Account | undefined> => {
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) return undefined
+    return toAccount(data as AccountRow)
+  },
 
-  add: (account: Omit<Account, 'id'>) =>
-    db.accounts.add({ ...account, createdAt: new Date().toISOString() }),
+  add: async (account: Omit<Account, 'id' | 'createdAt'>): Promise<Account> => {
+    const { data, error } = await supabase
+      .from('accounts')
+      .insert({
+        name:     account.name,
+        type:     account.type,
+        balance:  account.balance,
+        currency: account.currency,
+        color:    account.color,
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return toAccount(data as AccountRow)
+  },
 
-  update: (id: number, changes: Partial<Account>) =>
-    db.accounts.update(id, changes),
+  update: async (id: number, changes: Partial<Account>): Promise<void> => {
+    const row: Record<string, unknown> = {}
+    if (changes.name     !== undefined) row.name     = changes.name
+    if (changes.type     !== undefined) row.type     = changes.type
+    if (changes.balance  !== undefined) row.balance  = changes.balance
+    if (changes.currency !== undefined) row.currency = changes.currency
+    if (changes.color    !== undefined) row.color    = changes.color
+    const { error } = await supabase.from('accounts').update(row).eq('id', id)
+    if (error) throw error
+  },
 
-  remove: (id: number) => db.accounts.delete(id),
+  remove: async (id: number): Promise<void> => {
+    const { error } = await supabase.from('accounts').delete().eq('id', id)
+    if (error) throw error
+  },
 
-  /** Adjust the balance of an account by a delta in cents */
-  adjustBalance: (id: number, deltaCents: number) =>
-    db.transaction('rw', db.accounts, async () => {
-      const account = await db.accounts.get(id)
-      if (!account) throw new Error(`Account ${id} not found`)
-      await db.accounts.update(id, { balance: account.balance + deltaCents })
-    }),
+  /** Atomically adjusts the balance by delta cents (via RPC to avoid races) */
+  adjustBalance: async (id: number, deltaCents: number): Promise<void> => {
+    const { error } = await supabase.rpc('adjust_balance', { p_id: id, p_delta: deltaCents })
+    if (error) throw error
+  },
 }

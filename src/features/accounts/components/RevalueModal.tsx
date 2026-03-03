@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { toCents, fromCents, formatMoney } from '@/domain/money'
-import { transactionsRepo } from '@/data/repositories/transactionsRepo'
+import { addTransaction } from '@/shared/hooks/useTransactions'
 import { isoToday } from '@/shared/utils/format'
 import type { Account } from '@/domain/types'
 
@@ -28,14 +28,13 @@ export default function RevalueModal({ open, onClose, account }: Props) {
     e.preventDefault()
     if (unchanged || account.id == null) return
 
-    await transactionsRepo.add({
+    await addTransaction({
       accountId:   account.id,
       type:        'revaluation',
       amount:      delta,
       category:    'revaluation',
       description: `Market update — ${account.name}`,
       date:        isoToday(),
-      createdAt:   new Date().toISOString(),
     })
     onClose()
   }

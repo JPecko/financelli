@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { getYear, getMonth, format } from 'date-fns'
 import {
   Wallet, TrendingUp, TrendingDown, DollarSign, RefreshCw,
@@ -11,10 +12,11 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Badge } from '@/shared/components/ui/badge'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '@/data/db'
 import { useAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
 import { useMonthSummary, useTransactionsByMonth, isCashFlow } from '@/shared/hooks/useTransactions'
+import { useRecurringRules } from '@/shared/hooks/useRecurringRules'
+import { useRefresh } from '@/shared/hooks/useRefresh'
+import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
@@ -33,10 +35,33 @@ const ACCOUNT_TYPE_META: Record<AccountType, { label: string; icon: LucideIcon; 
 }
 
 export default function DashboardPage() {
-  const netWorth    = useNetWorth()
-  const summary     = useMonthSummary(YEAR, MONTH)
+  const netWorth     = useNetWorth()
+  const summary      = useMonthSummary(YEAR, MONTH)
   const transactions = useTransactionsByMonth(YEAR, MONTH)
-  const accounts    = useAccounts()
+  const accounts     = useAccounts()
+  const allRules     = useRecurringRules()
+  const key          = useRefresh()
+
+  const [lineData, setLineData] = useState<{ month: string; net: number }[]>([])
+
+  useEffect(() => {
+    const fetchLineData = async () => {
+      const result: { month: string; net: number }[] = []
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(YEAR, MONTH - 1 - i, 1)
+        const y = getYear(d)
+        const m = getMonth(d) + 1
+        const txs = await transactionsRepo.getByMonth(y, m)
+        const monthNet = txs.filter(isCashFlow).reduce((s, t) => s + t.amount, 0)
+        result.push({ month: format(d, 'MMM yy'), net: monthNet })
+      }
+      setLineData(result)
+    }
+    fetchLineData()
+  }, [key])
+
+  // Upcoming active rules (top 5 by next due)
+  const upcomingRules = allRules.filter(r => r.active).slice(0, 5)
 
   // Net worth breakdown by account type
   const netWorthByType = (() => {
@@ -53,22 +78,12 @@ export default function DashboardPage() {
     .filter(([, v]) => v > 0)
     .reduce((s, [, v]) => s + v, 0)
 
-  // Upcoming recurring rules
-  const upcomingRules = useLiveQuery(
-    () => db.recurringRules
-      .where('active').equals(1)
-      .sortBy('nextDue')
-      .then(rules => rules.slice(0, 5)),
-    [],
-  ) ?? []
-
-  // Spending by category (real expenses only — no internal transfers or revaluations)
+  // Spending by category (real expenses only)
   const categoryData = (() => {
     const map: Record<string, number> = {}
     for (const tx of transactions) {
       if (!isCashFlow(tx) || tx.amount >= 0) continue
-      const key = tx.category
-      map[key] = (map[key] ?? 0) + Math.abs(tx.amount)
+      map[tx.category] = (map[tx.category] ?? 0) + Math.abs(tx.amount)
     }
     return Object.entries(map)
       .map(([id, value]) => {
@@ -77,32 +92,6 @@ export default function DashboardPage() {
       })
       .sort((a, b) => b.value - a.value)
   })()
-
-  // Balance last 6 months (simplified — uses transactions per month)
-  const last6MonthsData = (() => {
-    const data = []
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(YEAR, MONTH - 1 - i, 1)
-      data.push({ month: format(d, 'MMM'), balance: 0 }) // placeholder — real calc below
-    }
-    return data
-  })()
-
-  // Compute running balance per month using accounts current balance as anchor
-  const lineData = useLiveQuery(async () => {
-    const result = []
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(YEAR, MONTH - 1 - i, 1)
-      const y = getYear(d)
-      const m = getMonth(d) + 1
-      const from = `${y}-${String(m).padStart(2, '0')}-01`
-      const to   = `${y}-${String(m).padStart(2, '0')}-31`
-      const txs = await db.transactions.where('date').between(from, to, true, true).toArray()
-      const monthNet = txs.filter(isCashFlow).reduce((s, t) => s + t.amount, 0)
-      result.push({ month: format(d, 'MMM yy'), net: monthNet })
-    }
-    return result
-  }, []) ?? last6MonthsData.map(d => ({ month: d.month, net: 0 }))
 
   return (
     <div className="p-6 space-y-6">

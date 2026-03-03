@@ -8,9 +8,11 @@ import {
   TrendingUp,
   Sun,
   Moon,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/shared/store/themeStore'
+import { supabase } from '@/data/supabase'
 
 const navItems = [
   { to: '/',             label: 'Dashboard',    icon: LayoutDashboard, end: true },
@@ -22,6 +24,7 @@ const navItems = [
 
 export default function Sidebar() {
   const { theme, toggle } = useThemeStore()
+  const handleLogout = () => supabase.auth.signOut()
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-sidebar">
@@ -60,7 +63,13 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-sidebar-border px-4 py-3">
-        <p className="text-xs text-muted-foreground">Personal Finance</p>
+        <button
+          onClick={handleLogout}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          aria-label="Sign out"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
         <button
           onClick={toggle}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

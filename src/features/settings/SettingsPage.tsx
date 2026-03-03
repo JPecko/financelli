@@ -1,11 +1,15 @@
 import { useRef, useState } from 'react'
 import {
-  Download, Upload, Trash2, FileText, Database,
+  Download, Upload, Trash2, FileText, Database, LogOut,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Separator } from '@/shared/components/ui/separator'
-import { db } from '@/data/db'
+import { supabase } from '@/data/supabase'
+import { accountsRepo } from '@/data/repositories/accountsRepo'
+import { transactionsRepo } from '@/data/repositories/transactionsRepo'
+import { recurringRepo } from '@/data/repositories/recurringRepo'
+import { emitRefresh } from '@/shared/hooks/useRefresh'
 import { transactionsToCSV, downloadFile, exportFilename } from '@/shared/utils/csv'
 
 export default function SettingsPage() {
@@ -20,9 +24,9 @@ export default function SettingsPage() {
   /* ---- Export JSON ---- */
   const handleExportJSON = async () => {
     const [accounts, transactions, recurringRules] = await Promise.all([
-      db.accounts.toArray(),
-      db.transactions.toArray(),
-      db.recurringRules.toArray(),
+      accountsRepo.getAll(),
+      transactionsRepo.getAll(),
+      recurringRepo.getAll(),
     ])
     const payload = { exportedAt: new Date().toISOString(), accounts, transactions, recurringRules }
     downloadFile(
@@ -43,14 +47,60 @@ export default function SettingsPage() {
       if (!data.accounts || !data.transactions) {
         throw new Error('Invalid backup file format.')
       }
-      await db.transaction('rw', db.accounts, db.transactions, db.recurringRules, async () => {
-        await db.accounts.clear()
-        await db.transactions.clear()
-        await db.recurringRules.clear()
-        await db.accounts.bulkAdd(data.accounts)
-        await db.transactions.bulkAdd(data.transactions)
-        if (data.recurringRules) await db.recurringRules.bulkAdd(data.recurringRules)
-      })
+
+      // Clear existing data (RLS ensures only current user's rows are deleted)
+      await supabase.from('recurring_rules').delete().neq('id', 0)
+      await supabase.from('transactions').delete().neq('id', 0)
+      await supabase.from('accounts').delete().neq('id', 0)
+
+      // Insert accounts, build old-id → new-id map to preserve relationships
+      const idMap: Record<number, number> = {}
+      for (const acc of data.accounts) {
+        const { data: inserted } = await supabase
+          .from('accounts')
+          .insert({
+            name: acc.name, type: acc.type, balance: acc.balance,
+            currency: acc.currency, color: acc.color,
+          })
+          .select('id')
+          .single()
+        if (inserted && acc.id != null) idMap[acc.id] = (inserted as { id: number }).id
+      }
+
+      // Insert transactions with remapped account IDs
+      for (const tx of data.transactions) {
+        await supabase.from('transactions').insert({
+          account_id:        idMap[tx.accountId]   ?? tx.accountId,
+          to_account_id:     tx.toAccountId != null ? (idMap[tx.toAccountId] ?? tx.toAccountId) : null,
+          amount:            tx.amount,
+          type:              tx.type,
+          category:          tx.category,
+          description:       tx.description,
+          date:              tx.date,
+          recurring_rule_id: tx.recurringRuleId ?? null,
+        })
+      }
+
+      // Insert recurring rules with remapped account IDs
+      if (data.recurringRules) {
+        for (const rule of data.recurringRules) {
+          await supabase.from('recurring_rules').insert({
+            account_id:  idMap[rule.accountId] ?? rule.accountId,
+            name:        rule.name,
+            amount:      rule.amount,
+            type:        rule.type,
+            category:    rule.category,
+            description: rule.description,
+            frequency:   rule.frequency,
+            start_date:  rule.startDate,
+            next_due:    rule.nextDue,
+            end_date:    rule.endDate ?? null,
+            active:      rule.active,
+          })
+        }
+      }
+
+      emitRefresh()
       showStatus('Data imported successfully.')
     } catch (err) {
       showStatus(`Import failed: ${err instanceof Error ? err.message : String(err)}`)
@@ -61,7 +111,7 @@ export default function SettingsPage() {
 
   /* ---- Export CSV ---- */
   const handleExportCSV = async () => {
-    const transactions = await db.transactions.orderBy('date').toArray()
+    const transactions = await transactionsRepo.getAll()
     const csv = transactionsToCSV(transactions)
     downloadFile(csv, exportFilename('transactions', 'csv'), 'text/csv')
     showStatus('CSV exported successfully.')
@@ -71,13 +121,15 @@ export default function SettingsPage() {
   const handleClearData = async () => {
     if (!confirm('This will delete ALL your data permanently. Are you sure?')) return
     if (!confirm('This action cannot be undone. Confirm again to proceed.')) return
-    await db.transaction('rw', db.accounts, db.transactions, db.recurringRules, db.settings, async () => {
-      await db.accounts.clear()
-      await db.transactions.clear()
-      await db.recurringRules.clear()
-    })
+    await supabase.from('recurring_rules').delete().neq('id', 0)
+    await supabase.from('transactions').delete().neq('id', 0)
+    await supabase.from('accounts').delete().neq('id', 0)
+    emitRefresh()
     showStatus('All data cleared.')
   }
+
+  /* ---- Logout ---- */
+  const handleLogout = () => supabase.auth.signOut()
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
@@ -159,6 +211,31 @@ export default function SettingsPage() {
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
               Export CSV
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <LogOut className="h-4 w-4" />
+            Account
+          </CardTitle>
+          <CardDescription>
+            Sign out of your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <p className="text-sm font-medium">Sign Out</p>
+              <p className="text-xs text-muted-foreground">You will be redirected to the login page</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
             </Button>
           </div>
         </CardContent>

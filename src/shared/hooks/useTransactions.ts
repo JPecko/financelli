@@ -1,24 +1,29 @@
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '@/data/db'
+import { useState, useEffect } from 'react'
+import { useRefresh, emitRefresh } from '@/shared/hooks/useRefresh'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import type { Transaction } from '@/domain/types'
 
-export function useTransactions() {
-  return useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray(), []) ?? []
+export function useTransactions(): Transaction[] {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const key = useRefresh()
+  useEffect(() => { transactionsRepo.getAll().then(setTransactions) }, [key])
+  return transactions
 }
 
-export function useTransactionsByMonth(year: number, month: number) {
-  return useLiveQuery(
-    () => transactionsRepo.getByMonth(year, month),
-    [year, month],
-  ) ?? []
+export function useTransactionsByMonth(year: number, month: number): Transaction[] {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const key = useRefresh()
+  useEffect(() => {
+    transactionsRepo.getByMonth(year, month).then(setTransactions)
+  }, [year, month, key])
+  return transactions
 }
 
 /** Returns true for transactions that represent real cash flow (not internal moves or capital) */
 export function isCashFlow(t: Transaction): boolean {
-  if (t.type === 'revaluation') return false                        // market fluctuation
-  if (t.type === 'transfer' && t.toAccountId != null) return false  // internal transfer
-  if (t.type === 'transfer' && t.category === 'capital') return false // capital movement
+  if (t.type === 'revaluation') return false
+  if (t.type === 'transfer' && t.toAccountId != null) return false
+  if (t.type === 'transfer' && t.category === 'capital') return false
   return true
 }
 
@@ -34,13 +39,16 @@ export function useMonthSummary(year: number, month: number) {
 }
 
 export async function addTransaction(data: Omit<Transaction, 'id' | 'createdAt'>) {
-  return transactionsRepo.add({ ...data, createdAt: new Date().toISOString() })
+  await transactionsRepo.add(data)
+  emitRefresh()
 }
 
 export async function updateTransaction(id: number, data: Partial<Transaction>) {
-  return transactionsRepo.update(id, data)
+  await transactionsRepo.update(id, data)
+  emitRefresh()
 }
 
 export async function removeTransaction(id: number) {
-  return transactionsRepo.remove(id)
+  await transactionsRepo.remove(id)
+  emitRefresh()
 }
