@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getYear, getMonth, format } from 'date-fns'
 import {
   Wallet, TrendingUp, TrendingDown, DollarSign, RefreshCw,
-  Banknote, PiggyBank, BarChart2, HandCoins, CreditCard, Users,
+  Banknote, PiggyBank, BarChart2, HandCoins, CreditCard,
 } from 'lucide-react'
 import type { AccountType } from '@/domain/types'
 import type { LucideIcon } from 'lucide-react'
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
         {/* Net Worth — breakdown by type */}
         <Card className="sm:col-span-2 xl:col-span-1">
@@ -158,32 +158,25 @@ export default function DashboardPage() {
         </Card>
 
         <StatCard
-          title="Monthly Income"
-          value={formatMoney(summary.income)}
+          title="My Income"
+          value={formatMoney(summary.personalIncome)}
           icon={TrendingUp}
           trend="up"
-          subtitle={format(now, 'MMMM')}
+          subtitle={summary.personalIncome !== summary.income ? `Total: ${formatMoney(summary.income)}` : format(now, 'MMMM')}
         />
         <StatCard
-          title="Monthly Expenses"
-          value={formatMoney(Math.abs(summary.expenses))}
+          title="My Expenses"
+          value={formatMoney(Math.abs(summary.personalExpenses))}
           icon={TrendingDown}
           trend="down"
-          subtitle={format(now, 'MMMM')}
+          subtitle={summary.personalExpenses !== summary.expenses ? `Total: ${formatMoney(Math.abs(summary.expenses))}` : format(now, 'MMMM')}
         />
         <StatCard
-          title="Month Balance"
-          value={formatMoney(summary.balance)}
+          title="My Balance"
+          value={formatMoney(summary.personalBalance)}
           icon={DollarSign}
-          trend={summary.balance >= 0 ? 'up' : 'down'}
-          subtitle="Income − Expenses"
-        />
-        <StatCard
-          title="Personal Expenses"
-          value={formatMoney(Math.abs(summary.personalExpenses))}
-          icon={Users}
-          trend="down"
-          subtitle="My share of expenses"
+          trend={summary.personalBalance >= 0 ? 'up' : 'down'}
+          subtitle={`Net flow: ${formatMoney(summary.balance)}`}
         />
       </div>
 

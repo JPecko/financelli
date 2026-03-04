@@ -47,10 +47,20 @@ export function useMonthSummary(year: number, month: number) {
       const participants = accounts.find(a => a.id === t.accountId)?.participants ?? 1
       return s + t.amount / participants
     }, 0)
+  const personalIncome = real
+    .filter(t => t.amount > 0)
+    .reduce((s, t) => {
+      const participants = accounts.find(a => a.id === t.accountId)?.participants ?? 1
+      return s + t.amount / participants
+    }, 0)
   const marketGain = txs
     .filter(t => t.type === 'revaluation')
     .reduce((s, t) => s + t.amount, 0)
-  return { income, expenses, balance: income + expenses, personalExpenses, marketGain }
+  return {
+    income, expenses, balance: income + expenses,
+    personalIncome, personalExpenses, personalBalance: personalIncome + personalExpenses,
+    marketGain,
+  }
 }
 
 export async function addTransaction(data: Omit<Transaction, 'id' | 'createdAt'>) {

@@ -102,21 +102,24 @@ export default function TransactionsPage() {
           </Button>
         </div>
 
-        <div className="flex gap-4 text-sm flex-wrap">
-          <span className="text-emerald-600 font-medium">
-            +{formatMoney(summary.income)}
-          </span>
-          <span className="text-rose-600 font-medium flex items-baseline gap-1.5">
-            -{formatMoney(Math.abs(summary.expenses))}
-            {summary.personalExpenses !== summary.expenses && (
-              <span className="text-rose-400 font-medium text-xs">
-                (my: -{formatMoney(Math.abs(summary.personalExpenses))})
-              </span>
-            )}
-          </span>
-          <span className={`font-semibold ${summary.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-            = {formatMoney(summary.balance)}
-          </span>
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-4 text-sm flex-wrap">
+            <span className="text-emerald-600 font-medium">
+              +{formatMoney(summary.personalIncome)}
+            </span>
+            <span className="text-rose-600 font-medium">
+              -{formatMoney(Math.abs(summary.personalExpenses))}
+            </span>
+            <span className={`font-semibold ${summary.personalBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              = {formatMoney(summary.personalBalance)}
+            </span>
+          </div>
+          {(summary.personalIncome !== summary.income || summary.personalExpenses !== summary.expenses) && (
+            <div className="flex gap-3 text-xs text-muted-foreground">
+              <span>Total: +{formatMoney(summary.income)}</span>
+              <span>-{formatMoney(Math.abs(summary.expenses))}</span>
+            </div>
+          )}
         </div>
       </div>
 
