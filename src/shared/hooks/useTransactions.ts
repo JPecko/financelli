@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRefresh, emitRefresh } from '@/shared/hooks/useRefresh'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
+import { accountsRepo } from '@/data/repositories/accountsRepo'
 import type { Transaction } from '@/domain/types'
 
 export function useTransactions(): Transaction[] {
@@ -29,13 +30,27 @@ export function isCashFlow(t: Transaction): boolean {
 
 export function useMonthSummary(year: number, month: number) {
   const txs = useTransactionsByMonth(year, month)
+  const [accounts, setAccounts] = useState<{ id: number; participants: number }[]>([])
+  const key = useRefresh()
+  useEffect(() => {
+    accountsRepo.getAll().then(all =>
+      setAccounts(all.map(a => ({ id: a.id!, participants: a.participants ?? 1 })))
+    )
+  }, [key])
+
   const real       = txs.filter(isCashFlow)
   const income     = real.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const expenses   = real.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)
+  const personalExpenses = real
+    .filter(t => t.amount < 0)
+    .reduce((s, t) => {
+      const participants = accounts.find(a => a.id === t.accountId)?.participants ?? 1
+      return s + t.amount / participants
+    }, 0)
   const marketGain = txs
     .filter(t => t.type === 'revaluation')
     .reduce((s, t) => s + t.amount, 0)
-  return { income, expenses, balance: income + expenses, marketGain }
+  return { income, expenses, balance: income + expenses, personalExpenses, marketGain }
 }
 
 export async function addTransaction(data: Omit<Transaction, 'id' | 'createdAt'>) {

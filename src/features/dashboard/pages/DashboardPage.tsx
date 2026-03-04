@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getYear, getMonth, format } from 'date-fns'
 import {
   Wallet, TrendingUp, TrendingDown, DollarSign, RefreshCw,
-  Banknote, PiggyBank, BarChart2, HandCoins, CreditCard,
+  Banknote, PiggyBank, BarChart2, HandCoins, CreditCard, Users,
 } from 'lucide-react'
 import type { AccountType } from '@/domain/types'
 import type { LucideIcon } from 'lucide-react'
@@ -101,10 +101,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
 
         {/* Net Worth — breakdown by type */}
-        <Card className="sm:col-span-2 lg:col-span-1">
+        <Card className="sm:col-span-2 xl:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Net Worth</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
@@ -177,6 +177,13 @@ export default function DashboardPage() {
           icon={DollarSign}
           trend={summary.balance >= 0 ? 'up' : 'down'}
           subtitle="Income − Expenses"
+        />
+        <StatCard
+          title="Personal Expenses"
+          value={formatMoney(Math.abs(summary.personalExpenses))}
+          icon={Users}
+          trend="down"
+          subtitle="My share of expenses"
         />
       </div>
 

@@ -102,12 +102,17 @@ export default function TransactionsPage() {
           </Button>
         </div>
 
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-4 text-sm flex-wrap">
           <span className="text-emerald-600 font-medium">
             +{formatMoney(summary.income)}
           </span>
-          <span className="text-rose-600 font-medium">
+          <span className="text-rose-600 font-medium flex items-baseline gap-1.5">
             -{formatMoney(Math.abs(summary.expenses))}
+            {summary.personalExpenses !== summary.expenses && (
+              <span className="text-rose-400 font-medium text-xs">
+                (my: -{formatMoney(Math.abs(summary.personalExpenses))})
+              </span>
+            )}
           </span>
           <span className={`font-semibold ${summary.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
             = {formatMoney(summary.balance)}

@@ -1,5 +1,11 @@
 export type AccountType = 'checking' | 'savings' | 'investment' | 'cash' | 'credit'
 
+export interface AccountShare {
+  userId: string
+  email: string
+  fullName?: string
+}
+
 export interface Account {
   id?: number
   name: string
@@ -8,6 +14,11 @@ export interface Account {
   currency: string      // e.g. 'EUR'
   color: string         // hex color for display
   createdAt: string     // ISO 8601
+  ownerId?: string      // user_id of the owner
+  ownerEmail?: string
+  ownerFullName?: string
+  participants?: number // 1 + number of shares (maintained by DB trigger)
+  sharedWith?: AccountShare[] // list of users this account is shared with (guests only)
 }
 
 export type TransactionType = 'income' | 'expense' | 'transfer' | 'revaluation'

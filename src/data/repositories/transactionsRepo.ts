@@ -68,13 +68,15 @@ export const transactionsRepo = {
   },
 
   getByMonth: async (year: number, month: number): Promise<Transaction[]> => {
-    const from = `${year}-${String(month).padStart(2, '0')}-01`
-    const to   = `${year}-${String(month).padStart(2, '0')}-31`
+    const from    = `${year}-${String(month).padStart(2, '0')}-01`
+    const nextMonth = month === 12 ? 1 : month + 1
+    const nextYear  = month === 12 ? year + 1 : year
+    const to      = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
       .gte('date', from)
-      .lte('date', to)
+      .lt('date', to)
       .order('date', { ascending: false })
     if (error) throw error
     return (data as TransactionRow[]).map(toTransaction)

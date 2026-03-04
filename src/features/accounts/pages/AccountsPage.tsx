@@ -1,16 +1,19 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Wallet, BarChart2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Wallet, BarChart2, Users } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Badge } from '@/shared/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
 import { useAccounts, removeAccount } from '@/shared/hooks/useAccounts'
+import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
 import AccountFormModal from '../components/AccountFormModal'
 import RevalueModal from '../components/RevalueModal'
+import ShareAccountModal from '../components/ShareAccountModal'
 import type { Account } from '@/domain/types'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -23,9 +26,11 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function AccountsPage() {
   const accounts = useAccounts()
+  const { user } = useAuth()
   const [modalOpen, setModalOpen]     = useState(false)
   const [editing, setEditing]         = useState<Account | undefined>()
   const [revaluing, setRevaluing]     = useState<Account | undefined>()
+  const [sharing, setSharing]         = useState<Account | undefined>()
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0)
 
@@ -97,9 +102,35 @@ export default function AccountsPage() {
                       </div>
                       <div>
                         <p className="font-semibold leading-tight">{account.name}</p>
-                        <Badge variant="secondary" className="mt-1 text-xs">
-                          {TYPE_LABELS[account.type] ?? account.type}
-                        </Badge>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {TYPE_LABELS[account.type] ?? account.type}
+                          </Badge>
+                          {(account.participants ?? 1) > 1 && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="text-xs gap-1 cursor-default">
+                                  <Users className="h-3 w-3" />
+                                  {account.participants}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom">
+                                <div className="space-y-0.5">
+                                  <p>
+                                    {account.ownerId === user?.id
+                                      ? (user?.user_metadata?.full_name ?? user?.email)
+                                      : (account.ownerFullName ?? account.ownerEmail ?? 'Owner')
+                                    }
+                                    {' '}<span className="opacity-60">(owner)</span>
+                                  </p>
+                                  {account.sharedWith?.map(s => (
+                                    <p key={s.userId}>{s.fullName ?? s.email}</p>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -135,6 +166,9 @@ export default function AccountsPage() {
                               <DropdownMenuSeparator />
                             </>
                           )}
+                          <DropdownMenuItem onClick={() => setSharing(account)}>
+                            <Users className="h-4 w-4 mr-2" /> Share
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(account)}>
                             <Pencil className="h-4 w-4 mr-2" /> Edit
                           </DropdownMenuItem>
@@ -156,6 +190,14 @@ export default function AccountsPage() {
       )}
 
       <AccountFormModal open={modalOpen} onClose={handleCloseForm} account={editing} />
+
+      {sharing && (
+        <ShareAccountModal
+          open={!!sharing}
+          onClose={() => setSharing(undefined)}
+          account={sharing}
+        />
+      )}
 
       {revaluing && (
         <RevalueModal

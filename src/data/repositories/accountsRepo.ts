@@ -3,34 +3,86 @@ import type { Account } from '@/domain/types'
 
 type AccountRow = {
   id: number
+  user_id: string
   name: string
   type: string
   balance: number
   currency: string
   color: string
   created_at: string
+  participants: number
 }
 
 function toAccount(row: AccountRow): Account {
   return {
-    id:        row.id,
-    name:      row.name,
-    type:      row.type as Account['type'],
-    balance:   row.balance,
-    currency:  row.currency,
-    color:     row.color,
-    createdAt: row.created_at,
+    id:           row.id,
+    ownerId:      row.user_id,
+    name:         row.name,
+    type:         row.type as Account['type'],
+    balance:      row.balance,
+    currency:     row.currency,
+    color:        row.color,
+    createdAt:    row.created_at,
+    participants: row.participants ?? 1,
+    sharedWith:   [],
   }
 }
 
 export const accountsRepo = {
   getAll: async (): Promise<Account[]> => {
-    const { data, error } = await supabase
+    // 1. Fetch accounts
+    const { data: accountRows, error } = await supabase
       .from('accounts')
       .select('*')
       .order('created_at')
     if (error) throw error
-    return (data as AccountRow[]).map(toAccount)
+    const accounts = (accountRows as AccountRow[]).map(toAccount)
+    if (accounts.length === 0) return accounts
+
+    const accountIds = accounts.map(a => a.id!)
+
+    // 2. Fetch all shares for these accounts
+    const { data: shares } = await supabase
+      .from('account_shares')
+      .select('account_id, shared_with_id')
+      .in('account_id', accountIds)
+
+    if (!shares || shares.length === 0) return accounts
+
+    // 3. Fetch profiles for all relevant users (shared + owners)
+    const sharedUserIds = [...new Set(shares.map(s => s.shared_with_id))]
+    const ownerIds      = [...new Set(accounts.map(a => a.ownerId).filter(Boolean) as string[])]
+    const userIds       = [...new Set([...sharedUserIds, ...ownerIds])]
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', userIds)
+
+    const profileMap = Object.fromEntries(
+      (profiles ?? []).map(p => [p.id, p])
+    )
+
+    // 4. Merge sharedWith into each account
+    const sharesByAccount: Record<number, typeof shares> = {}
+    for (const share of shares) {
+      if (!sharesByAccount[share.account_id]) sharesByAccount[share.account_id] = []
+      sharesByAccount[share.account_id].push(share)
+    }
+
+    return accounts.map(account => {
+      const accountShares = sharesByAccount[account.id!] ?? []
+      const ownerProf     = account.ownerId ? profileMap[account.ownerId] : undefined
+      return {
+        ...account,
+        ownerEmail:    ownerProf?.email ?? undefined,
+        ownerFullName: ownerProf?.full_name ?? undefined,
+        sharedWith: accountShares.map(s => ({
+          userId:   s.shared_with_id,
+          email:    profileMap[s.shared_with_id]?.email ?? s.shared_with_id,
+          fullName: profileMap[s.shared_with_id]?.full_name ?? undefined,
+        })),
+      }
+    })
   },
 
   getById: async (id: number): Promise<Account | undefined> => {
