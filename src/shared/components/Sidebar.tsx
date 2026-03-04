@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/shared/store/themeStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
+import { Button } from '@/shared/components/ui/button'
 
 const navItems = [
   { to: '/',             label: 'Dashboard',    icon: LayoutDashboard, end: true },
@@ -94,24 +95,12 @@ export default function Sidebar({ open, onClose }: Props) {
         </div>
         {/* Actions */}
         <div className="flex items-center justify-between px-1">
-          <button
-            onClick={handleLogout}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            aria-label="Sign out"
-          >
+          <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sign out" className="h-7 w-7">
             <LogOut className="h-4 w-4" />
-          </button>
-          <button
-            onClick={toggle}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-          </button>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="h-7 w-7">
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
     </aside>
