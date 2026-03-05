@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { accountsRepo } from '@/data/repositories/accountsRepo'
 import { queryClient } from '@/app/queryClient'
@@ -56,10 +57,11 @@ export function sortAccounts(
 export function useSortedAccounts() {
   const query = useAccounts()
   const { sort, manualOrder, colorOrder } = useAccountPrefsStore()
-  return {
-    ...query,
-    data: sortAccounts(query.data ?? [], sort, manualOrder, colorOrder),
-  }
+  const data = useMemo(
+    () => sortAccounts(query.data ?? [], sort, manualOrder, colorOrder),
+    [query.data, sort, manualOrder, colorOrder],
+  )
+  return { ...query, data }
 }
 
 // ─── Mutations ───────────────────────────────────────────────────────────────

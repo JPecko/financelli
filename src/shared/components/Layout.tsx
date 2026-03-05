@@ -8,7 +8,6 @@ import { useThemeStore } from '@/shared/store/themeStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
 import { navItems } from '@/shared/config/nav'
-import { cn } from '@/lib/utils'
 
 const MOBILE_NAV_ORDER = ['/dashboard', '/transactions', '/accounts', '/recurring', '/settings']
 const mobileNavItems = MOBILE_NAV_ORDER.map(to => navItems.find(n => n.to === to)!)
@@ -21,28 +20,12 @@ function BottomNav() {
           key={to}
           to={to}
           end
-          className={({ isActive }) =>
-            cn(
-              'flex flex-1 flex-col items-center justify-end gap-1 pb-2 pt-3 transition-colors',
-              isActive
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground',
-            )
-          }
+          className="group/tab flex flex-1 flex-col items-center gap-1 pb-2 pt-3 transition-colors text-muted-foreground hover:text-foreground [&.active]:text-primary"
         >
-          {({ isActive }) => (
-            <>
-              {/* Active indicator pill above icon */}
-              <span
-                className={cn(
-                  'h-0.5 w-5 rounded-full transition-all',
-                  isActive ? 'bg-primary' : 'bg-transparent',
-                )}
-              />
-              <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium leading-none">{label}</span>
-            </>
-          )}
+          {/* Indicator pill — visible when NavLink has the auto-added .active class */}
+          <span className="h-0.5 w-5 rounded-full bg-current opacity-0 group-[.active]/tab:opacity-100 transition-opacity" />
+          <Icon className="h-5 w-5" />
+          <span className="text-[10px] font-medium leading-none">{label}</span>
         </NavLink>
       ))}
     </nav>
