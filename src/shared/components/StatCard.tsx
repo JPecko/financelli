@@ -20,7 +20,7 @@ export default function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card className={cn('relative overflow-hidden', className)}>
+    <Card className={cn('relative overflow-hidden card-hoverable', className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">

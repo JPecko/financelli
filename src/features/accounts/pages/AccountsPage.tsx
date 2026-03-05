@@ -342,7 +342,7 @@ export default function AccountsPage() {
                 const isInvestment = account.type === 'investment'
                 return (
                   <SortableCard key={account.id} account={account} isManual={isManualEditing}>
-                    <Card className="overflow-hidden">
+                    <Card className="overflow-hidden card-hoverable">
                       <CardContent className="p-0">
                         <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
                         <div className={`flex items-start justify-between p-5 ${isManualEditing ? 'pl-9' : ''}`}>

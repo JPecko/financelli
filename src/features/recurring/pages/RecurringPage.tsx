@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { cn } from '@/lib/utils'
 import { Plus, Pencil, Trash2, RefreshCw, Play, Pause, ArrowRight } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
@@ -84,7 +85,7 @@ export default function RecurringPage() {
           {rules.map(rule => {
             const cat = getCategoryById(rule.category)
             return (
-              <Card key={rule.id} className={!rule.active ? 'opacity-60' : ''}>
+              <Card key={rule.id} className={cn('card-hoverable', !rule.active && 'opacity-60')}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
