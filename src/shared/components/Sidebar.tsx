@@ -1,35 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  ArrowLeftRight,
-  Wallet,
-  RefreshCw,
-  Settings,
-  TrendingUp,
-  Sun,
-  Moon,
-  LogOut,
-} from 'lucide-react'
+import { TrendingUp, Sun, Moon, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/shared/store/themeStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
 import { Button } from '@/shared/components/ui/button'
+import { navItems } from '@/shared/config/nav'
 
-const navItems = [
-  { to: '/accounts',     label: 'Accounts',     icon: Wallet },
-  { to: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-  { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
-  { to: '/recurring',    label: 'Recurring',    icon: RefreshCw },
-  { to: '/settings',     label: 'Settings',     icon: Settings },
-]
-
-interface Props {
-  open: boolean
-  onClose: () => void
-}
-
-export default function Sidebar({ open, onClose }: Props) {
+export default function Sidebar() {
   const { theme, toggle } = useThemeStore()
   const { user } = useAuth()
   const handleLogout = () => supabase.auth.signOut()
@@ -40,16 +18,9 @@ export default function Sidebar({ open, onClose }: Props) {
     : (user?.email?.[0] ?? '?').toUpperCase()
 
   return (
-    <aside
-      className={cn(
-        'fixed inset-y-0 left-0 z-50 flex h-screen w-60 flex-col border-r border-border bg-sidebar',
-        'transition-transform duration-300 ease-in-out',
-        'lg:static lg:translate-x-0',
-        open ? 'translate-x-0' : '-translate-x-full',
-      )}
-    >
-      {/* Logo — safe-area-top-pad-5 ensures content clears the notch */}
-      <div className="flex items-center gap-2 px-6 py-5 safe-area-top-pad-5 border-b border-sidebar-border">
+    <aside className="hidden lg:flex h-screen w-60 flex-col border-r border-border bg-sidebar">
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-6 py-5 border-b border-sidebar-border">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <TrendingUp className="h-4 w-4 text-primary-foreground" />
         </div>
@@ -64,7 +35,6 @@ export default function Sidebar({ open, onClose }: Props) {
               <NavLink
                 to={to}
                 end
-                onClick={onClose}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -82,8 +52,8 @@ export default function Sidebar({ open, onClose }: Props) {
         </ul>
       </nav>
 
-      {/* Footer — safe-area-bottom-pad-3 clears the home indicator */}
-      <div className="border-t border-sidebar-border px-3 py-3 safe-area-bottom-pad-3 space-y-2">
+      {/* Footer */}
+      <div className="border-t border-sidebar-border px-3 py-3 space-y-2">
         {/* User info */}
         <div className="flex items-center gap-2 px-1">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
