@@ -168,6 +168,34 @@ body {
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.30);
 }
 
+/* ─── iOS PWA safe area insets ───────────────────────────────────
+   Use these classes on elements that touch the screen edges so
+   content isn't hidden under the notch / Dynamic Island / home bar.
+   Works on both iPhone notch (safe-area-inset-top ≈ 44–59px) and
+   older iPhones (inset = 0, so these classes add no extra space).
+──────────────────────────────────────────────────────────────── */
+
+/* Apply to the mobile top bar / sidebar logo area */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Apply to bottom-anchored elements (tab bar, sidebar footer) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Use when the element already has padding — adds safe-area on top */
+.safe-area-top-pad-3 {
+  padding-top: calc(env(safe-area-inset-top) + 0.75rem); /* + py-3 */
+}
+.safe-area-top-pad-5 {
+  padding-top: calc(env(safe-area-inset-top) + 1.25rem); /* + py-5 */
+}
+.safe-area-bottom-pad-3 {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); /* + py-3 */
+}
+
 /* ─── Scrollbar — minimal ─────────────────────────────────────── */
 
 ::-webkit-scrollbar        { width: 6px; height: 6px; }

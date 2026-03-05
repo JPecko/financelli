@@ -48,8 +48,8 @@ export default function Sidebar({ open, onClose }: Props) {
         open ? 'translate-x-0' : '-translate-x-full',
       )}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-sidebar-border">
+      {/* Logo — safe-area-top-pad-5 ensures content clears the notch */}
+      <div className="flex items-center gap-2 px-6 py-5 safe-area-top-pad-5 border-b border-sidebar-border">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <TrendingUp className="h-4 w-4 text-primary-foreground" />
         </div>
@@ -82,8 +82,8 @@ export default function Sidebar({ open, onClose }: Props) {
         </ul>
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-sidebar-border px-3 py-3 space-y-2">
+      {/* Footer — safe-area-bottom-pad-3 clears the home indicator */}
+      <div className="border-t border-sidebar-border px-3 py-3 safe-area-bottom-pad-3 space-y-2">
         {/* User info */}
         <div className="flex items-center gap-2 px-1">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">

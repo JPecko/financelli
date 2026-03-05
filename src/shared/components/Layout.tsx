@@ -20,8 +20,8 @@ export default function Layout() {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Mobile header */}
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3 lg:hidden">
+        {/* Mobile header — safe-area-top-pad-3 pushes content below the notch/Dynamic Island */}
+        <header className="flex items-center gap-3 border-b border-border px-4 py-3 safe-area-top-pad-3 lg:hidden">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
             <Menu className="h-5 w-5" />
           </Button>
