@@ -8,7 +8,7 @@ import { Label } from '@/shared/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/categories'
-import { useAccounts } from '@/shared/hooks/useAccounts'
+import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
 import type { RecurringRule, TransactionType, RecurringFrequency } from '@/domain/types'
 
@@ -38,7 +38,7 @@ const TYPE_OPTIONS: { value: TransactionType; label: string; active: string; ina
 
 export default function RecurringFormModal({ open, onClose, rule }: Props) {
   const isEdit   = !!rule
-  const accounts = useAccounts()
+  const accounts = useSortedAccounts()
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: {

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/categories'
 import { addTransaction, updateTransaction } from '@/shared/hooks/useTransactions'
-import { useAccounts } from '@/shared/hooks/useAccounts'
+import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { isoToday } from '@/shared/utils/format'
 import type { Transaction, TransactionType } from '@/domain/types'
 
@@ -88,7 +88,7 @@ export function useTransactionForm({
   open, onClose, transaction, defaultType = 'expense',
 }: UseTransactionFormProps) {
   const isEdit   = !!transaction
-  const accounts = useAccounts()
+  const accounts = useSortedAccounts()
   const firstId  = accounts[0]?.id != null ? String(accounts[0].id) : ''
   const secondId = accounts[1]?.id != null ? String(accounts[1].id) : EXTERNAL
 

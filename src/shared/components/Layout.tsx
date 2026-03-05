@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Menu, TrendingUp } from 'lucide-react'
 import Sidebar from './Sidebar'
 import { Button } from '@/shared/components/ui/button'
+import { useAccountPrefsStore } from '@/shared/store/accountPrefsStore'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const load = useAccountPrefsStore(s => s.load)
+  useEffect(() => { void load() }, [load])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

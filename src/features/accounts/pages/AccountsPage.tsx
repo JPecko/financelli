@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Wallet, BarChart2, Users, GripVertical,
   ArrowUpDown, Check, ChevronUp, ChevronDown, Save, X,
@@ -18,7 +18,8 @@ import {
   SortableContext, rectSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useAccounts, removeAccount } from '@/shared/hooks/useAccounts'
+import { useAccounts, sortAccounts, removeAccount } from '@/shared/hooks/useAccounts'
+import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
@@ -35,8 +36,6 @@ const TYPE_LABELS: Record<string, string> = {
   credit:     'Credit Card',
 }
 
-type SortKey = 'default' | 'name' | 'type' | 'color' | 'balance' | 'manual'
-
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'default', label: 'Creation order' },
   { value: 'name',    label: 'Name A→Z' },
@@ -45,29 +44,6 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'balance', label: 'Balance ↓' },
   { value: 'manual',  label: 'Manual' },
 ]
-
-function sortAccounts(
-  accounts: Account[],
-  sort: SortKey,
-  manualOrder: number[],
-  colorOrder: string[],
-): Account[] {
-  if (sort === 'manual' && manualOrder.length > 0) {
-    const idx = Object.fromEntries(manualOrder.map((id, i) => [id, i]))
-    return [...accounts].sort((a, b) => (idx[a.id!] ?? 999) - (idx[b.id!] ?? 999))
-  }
-  if (sort === 'name')    return [...accounts].sort((a, b) => a.name.localeCompare(b.name))
-  if (sort === 'type')    return [...accounts].sort((a, b) => a.type.localeCompare(b.type))
-  if (sort === 'color') {
-    return [...accounts].sort((a, b) => {
-      const ai = colorOrder.indexOf(a.color)
-      const bi = colorOrder.indexOf(b.color)
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
-    })
-  }
-  if (sort === 'balance') return [...accounts].sort((a, b) => b.balance - a.balance)
-  return accounts
-}
 
 interface SortableCardProps {
   account: Account
@@ -106,76 +82,68 @@ function SortableCard({ account, isManual, children }: SortableCardProps) {
 export default function AccountsPage() {
   const accounts = useAccounts()
   const { user } = useAuth()
+  const {
+    sort, manualOrder, colorOrder, loaded,
+    setSort, setManualOrder, setColorOrder,
+  } = useAccountPrefsStore()
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing]     = useState<Account | undefined>()
   const [revaluing, setRevaluing] = useState<Account | undefined>()
   const [sharing, setSharing]     = useState<Account | undefined>()
 
-  const [sort, setSort] = useState<SortKey>(() =>
-    (localStorage.getItem('accounts-sort') as SortKey) ?? 'default'
-  )
   // True only while actively editing manual order (handles visible, not yet saved)
   const [isManualEditing, setIsManualEditing] = useState(false)
 
-  // Committed manual order (only updated on Save)
-  const [manualOrder, setManualOrder] = useState<number[]>(() => {
-    try { return JSON.parse(localStorage.getItem('accounts-manual-order') ?? '[]') } catch { return [] }
-  })
   // Draft order: changes as you drag, only committed on Save
-  const [draftOrder, setDraftOrder] = useState<number[]>(() => {
-    try { return JSON.parse(localStorage.getItem('accounts-manual-order') ?? '[]') } catch { return [] }
-  })
+  const [draftOrder, setDraftOrder] = useState<number[]>([])
 
-  // Color order for 'color' sort
-  const [colorOrder, setColorOrder] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('accounts-color-order') ?? '[]') } catch { return [] }
-  })
+  // Sync draftOrder once when prefs first load from Supabase
+  useEffect(() => {
+    if (loaded && !isManualEditing) setDraftOrder([...manualOrder])
+  }, [loaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  // Refs to read current store values inside effects without adding them as deps
+  const manualOrderRef = useRef(manualOrder)
+  manualOrderRef.current = manualOrder
+  const colorOrderRef = useRef(colorOrder)
+  colorOrderRef.current = colorOrder
 
   // Sync manualOrder/draftOrder when accounts are added or removed
   useEffect(() => {
     if (accounts.length === 0) return
     const ids = accounts.map(a => a.id!)
-    const merge = (prev: number[]) => [
-      ...prev.filter(id => ids.includes(id)),
-      ...ids.filter(id => !prev.includes(id)),
-    ]
-    setManualOrder(prev => {
-      const next = merge(prev)
-      localStorage.setItem('accounts-manual-order', JSON.stringify(next))
-      return next
-    })
-    setDraftOrder(prev => merge(prev))
+    const current = manualOrderRef.current
+    const merged = [...current.filter(id => ids.includes(id)), ...ids.filter(id => !current.includes(id))]
+    if (merged.length !== current.length || merged.some((id, i) => id !== current[i])) {
+      setManualOrder(merged)
+    }
+    setDraftOrder(prev => [...prev.filter(id => ids.includes(id)), ...ids.filter(id => !prev.includes(id))])
   }, [accounts.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync colorOrder with colors present in accounts
   useEffect(() => {
     if (accounts.length === 0) return
     const colors = [...new Set(accounts.map(a => a.color))]
-    setColorOrder(prev => {
-      const merged = [
-        ...prev.filter(c => colors.includes(c)),
-        ...colors.filter(c => !prev.includes(c)),
-      ]
-      localStorage.setItem('accounts-color-order', JSON.stringify(merged))
-      return merged
-    })
+    const current = colorOrderRef.current
+    const merged = [...current.filter(c => colors.includes(c)), ...colors.filter(c => !current.includes(c))]
+    if (merged.length !== current.length || merged.some((c, i) => c !== current[i])) {
+      setColorOrder(merged)
+    }
   }, [accounts]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const handleSortChange = (value: SortKey) => {
     setSort(value)
-    localStorage.setItem('accounts-sort', value)
     if (value === 'manual') {
       setDraftOrder(manualOrder.length > 0 ? [...manualOrder] : accounts.map(a => a.id!))
     }
-    // Selecting any sort option (re)enters editing mode for manual, exits for others
     setIsManualEditing(value === 'manual')
   }
 
   const handleSaveManual = () => {
     setManualOrder(draftOrder)
-    localStorage.setItem('accounts-manual-order', JSON.stringify(draftOrder))
     setIsManualEditing(false)
   }
 
@@ -196,18 +164,15 @@ export default function AccountsPage() {
   }
 
   const moveColor = (i: number, dir: -1 | 1) => {
-    setColorOrder(prev => {
-      const next = [...prev]
-      const j = i + dir
-      if (j < 0 || j >= next.length) return prev
-      ;[next[i], next[j]] = [next[j], next[i]]
-      localStorage.setItem('accounts-color-order', JSON.stringify(next))
-      return next
-    })
+    const next = [...colorOrder]
+    const j = i + dir
+    if (j < 0 || j >= next.length) return
+    ;[next[i], next[j]] = [next[j], next[i]]
+    setColorOrder(next)
   }
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0)
-  const sorted = sortAccounts(accounts, sort, sort === 'manual' ? draftOrder : [], colorOrder)
+  const sorted = sortAccounts(accounts, sort, sort === 'manual' ? draftOrder : manualOrder, colorOrder)
   const sortedIds = sorted.map(a => a.id!)
 
   const handleEdit = (account: Account) => {
