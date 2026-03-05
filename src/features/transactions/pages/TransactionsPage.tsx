@@ -26,9 +26,9 @@ export default function TransactionsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing]     = useState<Transaction | undefined>()
 
-  const transactions = useTransactionsByMonth(year, month)
-  const summary      = useMonthSummary(year, month)
-  const accounts     = useAccounts()
+  const { data: transactions = [] } = useTransactionsByMonth(year, month)
+  const summary                     = useMonthSummary(year, month)
+  const { data: accounts     = [] } = useAccounts()
 
   const accountMap = Object.fromEntries(accounts.map(a => [a.id!, a.name]))
   const accountLabel = (tx: Transaction) => {

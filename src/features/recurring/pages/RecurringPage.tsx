@@ -17,8 +17,8 @@ import RecurringFormModal from '../components/RecurringFormModal'
 import type { RecurringRule } from '@/domain/types'
 
 export default function RecurringPage() {
-  const rules    = useRecurringRules()
-  const accounts = useAccounts()
+  const { data: rules    = [] } = useRecurringRules()
+  const { data: accounts = [] } = useAccounts()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing]     = useState<RecurringRule | undefined>()
 

@@ -80,7 +80,7 @@ function SortableCard({ account, isManual, children }: SortableCardProps) {
 }
 
 export default function AccountsPage() {
-  const accounts = useAccounts()
+  const { data: accounts = [] } = useAccounts()
   const { user } = useAuth()
   const {
     sort, manualOrder, colorOrder, loaded,

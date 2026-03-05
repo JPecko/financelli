@@ -38,7 +38,7 @@ const TYPE_OPTIONS: { value: TransactionType; label: string; active: string; ina
 
 export default function RecurringFormModal({ open, onClose, rule }: Props) {
   const isEdit   = !!rule
-  const accounts = useSortedAccounts()
+  const { data: accounts = [] } = useSortedAccounts()
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: {

@@ -88,7 +88,7 @@ export function useTransactionForm({
   open, onClose, transaction, defaultType = 'expense',
 }: UseTransactionFormProps) {
   const isEdit   = !!transaction
-  const accounts = useSortedAccounts()
+  const { data: accounts = [] } = useSortedAccounts()
   const firstId  = accounts[0]?.id != null ? String(accounts[0].id) : ''
   const secondId = accounts[1]?.id != null ? String(accounts[1].id) : EXTERNAL
 

@@ -5,7 +5,8 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { profilesRepo } from '@/data/repositories/profilesRepo'
 import { accountSharesRepo } from '@/data/repositories/accountSharesRepo'
-import { emitRefresh } from '@/shared/hooks/useRefresh'
+import { queryClient } from '@/app/queryClient'
+import { queryKeys } from '@/data/queryKeys'
 import { useAuth } from '@/features/auth/AuthContext'
 import type { Account, AccountShare } from '@/domain/types'
 import type { ProfileResult } from '@/data/repositories/profilesRepo'
@@ -60,7 +61,7 @@ export default function ShareAccountModal({ open, onClose, account }: Props) {
       const newShare: AccountShare = { userId: profile.id, email: profile.email, fullName: profile.fullName }
       setSharedWith(prev => [...prev, newShare])
       setResults(r => r.filter(p => p.id !== profile.id))
-      emitRefresh()
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all() })
     } catch {
       setError('Could not add user. They may already have access.')
     }
@@ -72,7 +73,7 @@ export default function ShareAccountModal({ open, onClose, account }: Props) {
     try {
       await accountSharesRepo.remove(account.id, userId)
       setSharedWith(prev => prev.filter(s => s.userId !== userId))
-      emitRefresh()
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all() })
     } catch {
       setError('Could not remove user.')
     }

@@ -12,7 +12,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { accountsRepo } from '@/data/repositories/accountsRepo'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { recurringRepo } from '@/data/repositories/recurringRepo'
-import { emitRefresh } from '@/shared/hooks/useRefresh'
+import { queryClient } from '@/app/queryClient'
 import { transactionsToCSV, downloadFile, exportFilename } from '@/shared/utils/csv'
 
 export default function SettingsPage() {
@@ -115,7 +115,7 @@ export default function SettingsPage() {
         }
       }
 
-      emitRefresh()
+      queryClient.invalidateQueries()
       showStatus('Data imported successfully.')
     } catch (err) {
       showStatus(`Import failed: ${err instanceof Error ? err.message : String(err)}`)
@@ -139,7 +139,7 @@ export default function SettingsPage() {
     await supabase.from('recurring_rules').delete().neq('id', 0)
     await supabase.from('transactions').delete().neq('id', 0)
     await supabase.from('accounts').delete().neq('id', 0)
-    emitRefresh()
+    queryClient.invalidateQueries()
     showStatus('All data cleared.')
   }
 

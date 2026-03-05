@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { getYear, getMonth, format } from 'date-fns'
 import {
   Wallet, TrendingUp, TrendingDown, DollarSign, RefreshCw,
@@ -13,16 +12,14 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Badge } from '@/shared/components/ui/badge'
 import { useAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
-import { useMonthSummary, useTransactionsByMonth, isCashFlow } from '@/shared/hooks/useTransactions'
+import { useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow, isCashFlow } from '@/shared/hooks/useTransactions'
 import { useRecurringRules } from '@/shared/hooks/useRecurringRules'
-import { useRefresh } from '@/shared/hooks/useRefresh'
-import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import StatCard from '@/shared/components/StatCard'
 
-const now = new Date()
+const now   = new Date()
 const YEAR  = getYear(now)
 const MONTH = getMonth(now) + 1
 
@@ -35,30 +32,12 @@ const ACCOUNT_TYPE_META: Record<AccountType, { label: string; icon: LucideIcon; 
 }
 
 export default function DashboardPage() {
-  const netWorth     = useNetWorth()
-  const summary      = useMonthSummary(YEAR, MONTH)
-  const transactions = useTransactionsByMonth(YEAR, MONTH)
-  const accounts     = useAccounts()
-  const allRules     = useRecurringRules()
-  const key          = useRefresh()
-
-  const [lineData, setLineData] = useState<{ month: string; net: number }[]>([])
-
-  useEffect(() => {
-    const fetchLineData = async () => {
-      const result: { month: string; net: number }[] = []
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(YEAR, MONTH - 1 - i, 1)
-        const y = getYear(d)
-        const m = getMonth(d) + 1
-        const txs = await transactionsRepo.getByMonth(y, m)
-        const monthNet = txs.filter(isCashFlow).reduce((s, t) => s + t.amount, 0)
-        result.push({ month: format(d, 'MMM yy'), net: monthNet })
-      }
-      setLineData(result)
-    }
-    fetchLineData()
-  }, [key])
+  const netWorth                  = useNetWorth()
+  const summary                   = useMonthSummary(YEAR, MONTH)
+  const { data: transactions = [] } = useTransactionsByMonth(YEAR, MONTH)
+  const { data: accounts     = [] } = useAccounts()
+  const { data: allRules     = [] } = useRecurringRules()
+  const { data: lineData     = [] } = useMonthlyNetFlow(YEAR, MONTH)
 
   // Upcoming active rules (top 5 by next due)
   const upcomingRules = allRules.filter(r => r.active).slice(0, 5)

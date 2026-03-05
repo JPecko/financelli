@@ -1,30 +1,33 @@
-import { useState, useEffect } from 'react'
-import { useRefresh, emitRefresh } from '@/shared/hooks/useRefresh'
+import { useQuery } from '@tanstack/react-query'
 import { accountsRepo } from '@/data/repositories/accountsRepo'
+import { queryClient } from '@/app/queryClient'
+import { queryKeys } from '@/data/queryKeys'
 import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
 import type { Account } from '@/domain/types'
 
-export function useAccounts(): Account[] {
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const key = useRefresh()
-  useEffect(() => { accountsRepo.getAll().then(setAccounts) }, [key])
-  return accounts
+// ─── Queries ────────────────────────────────────────────────────────────────
+
+export function useAccounts() {
+  return useQuery({
+    queryKey: queryKeys.accounts.all(),
+    queryFn:  accountsRepo.getAll,
+  })
 }
 
-export function useAccount(id: number | undefined): Account | undefined {
-  const [account, setAccount] = useState<Account | undefined>()
-  const key = useRefresh()
-  useEffect(() => {
-    if (id == null) { setAccount(undefined); return }
-    accountsRepo.getById(id).then(setAccount)
-  }, [id, key])
-  return account
+export function useAccount(id: number | undefined) {
+  return useQuery({
+    queryKey: ['accounts', id],
+    queryFn:  () => accountsRepo.getById(id!),
+    enabled:  id != null,
+  })
 }
 
-export function useNetWorth(): number {
-  const accounts = useAccounts()
+export function useNetWorth() {
+  const { data: accounts = [] } = useAccounts()
   return accounts.reduce((sum, a) => sum + a.balance, 0)
 }
+
+// ─── Sorting ─────────────────────────────────────────────────────────────────
 
 export function sortAccounts(
   accounts: Account[],
@@ -49,23 +52,31 @@ export function sortAccounts(
   return accounts
 }
 
-export function useSortedAccounts(): Account[] {
-  const accounts = useAccounts()
+/** Returns the accounts list already sorted per user preferences. */
+export function useSortedAccounts() {
+  const query = useAccounts()
   const { sort, manualOrder, colorOrder } = useAccountPrefsStore()
-  return sortAccounts(accounts, sort, manualOrder, colorOrder)
+  return {
+    ...query,
+    data: sortAccounts(query.data ?? [], sort, manualOrder, colorOrder),
+  }
 }
+
+// ─── Mutations ───────────────────────────────────────────────────────────────
+// Standalone async functions — call queryClient.invalidateQueries so all
+// subscribers receive fresh data automatically.
 
 export async function addAccount(data: Omit<Account, 'id' | 'createdAt'>) {
   await accountsRepo.add(data)
-  emitRefresh()
+  queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all() })
 }
 
 export async function updateAccount(id: number, data: Partial<Account>) {
   await accountsRepo.update(id, data)
-  emitRefresh()
+  queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all() })
 }
 
 export async function removeAccount(id: number) {
   await accountsRepo.remove(id)
-  emitRefresh()
+  queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all() })
 }
