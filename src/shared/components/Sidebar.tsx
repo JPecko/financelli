@@ -17,9 +17,9 @@ import { supabase } from '@/data/supabase'
 import { Button } from '@/shared/components/ui/button'
 
 const navItems = [
-  { to: '/',             label: 'Dashboard',    icon: LayoutDashboard, end: true },
-  { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/accounts',     label: 'Accounts',     icon: Wallet },
+  { to: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+  { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/recurring',    label: 'Recurring',    icon: RefreshCw },
   { to: '/settings',     label: 'Settings',     icon: Settings },
 ]
@@ -59,11 +59,11 @@ export default function Sidebar({ open, onClose }: Props) {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <li key={to}>
               <NavLink
                 to={to}
-                end={end}
+                end
                 onClick={onClose}
                 className={({ isActive }) =>
                   cn(

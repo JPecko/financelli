@@ -33,9 +33,10 @@ export const router = createBrowserRouter([
         path: '/',
         element: <Layout />,
         children: [
-          { index: true,              element: <DashboardPage /> },
-          { path: 'transactions',     element: <TransactionsPage /> },
+          { index: true,              element: <Navigate to="/accounts" replace /> },
           { path: 'accounts',         element: <AccountsPage /> },
+          { path: 'dashboard',        element: <DashboardPage /> },
+          { path: 'transactions',     element: <TransactionsPage /> },
           { path: 'recurring',        element: <RecurringPage /> },
           { path: 'settings',         element: <SettingsPage /> },
         ],
