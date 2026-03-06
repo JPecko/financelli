@@ -59,24 +59,6 @@ async function createAutoTransactions(
 
   const expAbs = Math.abs(tx.amount) // positive cents
 
-  // ── Cashback ────────────────────────────────────────────────────────────────
-  if (account.cashbackPct) {
-    const cashbackCents = Math.floor(expAbs * account.cashbackPct / 100)
-    if (cashbackCents > 0) {
-      await supabase.from('transactions').insert({
-        account_id:        tx.accountId,
-        to_account_id:     null,
-        amount:            -cashbackCents,
-        type:              'expense',
-        category:          'cashback',
-        description:       `${tx.description} - Cashback ${account.cashbackPct}%`,
-        date:              tx.date,
-        recurring_rule_id: null,
-      })
-      await accountsRepo.adjustBalance(tx.accountId, -cashbackCents)
-    }
-  }
-
   // ── Roundup ─────────────────────────────────────────────────────────────────
   if (account.roundupMultiplier) {
     const remainder = expAbs % 100                    // cents past the last whole euro
