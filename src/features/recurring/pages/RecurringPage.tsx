@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { Plus, Pencil, Trash2, RefreshCw, Play, Pause, ArrowRight, CalendarDays } from 'lucide-react'
+import { Plus, Pencil, Trash2, RefreshCw, Play, Pause, ArrowRight, CalendarDays, Zap, Loader2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
-import { useRecurringRules, removeRule, updateRule } from '@/shared/hooks/useRecurringRules'
+import { useRecurringRules, removeRule, updateRule, applyRule } from '@/shared/hooks/useRecurringRules'
 import { useAccounts } from '@/shared/hooks/useAccounts'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import EmptyState from '@/shared/components/EmptyState'
+import PageLoader from '@/shared/components/PageLoader'
 import RecurringFormModal from '../components/RecurringFormModal'
 import type { RecurringRule } from '@/domain/types'
 
@@ -22,10 +23,11 @@ const FREQ_BADGE: Record<string, string> = {
 }
 
 export default function RecurringPage() {
-  const { data: rules    = [] } = useRecurringRules()
+  const { data: rules    = [], isLoading } = useRecurringRules()
   const { data: accounts = [] } = useAccounts()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing]     = useState<RecurringRule | undefined>()
+  const [applying, setApplying]   = useState<number | null>(null)
 
   const accountName = (id: number) => accounts.find(a => a.id === id)?.name ?? '?'
 
@@ -44,6 +46,12 @@ export default function RecurringPage() {
     if (confirm('Delete this recurring rule?')) {
       await removeRule(id)
     }
+  }
+
+  const handleApply = async (rule: RecurringRule) => {
+    if (rule.id == null) return
+    setApplying(rule.id)
+    try { await applyRule(rule) } finally { setApplying(null) }
   }
 
   const handleToggle = async (rule: RecurringRule) => {
@@ -67,7 +75,9 @@ export default function RecurringPage() {
         </Button>
       </div>
 
-      {rules.length === 0 ? (
+      {isLoading ? (
+        <PageLoader message="Loading recurring rules..." />
+      ) : rules.length === 0 ? (
         <EmptyState
           icon={RefreshCw}
           title="No recurring rules"
@@ -177,6 +187,16 @@ export default function RecurringPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleApply(rule)}
+                        disabled={applying === rule.id}
+                      >
+                        {applying === rule.id
+                          ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          : <Zap className="h-4 w-4 mr-2" />
+                        }
+                        Apply now
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleEdit(rule)}>
                         <Pencil className="h-4 w-4 mr-2" /> Edit
                       </DropdownMenuItem>

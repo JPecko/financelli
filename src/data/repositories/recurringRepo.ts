@@ -55,7 +55,7 @@ function toRow(rule: Partial<RecurringRule>): Record<string, unknown> {
   return row
 }
 
-function nextDueDate(current: string, frequency: RecurringRule['frequency']): string {
+export function advanceDueDate(current: string, frequency: RecurringRule['frequency']): string {
   const date = parseISO(current)
   let next: Date
   switch (frequency) {
@@ -113,7 +113,7 @@ export const recurringRepo = {
   advance: async (id: number, frequency: RecurringRule['frequency'], currentNextDue: string): Promise<void> => {
     const { error } = await supabase
       .from('recurring_rules')
-      .update({ next_due: nextDueDate(currentNextDue, frequency) })
+      .update({ next_due: advanceDueDate(currentNextDue, frequency) })
       .eq('id', id)
     if (error) throw error
   },

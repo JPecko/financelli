@@ -23,6 +23,7 @@ import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsS
 import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
+import PageLoader from '@/shared/components/PageLoader'
 import AccountFormModal from '../components/AccountFormModal'
 import RevalueModal from '../components/RevalueModal'
 import ShareAccountModal from '../components/ShareAccountModal'
@@ -80,7 +81,7 @@ function SortableCard({ account, isManual, children }: SortableCardProps) {
 }
 
 export default function AccountsPage() {
-  const { data: accounts = [] } = useAccounts()
+  const { data: accounts = [], isLoading } = useAccounts()
   const { user } = useAuth()
   const {
     sort, manualOrder, colorOrder, loaded,
@@ -287,7 +288,9 @@ export default function AccountsPage() {
       )}
 
       {/* List */}
-      {accounts.length === 0 ? (
+      {isLoading ? (
+        <PageLoader message="Loading accounts..." />
+      ) : accounts.length === 0 ? (
         <EmptyState
           icon={Wallet}
           title="No accounts yet"
