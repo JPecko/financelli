@@ -3,6 +3,10 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/data/supabase'
 import { queryClient } from '@/app/queryClient'
 import { useAccountPrefsStore } from '@/shared/store/accountPrefsStore'
+import { autoApplyDueRules } from '@/shared/hooks/useRecurringRules'
+
+// Reset on logout so the next login re-runs the auto-apply
+let autoApplied = false
 
 interface AuthContextValue {
   user: User | null
@@ -23,8 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
+        autoApplied = false
         queryClient.clear()
         useAccountPrefsStore.getState().reset()
+      }
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !autoApplied) {
+        autoApplied = true
+        void autoApplyDueRules()
       }
       setUser(session?.user ?? null)
     })
