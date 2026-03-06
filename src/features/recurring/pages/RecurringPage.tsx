@@ -12,6 +12,7 @@ import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import EmptyState from '@/shared/components/EmptyState'
+import PageLoader from '@/shared/components/PageLoader'
 import RecurringFormModal from '../components/RecurringFormModal'
 import type { RecurringRule } from '@/domain/types'
 
@@ -22,7 +23,7 @@ const FREQ_BADGE: Record<string, string> = {
 }
 
 export default function RecurringPage() {
-  const { data: rules    = [] } = useRecurringRules()
+  const { data: rules    = [], isLoading } = useRecurringRules()
   const { data: accounts = [] } = useAccounts()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing]     = useState<RecurringRule | undefined>()
@@ -67,7 +68,9 @@ export default function RecurringPage() {
         </Button>
       </div>
 
-      {rules.length === 0 ? (
+      {isLoading ? (
+        <PageLoader message="Loading recurring rules..." />
+      ) : rules.length === 0 ? (
         <EmptyState
           icon={RefreshCw}
           title="No recurring rules"

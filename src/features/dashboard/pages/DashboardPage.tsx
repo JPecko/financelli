@@ -18,6 +18,7 @@ import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import StatCard from '@/shared/components/StatCard'
+import PageLoader from '@/shared/components/PageLoader'
 
 const now   = new Date()
 const YEAR  = getYear(now)
@@ -34,8 +35,8 @@ const ACCOUNT_TYPE_META: Record<AccountType, { label: string; icon: LucideIcon; 
 export default function DashboardPage() {
   const netWorth                  = useNetWorth()
   const summary                   = useMonthSummary(YEAR, MONTH)
-  const { data: transactions = [] } = useTransactionsByMonth(YEAR, MONTH)
-  const { data: accounts     = [] } = useAccounts()
+  const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(YEAR, MONTH)
+  const { data: accounts     = [], isLoading: accLoading } = useAccounts()
   const { data: allRules     = [] } = useRecurringRules()
   const { data: lineData     = [] } = useMonthlyNetFlow(YEAR, MONTH)
 
@@ -72,12 +73,17 @@ export default function DashboardPage() {
       .sort((a, b) => b.value - a.value)
   })()
 
+  const isLoading = accLoading || txLoading
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{format(now, 'MMMM yyyy')}</p>
       </div>
+
+      {isLoading && <PageLoader message="Loading your data..." />}
+      {isLoading ? null : (<>
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -276,6 +282,7 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+      </>)}
     </div>
   )
 }

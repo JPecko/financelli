@@ -12,6 +12,7 @@ import { formatMoney } from '@/domain/money'
 import { formatDate } from '@/shared/utils/format'
 import { getCategoryById } from '@/domain/categories'
 import EmptyState from '@/shared/components/EmptyState'
+import PageLoader from '@/shared/components/PageLoader'
 import TransactionFormModal from '../components/TransactionFormModal'
 import type { Transaction } from '@/domain/types'
 
@@ -26,7 +27,7 @@ export default function TransactionsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing]     = useState<Transaction | undefined>()
 
-  const { data: transactions = [] } = useTransactionsByMonth(year, month)
+  const { data: transactions = [], isLoading } = useTransactionsByMonth(year, month)
   const summary                     = useMonthSummary(year, month)
   const { data: accounts     = [] } = useAccounts()
 
@@ -107,7 +108,9 @@ export default function TransactionsPage() {
       </div>
 
       {/* Transaction list */}
-      {transactions.length === 0 ? (
+      {isLoading ? (
+        <PageLoader message="Loading transactions..." />
+      ) : transactions.length === 0 ? (
         <EmptyState
           icon={ArrowLeftRight}
           title="No transactions this month"
