@@ -17,7 +17,7 @@ import TransactionFormModal from '../components/TransactionFormModal'
 import type { Transaction } from '@/domain/types'
 
 // Desktop grid column template — must match the header row
-const GRID_COLS = 'sm:grid-cols-[76px_1fr_120px_144px_80px_28px]'
+const GRID_COLS = 'sm:grid-cols-[54px_1fr_220px_120px_80px_28px]'
 
 export default function TransactionsPage() {
   const now = new Date()
@@ -130,14 +130,14 @@ export default function TransactionsPage() {
           <div className={`hidden sm:grid ${GRID_COLS} gap-x-3 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/40 border-b border-border`}>
             <span>Date</span>
             <span>Description</span>
-            <span>Category</span>
             <span>Account</span>
+            <span>Category</span>
             <span className="text-right">Amount</span>
             <span />
           </div>
 
           <div className="divide-y divide-border">
-            {transactions.map(tx => {
+            {transactions?.map(tx => {
               const cat        = getCategoryById(tx.category)
               const isTransfer = tx.type === 'transfer' && tx.toAccountId != null
               const isIncome   = tx.amount >= 0 && tx.type !== 'transfer'
@@ -172,6 +172,9 @@ export default function TransactionsPage() {
                   <p className="hidden sm:block text-sm font-semibold truncate leading-snug">
                     {tx.description || '—'}
                   </p>
+                  <div className="hidden sm:block min-w-0">
+                    <div className="text-sm text-muted-foreground truncate">{accountName}</div>
+                  </div>
                   <div className="hidden sm:flex items-center">
                     <Badge
                       variant="secondary"
@@ -181,21 +184,13 @@ export default function TransactionsPage() {
                       {cat.label}
                     </Badge>
                   </div>
-                  <div className="hidden sm:block min-w-0">
-                    <div className="text-sm text-muted-foreground truncate">{accountName}</div>
-                    {txBalance != null && (
-                      <div className="text-xs text-muted-foreground/60 tabular-nums">{formatMoney(txBalance)}</div>
-                    )}
-                  </div>
 
                   {/* ── Mobile: 3-line layout ── */}
                   <div className="sm:hidden flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate leading-snug">
                       {tx.description || '—'}
                     </p>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                      <span className="shrink-0">{formatDate(tx.date)}</span>
-                      <span className="shrink-0">·</span>
+                    <div className="mt-1">
                       <Badge
                         variant="secondary"
                         className="text-xs px-1.5 py-0 h-5 shrink-0"
@@ -204,21 +199,29 @@ export default function TransactionsPage() {
                         {cat.label}
                       </Badge>
                     </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <span className="shrink-0">{formatDate(tx.date)}</span>
+                    </div>
                     <div className="text-sm text-muted-foreground mt-0.5 truncate">
                       {accountName}
-                      {txBalance != null && (
-                        <span className="ml-1.5 text-xs text-muted-foreground/60 tabular-nums">{formatMoney(txBalance)}</span>
-                      )}
                     </div>
                   </div>
 
-                  {/* Amount */}
-                  <span className={`text-sm font-semibold shrink-0 sm:text-right tabular-nums ${amountColor}`}>
-                    {isTransfer
-                      ? formatMoney(Math.abs(tx.amount))
-                      : `${tx.amount >= 0 ? '+' : ''}${formatMoney(tx.amount)}`
-                    }
-                  </span>
+                  {/* Amount + desktop running balance */}
+                  <div className="shrink-0 sm:text-right">
+                    <span className={`block text-sm font-semibold tabular-nums ${amountColor}`}>
+                      {isTransfer
+                        ? formatMoney(Math.abs(tx.amount))
+                        : `${tx.amount >= 0 ? '+' : ''}${formatMoney(tx.amount)}`
+                      }
+                    </span>
+                    {txBalance != null && (
+                      <div className="block text-xs text-muted-foreground/60 tabular-nums">
+                        {formatMoney(txBalance)}
+                      </div>
+                    )}
+                  </div>
+
 
                   {/* Actions */}
                   <DropdownMenu>
