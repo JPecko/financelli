@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import {
-  Download, Upload, Trash2, FileText, Database, LogOut, User,
+  Download, Upload, Trash2, FileText, Database, LogOut, User, KeyRound,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
@@ -20,7 +20,11 @@ export default function SettingsPage() {
   const importRef  = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState(user?.user_metadata?.full_name ?? '')
-  const [savingName, setSavingName] = useState(false)
+  const [savingName, setSavingName]   = useState(false)
+  const [newPw, setNewPw]             = useState('')
+  const [confirmPw, setConfirmPw]     = useState('')
+  const [pwError, setPwError]         = useState<string | null>(null)
+  const [changingPw, setChangingPw]   = useState(false)
 
   const showStatus = (msg: string) => {
     setStatus(msg)
@@ -34,6 +38,18 @@ export default function SettingsPage() {
     setSavingName(false)
     if (error) showStatus(`Error: ${error.message}`)
     else showStatus('Name updated successfully.')
+  }
+
+  /* ---- Change password ---- */
+  const handleChangePassword = async () => {
+    setPwError(null)
+    if (newPw.length < 6) { setPwError('At least 6 characters required'); return }
+    if (newPw !== confirmPw) { setPwError('Passwords do not match'); return }
+    setChangingPw(true)
+    const { error } = await supabase.auth.updateUser({ password: newPw })
+    setChangingPw(false)
+    if (error) setPwError(error.message)
+    else { showStatus('Password changed successfully.'); setNewPw(''); setConfirmPw('') }
   }
 
   /* ---- Export JSON ---- */
@@ -186,13 +202,56 @@ export default function SettingsPage() {
               <Button
                 variant="outline"
                 size="sm"
+                loading={savingName}
                 onClick={handleSaveName}
-                disabled={savingName}
               >
-                {savingName ? 'Saving…' : 'Save'}
+                Save
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+
+          <Separator />
+
+          {/* Change password */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-medium">Change Password</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="••••••••"
+                autoComplete="new-password"
+                value={newPw}
+                onChange={e => { setNewPw(e.target.value); setPwError(null) }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="••••••••"
+                autoComplete="new-password"
+                value={confirmPw}
+                onChange={e => { setConfirmPw(e.target.value); setPwError(null) }}
+                onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
+              />
+            </div>
+            {pwError && <p className="text-xs text-destructive">{pwError}</p>}
+            <Button
+              variant="outline"
+              size="sm"
+              loading={changingPw}
+              disabled={!newPw || !confirmPw}
+              onClick={handleChangePassword}
+            >
+              Change Password
+            </Button>
           </div>
         </CardContent>
       </Card>

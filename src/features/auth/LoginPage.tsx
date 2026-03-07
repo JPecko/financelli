@@ -9,40 +9,50 @@ import { Label } from '@/shared/components/ui/label'
 import { supabase } from '@/data/supabase'
 
 interface FormValues {
-  email: string
-  password: string
+  email:           string
+  password:        string
+  name:            string
+  confirmPassword: string
 }
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [mode, setMode]           = useState<'login' | 'signup'>('login')
+  const [error, setError]         = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>()
+  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+    shouldUnregister: true,
+  })
 
-  const onSubmit = async ({ email, password }: FormValues) => {
+  const switchMode = (next: 'login' | 'signup') => {
+    setMode(next)
     setError(null)
     setSuccessMsg(null)
-    setLoading(true)
+    reset()
+  }
+
+  const onSubmit = handleSubmit(async ({ email, password, name }) => {
+    setError(null)
     try {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         navigate('/')
       } else {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: name.trim() } },
+        })
         if (error) throw error
         setSuccessMsg('Account created! Check your email to confirm, then log in.')
-        setMode('login')
+        switchMode('login')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed.')
-    } finally {
-      setLoading(false)
     }
-  }
+  })
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -68,7 +78,7 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={onSubmit} className="space-y-4">
               {successMsg && (
                 <div className="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground">
                   {successMsg}
@@ -77,6 +87,23 @@ export default function LoginPage() {
               {error && (
                 <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
                   {error}
+                </div>
+              )}
+
+              {/* Name — signup only */}
+              {mode === 'signup' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Your name"
+                    autoComplete="name"
+                    {...register('name', { required: 'Name is required' })}
+                  />
+                  {errors.name && (
+                    <p className="text-xs text-destructive">{errors.name.message}</p>
+                  )}
                 </div>
               )}
 
@@ -103,7 +130,7 @@ export default function LoginPage() {
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   {...register('password', {
                     required: 'Password is required',
-                    minLength: { value: 6, message: 'Password must be at least 6 characters' },
+                    minLength: { value: 6, message: 'At least 6 characters' },
                   })}
                 />
                 {errors.password && (
@@ -111,10 +138,28 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading
-                  ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
-                  : (mode === 'login' ? 'Sign in' : 'Create account')}
+              {/* Confirm password — signup only */}
+              {mode === 'signup' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    {...register('confirmPassword', {
+                      required: 'Please confirm your password',
+                      validate: val => val === watch('password') || 'Passwords do not match',
+                    })}
+                  />
+                  {errors.confirmPassword && (
+                    <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+                  )}
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" loading={isSubmitting}>
+                {mode === 'login' ? 'Sign in' : 'Create account'}
               </Button>
             </form>
 
@@ -123,7 +168,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 className="underline underline-offset-2 hover:text-foreground"
-                onClick={() => { setMode(m => m === 'login' ? 'signup' : 'login'); setError(null) }}
+                onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
               >
                 {mode === 'login' ? 'Sign up' : 'Sign in'}
               </button>
