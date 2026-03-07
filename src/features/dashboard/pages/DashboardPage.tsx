@@ -12,7 +12,7 @@ import {
   LineChart, Line,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { useAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
+import { useSortedAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
 import { useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow, useMonthlyBenefits, useYearBenefits, isCashFlow } from '@/shared/hooks/useTransactions'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const netWorth                   = useNetWorth()
   const summary                    = useMonthSummary(YEAR, MONTH)
   const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(YEAR, MONTH)
-  const { data: accounts     = [], isLoading: accLoading } = useAccounts()
+  const { data: accounts     = [], isLoading: accLoading } = useSortedAccounts()
   const { data: barData       = [] } = useMonthlyNetFlow(YEAR, MONTH)
   const { data: benefitsData  = [] } = useMonthlyBenefits(YEAR, MONTH)
   const { data: yearBenefits      } = useYearBenefits(YEAR)
@@ -100,13 +100,6 @@ export default function DashboardPage() {
   const savingsRate = summary.personalIncome > 0
     ? Math.round((summary.personalBalance / summary.personalIncome) * 100)
     : null
-
-  // Account balances: positives desc, then negatives
-  const accountsSorted = [...accounts].sort((a, b) => {
-    if (a.balance >= 0 && b.balance < 0) return -1
-    if (a.balance < 0 && b.balance >= 0) return 1
-    return Math.abs(b.balance) - Math.abs(a.balance)
-  })
 
   // Top 5 expenses
   const topExpenses = transactions
@@ -227,9 +220,9 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Account Balances</CardTitle>
           </CardHeader>
           <CardContent className="divide-y divide-border">
-            {accountsSorted.length === 0 ? (
+            {accounts.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">No accounts yet.</p>
-            ) : accountsSorted.map(account => {
+            ) : accounts.map(account => {
               const meta = ACCOUNT_TYPE_META[account.type]
               const Icon = meta.icon
               return (
@@ -308,8 +301,9 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Row 3: Top Expenses (full width) */}
-      <Card>
+      {/* Row 3+4: Top Expenses + Perks side by side on desktop */}
+      <div className="grid gap-4 lg:grid-cols-2">
+      <Card className={!hasBenefits ? 'lg:col-span-2' : ''}>
         <CardHeader>
           <CardTitle className="text-sm font-medium">Top Expenses</CardTitle>
         </CardHeader>
@@ -339,7 +333,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Row 4: Perks (conditional) */}
       {hasBenefits && (
         <Card>
           <CardHeader>
@@ -381,6 +374,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+      </div>
 
       </>)}
     </div>
