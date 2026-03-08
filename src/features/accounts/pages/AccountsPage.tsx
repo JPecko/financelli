@@ -355,7 +355,7 @@ export default function AccountsPage() {
                     <Card className="overflow-hidden card-hoverable">
                       <CardContent className="p-0">
                         <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
-                        <div className={`py-3 sm:py-5 px-0 sm:px-3  ${isManualEditing ? 'pl-9' : ''}`}>
+                        <div className={`py-3 sm:py-5 px-3 sm:px-0  ${isManualEditing ? 'pl-9' : ''}`}>
                           {/* Top row: logo + name + menu */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -452,7 +452,7 @@ export default function AccountsPage() {
                             </div>
 
                             <div className="text-right shrink-0">
-                              <p className={`text-sm sm:text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                              <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
                                 {formatMoney(account.balance, account.currency)}
                               </p>
                               <p className="text-[11px] text-muted-foreground">{account.currency}</p>
