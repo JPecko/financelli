@@ -20,6 +20,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useAccounts, sortAccounts, removeAccount } from '@/shared/hooks/useAccounts'
 import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
+import { useAccountBankStore } from '@/shared/store/accountBankStore'
+import { BANK_OPTIONS } from '@/shared/config/banks'
 import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
@@ -82,6 +84,8 @@ function SortableCard({ account, isManual, children }: SortableCardProps) {
 
 export default function AccountsPage() {
   const { data: accounts = [], isLoading } = useAccounts()
+  const bankByAccountId = useAccountBankStore(s => s.bankByAccountId)
+  const clearBankMeta = useAccountBankStore(s => s.clearBankMeta)
   const { user } = useAuth()
   const {
     sort, manualOrder, colorOrder, loaded,
@@ -190,6 +194,7 @@ export default function AccountsPage() {
     if (id == null) return
     if (confirm('Delete this account? All associated transactions will remain.')) {
       await removeAccount(id)
+      clearBankMeta(id)
     }
   }
 
@@ -305,28 +310,46 @@ export default function AccountsPage() {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={sortedIds} strategy={rectSortingStrategy}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               {sorted.map(account => {
                 const isInvestment = account.type === 'investment'
+                const bankMeta = account.id != null ? bankByAccountId[account.id] : undefined
+                const selectedBank = bankMeta ? BANK_OPTIONS.find(b => b.code === bankMeta.bankCode) : undefined
                 return (
                   <SortableCard key={account.id} account={account} isManual={isManualEditing}>
                     <Card className="overflow-hidden card-hoverable">
                       <CardContent className="p-0">
                         <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
-                        <div className={`flex items-start justify-between p-5 ${isManualEditing ? 'pl-9' : ''}`}>
-                          <div className="flex items-start gap-3">
-                            <div
-                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                              style={{ backgroundColor: `${account.color}20` }}
-                            >
-                              {isInvestment
-                                ? <BarChart2 className="h-5 w-5" style={{ color: account.color }} />
-                                : <Wallet    className="h-5 w-5" style={{ color: account.color }} />
-                              }
-                            </div>
-                            <div>
-                              <p className="font-semibold leading-tight">{account.name}</p>
-                              <div className="flex items-center gap-1.5 mt-1">
+                        <div className={`p-3 sm:p-5 ${isManualEditing ? 'pl-9' : ''}`}>
+                          <p className="text-base sm:text-lg font-semibold leading-tight truncate">
+                            {account.name}
+                          </p>
+
+                          <div className="mt-2 flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {bankMeta?.bankLogoUrl ? (
+                                  <img
+                                    src={bankMeta.bankLogoUrl}
+                                    alt={bankMeta.bankName}
+                                    className="h-4 w-4 rounded-sm object-contain shrink-0"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      if (selectedBank) e.currentTarget.src = selectedBank.logoPath
+                                    }}
+                                  />
+                                ) : (
+                                  <span
+                                    className="h-2 w-2 rounded-full shrink-0"
+                                    style={{ backgroundColor: account.color }}
+                                  />
+                                )}
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {bankMeta?.bankName ?? 'No bank'}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                 <Badge variant="secondary" className="text-xs">
                                   {TYPE_LABELS[account.type] ?? account.type}
                                 </Badge>
@@ -356,50 +379,50 @@ export default function AccountsPage() {
                                 )}
                               </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
-                              <p className={`text-lg font-bold ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                                {formatMoney(account.balance, account.currency)}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{account.currency}</p>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="text-right">
+                                <p className={`text-sm sm:text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                                  {formatMoney(account.balance, account.currency)}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">{account.currency}</p>
+                              </div>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                                    <span className="sr-only">Actions</span>
+                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                      <circle cx="12" cy="5"  r="1.5" />
+                                      <circle cx="12" cy="12" r="1.5" />
+                                      <circle cx="12" cy="19" r="1.5" />
+                                    </svg>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {isInvestment && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => setRevaluing(account)}>
+                                        <BarChart2 className="h-4 w-4 mr-2" /> Update Market Value
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                    </>
+                                  )}
+                                  <DropdownMenuItem onClick={() => setSharing(account)}>
+                                    <Users className="h-4 w-4 mr-2" /> Share
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEdit(account)}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => handleDelete(account.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 ml-1">
-                                  <span className="sr-only">Actions</span>
-                                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="5"  r="1.5" />
-                                    <circle cx="12" cy="12" r="1.5" />
-                                    <circle cx="12" cy="19" r="1.5" />
-                                  </svg>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {isInvestment && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => setRevaluing(account)}>
-                                      <BarChart2 className="h-4 w-4 mr-2" /> Update Market Value
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                  </>
-                                )}
-                                <DropdownMenuItem onClick={() => setSharing(account)}>
-                                  <Users className="h-4 w-4 mr-2" /> Share
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEdit(account)}>
-                                  <Pencil className="h-4 w-4 mr-2" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => handleDelete(account.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           </div>
                         </div>
                       </CardContent>

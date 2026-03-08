@@ -7,6 +7,8 @@ import { Label } from '@/shared/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { toCents, fromCents } from '@/domain/money'
 import { addAccount, updateAccount } from '@/shared/hooks/useAccounts'
+import { BANK_OPTIONS, bankApiLogoUrl } from '@/shared/config/banks'
+import { useAccountBankStore } from '@/shared/store/accountBankStore'
 import type { Account, AccountType } from '@/domain/types'
 
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
@@ -34,6 +36,7 @@ const ROUNDUP_OPTIONS = [
 
 interface FormValues {
   name: string
+  bankCode: string
   type: AccountType
   balance: string
   currency: string
@@ -50,10 +53,12 @@ interface Props {
 
 export default function AccountFormModal({ open, onClose, account }: Props) {
   const isEdit = !!account
+  const { bankByAccountId, setBankMeta, clearBankMeta } = useAccountBankStore()
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     defaultValues: {
       name: '',
+      bankCode: 'none',
       type: 'checking',
       balance: '0',
       currency: 'EUR',
@@ -64,13 +69,16 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
   })
 
   const selectedColor    = watch('color')
+  const selectedBankCode = watch('bankCode')
   const selectedType     = watch('type')
   const selectedRoundup  = watch('roundupMultiplier')
 
   useEffect(() => {
     if (open && account) {
+      const bankMeta = account.id != null ? bankByAccountId[account.id] : undefined
       reset({
         name:              account.name,
+        bankCode:          bankMeta?.bankCode ?? 'none',
         type:              account.type,
         balance:           fromCents(account.balance).toFixed(2),
         currency:          account.currency,
@@ -79,9 +87,18 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         roundupMultiplier: account.roundupMultiplier != null ? String(account.roundupMultiplier) : 'off',
       })
     } else if (open) {
-      reset({ name: '', type: 'checking', balance: '0', currency: 'EUR', color: COLORS[0], cashbackPct: '', roundupMultiplier: 'off' })
+      reset({
+        name: '',
+        bankCode: 'none',
+        type: 'checking',
+        balance: '0',
+        currency: 'EUR',
+        color: COLORS[0],
+        cashbackPct: '',
+        roundupMultiplier: 'off',
+      })
     }
-  }, [open, account, reset])
+  }, [open, account, reset, bankByAccountId])
 
   const onSubmit = async (values: FormValues) => {
     const payload = {
@@ -95,8 +112,30 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
     }
     if (isEdit && account?.id != null) {
       await updateAccount(account.id, payload)
+      if (values.bankCode && values.bankCode !== 'none') {
+        const bank = BANK_OPTIONS.find(b => b.code === values.bankCode)
+        if (bank) {
+          setBankMeta(account.id, {
+            bankCode: bank.code,
+            bankName: bank.name,
+            bankLogoUrl: bankApiLogoUrl(bank.logoDomain),
+          })
+        }
+      } else {
+        clearBankMeta(account.id)
+      }
     } else {
-      await addAccount(payload)
+      const created = await addAccount(payload)
+      if (created?.id != null && values.bankCode && values.bankCode !== 'none') {
+        const bank = BANK_OPTIONS.find(b => b.code === values.bankCode)
+        if (bank) {
+          setBankMeta(created.id, {
+            bankCode: bank.code,
+            bankName: bank.name,
+            bankLogoUrl: bankApiLogoUrl(bank.logoDomain),
+          })
+        }
+      }
     }
     onClose()
   }
@@ -114,10 +153,26 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
             <Label htmlFor="acc-name">Name</Label>
             <Input
               id="acc-name"
-              placeholder="e.g. Main Checking"
+              placeholder="e.g. Daily Expenses"
               {...register('name', { required: 'Name is required' })}
             />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+          </div>
+
+          {/* Bank */}
+          <div className="space-y-1">
+            <Label>Bank</Label>
+            <Select value={selectedBankCode} onValueChange={v => setValue('bankCode', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Optional" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No bank</SelectItem>
+                {BANK_OPTIONS.map(b => (
+                  <SelectItem key={b.code} value={b.code}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Type */}

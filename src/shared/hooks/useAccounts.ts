@@ -69,8 +69,9 @@ export function useSortedAccounts() {
 // subscribers receive fresh data automatically.
 
 export async function addAccount(data: Omit<Account, 'id' | 'createdAt'>) {
-  await accountsRepo.add(data)
+  const created = await accountsRepo.add(data)
   queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all() })
+  return created
 }
 
 export async function updateAccount(id: number, data: Partial<Account>) {
