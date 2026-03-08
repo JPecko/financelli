@@ -2,7 +2,13 @@ export interface BankOption {
   code: string
   name: string
   logoDomain: string
-  logoPath: string
+  logoPath: string   // local fallback
+}
+
+const LOGO_DEV_TOKEN = import.meta.env.VITE_LOGO_DEV_TOKEN as string | undefined
+
+export function bankLogoUrl(domain: string): string {
+  return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN ?? ''}&size=64&retina=true`
 }
 
 export const BANK_OPTIONS: BankOption[] = [
@@ -23,7 +29,3 @@ export const BANK_OPTIONS: BankOption[] = [
   { code: 'wise',       name: 'Wise',           logoDomain: 'wise.com',         logoPath: '/banks/wise.svg' },
   { code: 'traderepublic', name: 'Trade Republic', logoDomain: 'traderepublic.com', logoPath: '/banks/traderepublic.svg' },
 ]
-
-export function bankApiLogoUrl(domain: string): string {
-  return `https://img.logo.dev/${domain}?size=64&retina=true`
-}

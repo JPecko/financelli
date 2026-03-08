@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Wallet, BarChart2, Users, GripVertical,
   ArrowUpDown, Check, ChevronUp, ChevronDown, Save, X,
+  Banknote, PiggyBank, HandCoins, CreditCard,
 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
@@ -20,7 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useAccounts, sortAccounts, removeAccount } from '@/shared/hooks/useAccounts'
 import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
-import { BANK_OPTIONS, bankApiLogoUrl } from '@/shared/config/banks'
+import { BANK_OPTIONS, bankLogoUrl } from '@/shared/config/banks'
 import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
@@ -36,6 +37,45 @@ const TYPE_LABELS: Record<string, string> = {
   investment: 'Investment',
   cash:       'Cash',
   credit:     'Credit Card',
+}
+
+const TYPE_ICONS: Record<string, React.ElementType> = {
+  checking:   Banknote,
+  savings:    PiggyBank,
+  investment: BarChart2,
+  cash:       HandCoins,
+  credit:     CreditCard,
+}
+
+// Module-level blob cache: domain → blob URL or 'failed'
+// Persists for the app lifetime — zero network requests after first load
+const logoCache = new Map<string, string | 'failed'>()
+
+function BankLogo({ domain, name, accountType, imgClassName, iconClassName }: {
+  domain: string; name: string; accountType: string
+  imgClassName?: string; iconClassName?: string
+}) {
+  const [src, setSrc] = useState<string | 'failed' | null>(() => logoCache.get(domain) ?? null)
+  const Icon = TYPE_ICONS[accountType] ?? Wallet
+
+  useEffect(() => {
+    if (logoCache.has(domain)) return
+    fetch(bankLogoUrl(domain))
+      .then(res => { if (!res.ok) throw new Error('not ok'); return res.blob() })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob)
+        logoCache.set(domain, blobUrl)
+        setSrc(blobUrl)
+      })
+      .catch(() => {
+        logoCache.set(domain, 'failed')
+        setSrc('failed')
+      })
+  }, [domain])
+
+  if (src === 'failed') return <Icon className={iconClassName ?? 'h-4 w-4 shrink-0 text-muted-foreground'} />
+  if (!src) return <span className={imgClassName ? imgClassName.replace(/\S+/g, '') : 'h-4 w-4 shrink-0'} />
+  return <img src={src} alt={name} className={imgClassName ?? 'h-4 w-4 rounded-sm object-contain shrink-0'} />
 }
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -315,72 +355,33 @@ export default function AccountsPage() {
                     <Card className="overflow-hidden card-hoverable">
                       <CardContent className="p-0">
                         <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
-                        <div className={`p-3 sm:p-5 ${isManualEditing ? 'pl-9' : ''}`}>
-                          <p className="text-base sm:text-lg font-semibold leading-tight truncate">
-                            {account.name}
-                          </p>
-
-                          <div className="mt-2 flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 min-w-0">
+                        <div className={`py-3 sm:py-5 ${isManualEditing ? 'pl-9' : ''}`}>
+                          {/* Top row: logo + name + menu */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                                 {bank ? (
-                                  <img
-                                    src={bankApiLogoUrl(bank.logoDomain)}
-                                    alt={bank.name}
-                                    className="h-4 w-4 rounded-sm object-contain shrink-0"
-                                    loading="lazy"
-                                    onError={(e) => { e.currentTarget.src = bank.logoPath }}
+                                  <BankLogo
+                                    domain={bank.logoDomain}
+                                    name={bank.name}
+                                    accountType={account.type}
+                                    imgClassName="h-6 w-6 object-contain"
+                                    iconClassName="h-5 w-5 text-muted-foreground"
                                   />
                                 ) : (
-                                  <span
-                                    className="h-2 w-2 rounded-full shrink-0"
-                                    style={{ backgroundColor: account.color }}
-                                  />
+                                  (() => { const Icon = TYPE_ICONS[account.type] ?? Wallet; return <Icon className="h-5 w-5 text-muted-foreground" /> })()
                                 )}
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {bank?.name ?? 'No bank'}
-                                </p>
                               </div>
-
-                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <Badge variant="secondary" className="text-xs">
-                                  {TYPE_LABELS[account.type] ?? account.type}
-                                </Badge>
-                                {(account.participants ?? 1) > 1 && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge variant="outline" className="text-xs gap-1 cursor-default">
-                                        <Users className="h-3 w-3" />
-                                        {account.participants}
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom">
-                                      <div className="space-y-0.5">
-                                        <p>
-                                          {account.ownerId === user?.id
-                                            ? (user?.user_metadata?.full_name ?? user?.email)
-                                            : (account.ownerFullName ?? account.ownerEmail ?? 'Owner')
-                                          }
-                                          {' '}<span className="opacity-60">(owner)</span>
-                                        </p>
-                                        {account.sharedWith?.map(s => (
-                                          <p key={s.userId}>{s.fullName ?? s.email}</p>
-                                        ))}
-                                      </div>
-                                    </TooltipContent>
-                                  </Tooltip>
+                              <div className="min-w-0">
+                                <p className="text-base sm:text-lg font-semibold leading-tight truncate">
+                                  {account.name}
+                                </p>
+                                {bank && (
+                                  <p className="text-xs text-muted-foreground truncate">{bank.name}</p>
                                 )}
                               </div>
                             </div>
-
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <div className="text-right">
-                                <p className={`text-sm sm:text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                                  {formatMoney(account.balance, account.currency)}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">{account.currency}</p>
-                              </div>
-
+                            <div className="flex items-center shrink-0">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
@@ -415,6 +416,46 @@ export default function AccountsPage() {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
+                            </div>
+                          </div>
+
+                          {/* Bottom row: badges + balance */}
+                          <div className="mt-3 flex items-end justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Badge variant="secondary" className="text-xs">
+                                {TYPE_LABELS[account.type] ?? account.type}
+                              </Badge>
+                              {(account.participants ?? 1) > 1 && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="text-xs gap-1 cursor-default">
+                                      <Users className="h-3 w-3" />
+                                      {account.participants}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom">
+                                    <div className="space-y-0.5">
+                                      <p>
+                                        {account.ownerId === user?.id
+                                          ? (user?.user_metadata?.full_name ?? user?.email)
+                                          : (account.ownerFullName ?? account.ownerEmail ?? 'Owner')
+                                        }
+                                        {' '}<span className="opacity-60">(owner)</span>
+                                      </p>
+                                      {account.sharedWith?.map(s => (
+                                        <p key={s.userId}>{s.fullName ?? s.email}</p>
+                                      ))}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <p className={`text-sm sm:text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                                {formatMoney(account.balance, account.currency)}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">{account.currency}</p>
                             </div>
                           </div>
                         </div>
