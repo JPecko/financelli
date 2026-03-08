@@ -355,7 +355,7 @@ export default function AccountsPage() {
                     <Card className="overflow-hidden card-hoverable">
                       <CardContent className="p-0">
                         <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
-                        <div className={`py-3 sm:py-5 ${isManualEditing ? 'pl-9' : ''}`}>
+                        <div className={`py-3 sm:py-5 px-0 sm:px-3  ${isManualEditing ? 'pl-9' : ''}`}>
                           {/* Top row: logo + name + menu */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
