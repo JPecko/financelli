@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Wallet, BarChart2, Users, GripVertical,
   ArrowUpDown, Check, ChevronUp, ChevronDown, Save, X,
@@ -83,7 +83,7 @@ export default function AccountsPage() {
   const { data: accounts = [], isLoading } = useAccounts()
   const { user } = useAuth()
   const {
-    sort, manualOrder, colorOrder, loaded,
+    sort, manualOrder, colorOrder,
     setSort, setManualOrder, setColorOrder,
   } = useAccountPrefsStore()
 
@@ -93,33 +93,38 @@ export default function AccountsPage() {
   const [sharing, setSharing]     = useState<Account | undefined>()
 
   const [isManualEditing, setIsManualEditing] = useState(false)
+  // Raw drag order — only populated while editing; accounts added/removed are merged in effectiveDraftOrder
   const [draftOrder, setDraftOrder] = useState<number[]>([])
 
-  useEffect(() => {
-    if (loaded && !isManualEditing) setDraftOrder([...manualOrder])
-  }, [loaded]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Derived: merge drag order with current accounts (handles additions/removals without setState in effects)
+  const effectiveDraftOrder = useMemo(() => {
+    const ids = accounts.map(a => a.id!)
+    if (draftOrder.length === 0) return ids
+    return [...draftOrder.filter(id => ids.includes(id)), ...ids.filter(id => !draftOrder.includes(id))]
+  }, [draftOrder, accounts])
 
   const manualOrderRef = useRef(manualOrder)
-  manualOrderRef.current = manualOrder
-  const colorOrderRef = useRef(colorOrder)
-  colorOrderRef.current = colorOrder
+  const colorOrderRef  = useRef(colorOrder)
+  useLayoutEffect(() => { manualOrderRef.current = manualOrder }, [manualOrder])
+  useLayoutEffect(() => { colorOrderRef.current  = colorOrder  }, [colorOrder])
 
+  // Sync store manualOrder when accounts are added/removed (only external store update — no local setState)
   useEffect(() => {
     if (accounts.length === 0) return
-    const ids = accounts.map(a => a.id!)
+    const ids     = accounts.map(a => a.id!)
     const current = manualOrderRef.current
-    const merged = [...current.filter(id => ids.includes(id)), ...ids.filter(id => !current.includes(id))]
+    const merged  = [...current.filter(id => ids.includes(id)), ...ids.filter(id => !current.includes(id))]
     if (merged.length !== current.length || merged.some((id, i) => id !== current[i])) {
       setManualOrder(merged)
     }
-    setDraftOrder(prev => [...prev.filter(id => ids.includes(id)), ...ids.filter(id => !prev.includes(id))])
   }, [accounts.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync store colorOrder when account colors change (external store update only)
   useEffect(() => {
     if (accounts.length === 0) return
-    const colors = [...new Set(accounts.map(a => a.color))]
+    const colors  = [...new Set(accounts.map(a => a.color))]
     const current = colorOrderRef.current
-    const merged = [...current.filter(c => colors.includes(c)), ...colors.filter(c => !current.includes(c))]
+    const merged  = [...current.filter(c => colors.includes(c)), ...colors.filter(c => !current.includes(c))]
     if (merged.length !== current.length || merged.some((c, i) => c !== current[i])) {
       setColorOrder(merged)
     }
@@ -131,17 +136,20 @@ export default function AccountsPage() {
     setSort(value)
     if (value === 'manual') {
       setDraftOrder(manualOrder.length > 0 ? [...manualOrder] : accounts.map(a => a.id!))
+      setIsManualEditing(true)
+    } else {
+      setDraftOrder([])
+      setIsManualEditing(false)
     }
-    setIsManualEditing(value === 'manual')
   }
 
   const handleSaveManual = () => {
-    setManualOrder(draftOrder)
+    setManualOrder(effectiveDraftOrder)
     setIsManualEditing(false)
   }
 
   const handleCancelManual = () => {
-    setDraftOrder([...manualOrder])
+    setDraftOrder([])
     setIsManualEditing(false)
   }
 
@@ -149,11 +157,10 @@ export default function AccountsPage() {
     if (!isManualEditing) return
     const { active, over } = event
     if (!over || active.id === over.id) return
-    setDraftOrder(prev => {
-      const oldIdx = prev.indexOf(active.id as number)
-      const newIdx = prev.indexOf(over.id as number)
-      return arrayMove(prev, oldIdx, newIdx)
-    })
+    const oldIdx = effectiveDraftOrder.indexOf(active.id as number)
+    const newIdx = effectiveDraftOrder.indexOf(over.id as number)
+    if (oldIdx === -1 || newIdx === -1) return
+    setDraftOrder(arrayMove([...effectiveDraftOrder], oldIdx, newIdx))
   }
 
   const moveColor = (i: number, dir: -1 | 1) => {
@@ -177,7 +184,8 @@ export default function AccountsPage() {
   }
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0)
-  const sorted = sortAccounts(accounts, sort, sort === 'manual' ? draftOrder : manualOrder, colorOrder)
+  const orderForSort = isManualEditing ? effectiveDraftOrder : manualOrder
+  const sorted = sortAccounts(accounts, sort, orderForSort, colorOrder)
   const sortedIds = sorted.map(a => a.id!)
 
   const handleEdit = (account: Account) => {
