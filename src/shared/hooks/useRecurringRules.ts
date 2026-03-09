@@ -47,6 +47,7 @@ export async function applyRule(rule: RecurringRule, date?: string): Promise<voi
     description:     rule.description || rule.name,
     date:            applyDate,
     recurringRuleId: rule.id,
+    isPersonal:      rule.isPersonal ?? false,
   })
   await recurringRepo.advance(rule.id!, rule.frequency, rule.nextDue)
   queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all() })
@@ -74,6 +75,7 @@ export async function autoApplyDueRules(): Promise<void> {
         description:     rule.description || rule.name,
         date:            currentDue,
         recurringRuleId: rule.id,
+        isPersonal:      rule.isPersonal ?? false,
       })
       await recurringRepo.advance(rule.id!, rule.frequency, currentDue)
       currentDue = advanceDueDate(currentDue, rule.frequency)

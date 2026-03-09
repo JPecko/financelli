@@ -17,6 +17,7 @@ export interface TransactionFormValues {
   category:    string
   description: string
   date:        string
+  isShared:    boolean  // UI field: true = shared (default for shared accounts), false = personal
 }
 
 function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | 'createdAt'> {
@@ -28,6 +29,7 @@ function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | '
     category:    values.category,
     description: values.description.trim(),
     date:        values.date,
+    isPersonal:  !values.isShared,   // invert: shared=false → isPersonal=false; unshared=true → isPersonal=true
   }
 
   if (values.type === 'transfer') {
@@ -59,6 +61,7 @@ function buildDefaultValues(
     category:    defaultType === 'transfer' ? 'transfer' : 'other',
     description: '',
     date:        isoToday(),
+    isShared:    true,
   }
 }
 
@@ -74,6 +77,7 @@ function buildEditValues(transaction: Transaction): TransactionFormValues {
     category:    transaction.category,
     description: transaction.description,
     date:        transaction.date,
+    isShared:    !(transaction.isPersonal ?? false),
   }
 }
 
@@ -104,6 +108,12 @@ export function useTransactionForm({
   const isTransfer = selectedType === 'transfer'
   const isValid    = !isTransfer || selectedFrom !== EXTERNAL || selectedTo !== EXTERNAL
 
+  // Which account is "primary" for shared-split purposes
+  const primaryAccountId = isTransfer ? null
+    : selectedType === 'income' ? parseInt(selectedTo) : parseInt(selectedFrom)
+  const isSharedAccount = primaryAccountId != null &&
+    (accounts.find(a => a.id === primaryAccountId)?.participants ?? 1) > 1
+
   const categories =
     selectedType === 'income'   ? INCOME_CATEGORIES :
     selectedType === 'transfer' ? CATEGORIES.filter(c => ['transfer', 'capital', 'other'].includes(c.id)) :
@@ -115,6 +125,7 @@ export function useTransactionForm({
   const handleTypeChange = (t: TransactionType) => {
     setValue('type', t)
     setValue('category', t === 'transfer' ? 'transfer' : 'other')
+    setValue('isShared', true)
     if (t === 'income') {
       setValue('fromId', EXTERNAL)
       setValue('toId',   firstId)
@@ -147,6 +158,7 @@ export function useTransactionForm({
     isEdit,
     isTransfer,
     isValid,
+    isSharedAccount,
     categories,
     accounts,
     accountOptions,

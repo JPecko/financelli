@@ -16,6 +16,7 @@ type RuleRow = {
   next_due: string
   end_date: string | null
   active: boolean
+  is_personal: boolean
   created_at: string
 }
 
@@ -34,6 +35,7 @@ function toRule(row: RuleRow): RecurringRule {
     nextDue:     row.next_due,
     endDate:     row.end_date ?? undefined,
     active:      row.active,
+    isPersonal:  row.is_personal ?? false,
     createdAt:   row.created_at,
   }
 }
@@ -52,6 +54,7 @@ function toRow(rule: Partial<RecurringRule>): Record<string, unknown> {
   if (rule.nextDue     !== undefined) row.next_due    = rule.nextDue
   if (rule.endDate     !== undefined) row.end_date    = rule.endDate
   if (rule.active      !== undefined) row.active      = rule.active
+  if (rule.isPersonal  !== undefined) row.is_personal = rule.isPersonal
   return row
 }
 

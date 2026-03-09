@@ -36,6 +36,7 @@ export interface Transaction {
   description: string
   date: string          // ISO 8601 date string (YYYY-MM-DD)
   recurringRuleId?: number
+  isPersonal?: boolean  // if true, don't divide by participants (even in shared accounts)
   createdAt: string
 }
 
@@ -55,6 +56,7 @@ export interface RecurringRule {
   nextDue: string       // ISO 8601
   endDate?: string      // ISO 8601
   active: boolean
+  isPersonal?: boolean  // if true, generated transactions won't be split by participants
   createdAt: string
 }
 

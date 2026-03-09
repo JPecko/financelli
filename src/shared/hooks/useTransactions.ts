@@ -57,14 +57,14 @@ export function useMonthSummary(year: number, month: number) {
   const personalExpenses = real
     .filter(t => t.amount < 0)
     .reduce((s, t) => {
-      const participants = accounts.find(a => a.id === t.accountId)?.participants ?? 1
+      const participants = t.isPersonal ? 1 : (accounts.find(a => a.id === t.accountId)?.participants ?? 1)
       return s + t.amount / participants
     }, 0)
 
   const personalIncome = real
     .filter(t => t.amount > 0)
     .reduce((s, t) => {
-      const participants = accounts.find(a => a.id === t.accountId)?.participants ?? 1
+      const participants = t.isPersonal ? 1 : (accounts.find(a => a.id === t.accountId)?.participants ?? 1)
       return s + t.amount / participants
     }, 0)
 

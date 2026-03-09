@@ -12,6 +12,7 @@ type TransactionRow = {
   description: string
   date: string
   recurring_rule_id: number | null
+  is_personal: boolean
   created_at: string
 }
 
@@ -26,6 +27,7 @@ function toTransaction(row: TransactionRow): Transaction {
     description:     row.description,
     date:            row.date,
     recurringRuleId: row.recurring_rule_id ?? undefined,
+    isPersonal:      row.is_personal ?? false,
     createdAt:       row.created_at,
   }
 }
@@ -40,6 +42,7 @@ function toRow(tx: Omit<Transaction, 'id' | 'createdAt'>): Record<string, unknow
     description:       tx.description,
     date:              tx.date,
     recurring_rule_id: tx.recurringRuleId ?? null,
+    is_personal:       tx.isPersonal ?? false,
   }
 }
 

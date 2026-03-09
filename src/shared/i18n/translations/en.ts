@@ -170,9 +170,11 @@ export const en = {
     colCategory:        'Category',
     colAmount:          'Amount',
     allCategories:      'All categories',
-    filters:            'Filters',
-    clearFilters:       'Clear all',
-    filterAll:          'All',
+    filters:                  'Filters',
+    clearFilters:             'Clear all',
+    filterAll:                'All',
+    sharedWithParticipants:   'Shared with participants',
+    sharedWithParticipantsDesc: 'Amount split between all account participants',
   },
 
   recurring: {
@@ -190,8 +192,10 @@ export const en = {
     applyNow:      'Apply now',
     pause:         'Pause',
     resume:        'Resume',
-    loading:       'Loading recurring rules...',
-    deleteConfirm: 'Delete this recurring rule?',
+    loading:                  'Loading recurring rules...',
+    deleteConfirm:            'Delete this recurring rule?',
+    sharedWithParticipants:   'Shared with participants',
+    sharedWithParticipantsDesc: 'Generated transactions split between all account participants',
     frequencies: {
       weekly:  'Weekly',
       monthly: 'Monthly',

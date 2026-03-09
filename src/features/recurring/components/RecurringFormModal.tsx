@@ -11,6 +11,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/cate
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
 import type { RecurringRule, TransactionType, RecurringFrequency } from '@/domain/types'
+import { useT } from '@/shared/i18n'
 
 interface FormValues {
   accountId:    string
@@ -22,6 +23,7 @@ interface FormValues {
   description:  string
   frequency:    RecurringFrequency
   startDate:    string
+  isShared:     boolean   // UI field: true = shared (default), false = personal
 }
 
 interface Props {
@@ -37,7 +39,8 @@ const TYPE_OPTIONS: { value: TransactionType; label: string; active: string; ina
 ]
 
 export default function RecurringFormModal({ open, onClose, rule }: Props) {
-  const isEdit   = !!rule
+  const t      = useT()
+  const isEdit = !!rule
   const { data: accounts = [] } = useSortedAccounts()
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
@@ -51,6 +54,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
       description:  '',
       frequency:    'monthly',
       startDate:    format(new Date(), 'yyyy-MM-dd'),
+      isShared:     true,
     },
   })
 
@@ -59,7 +63,11 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
   const selectedTo       = watch('toAccountId')
   const selectedCategory = watch('category')
   const selectedFreq     = watch('frequency')
+  const isShared         = watch('isShared')
   const isTransfer       = selectedType === 'transfer'
+
+  const primaryAccount   = accounts.find(a => String(a.id) === selectedAccount)
+  const isSharedAccount  = (primaryAccount?.participants ?? 1) > 1
 
   const categories =
     selectedType === 'income'   ? INCOME_CATEGORIES :
@@ -78,6 +86,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
         description:  rule.description,
         frequency:    rule.frequency,
         startDate:    rule.startDate,
+        isShared:     !(rule.isPersonal ?? false),
       })
     } else if (open) {
       const firstId  = accounts[0]?.id != null ? String(accounts[0].id) : ''
@@ -92,14 +101,16 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
         description:  '',
         frequency:    'monthly',
         startDate:    format(new Date(), 'yyyy-MM-dd'),
+        isShared:     true,
       })
     }
   }, [open, rule, accounts, reset])
 
-  // Reset category when switching type
+  // Reset category + personal flag when switching type
   const handleTypeChange = (t: TransactionType) => {
     setValue('type', t)
     setValue('category', t === 'transfer' ? 'transfer' : 'other')
+    setValue('isShared', true)
   }
 
   const onSubmit = async (values: FormValues) => {
@@ -118,6 +129,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
       startDate:    values.startDate,
       nextDue:      values.startDate,
       active:       true,
+      isPersonal:   isTransfer ? false : !values.isShared,
     }
 
     if (isEdit && rule?.id != null) {
@@ -260,6 +272,19 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
               <Input id="rec-start" type="date" {...register('startDate', { required: true })} />
             </div>
           </div>
+
+          {isSharedAccount && !isTransfer && (
+            <label className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors">
+              <div>
+                <p className="text-sm font-medium leading-none">{t('recurring.sharedWithParticipants')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('recurring.sharedWithParticipantsDesc')}</p>
+              </div>
+              <div className="relative shrink-0" onClick={e => { e.preventDefault(); setValue('isShared', !isShared) }}>
+                <div className={`h-5 w-9 rounded-full transition-colors ${isShared ? 'bg-primary' : 'bg-muted'}`} />
+                <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform ${isShared ? 'left-5' : 'left-1'}`} />
+              </div>
+            </label>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>Cancel</Button>

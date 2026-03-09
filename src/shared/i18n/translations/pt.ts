@@ -199,9 +199,11 @@ export const pt: typeof en = {
     colCategory:        'Categoria',
     colAmount:          'Valor',
     allCategories:      'Todas as categorias',
-    filters:            'Filtros',
-    clearFilters:       'Limpar',
-    filterAll:          'Todos',
+    filters:                  'Filtros',
+    clearFilters:             'Limpar',
+    filterAll:                'Todos',
+    sharedWithParticipants:   'Partilhado com participantes',
+    sharedWithParticipantsDesc: 'O valor é dividido entre todos os participantes da conta',
   },
 
   recurring: {
@@ -219,8 +221,10 @@ export const pt: typeof en = {
     applyNow:      'Aplicar Agora',
     pause:         'Pausar',
     resume:        'Retomar',
-    loading:       'A carregar regras recorrentes...',
-    deleteConfirm: 'Eliminar esta regra recorrente?',
+    loading:                  'A carregar regras recorrentes...',
+    deleteConfirm:            'Eliminar esta regra recorrente?',
+    sharedWithParticipants:   'Partilhado com participantes',
+    sharedWithParticipantsDesc: 'Os movimentos gerados são divididos entre todos os participantes da conta',
     frequencies: {
       weekly:  'Semanal',
       monthly: 'Mensal',

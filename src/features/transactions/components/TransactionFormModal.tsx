@@ -7,6 +7,7 @@ import TransactionTypeTabs from './TransactionTypeTabs'
 import AccountSelector from './AccountSelector'
 import CategorySelect from './CategorySelect'
 import type { Transaction, TransactionType } from '@/domain/types'
+import { useT } from '@/shared/i18n'
 
 interface Props {
   open:         boolean
@@ -16,11 +17,13 @@ interface Props {
 }
 
 export default function TransactionFormModal({ open, onClose, transaction, defaultType }: Props) {
+  const t = useT()
   const {
     form,
     isEdit,
     isTransfer,
     isValid,
+    isSharedAccount,
     categories,
     accounts,
     accountOptions,
@@ -31,7 +34,8 @@ export default function TransactionFormModal({ open, onClose, transaction, defau
     onSubmit,
   } = useTransactionForm({ open, onClose, transaction, defaultType })
 
-  const { register, setValue, formState: { errors, isSubmitting } } = form
+  const { register, watch, setValue, formState: { errors, isSubmitting } } = form
+  const isShared = watch('isShared')
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -82,6 +86,19 @@ export default function TransactionFormModal({ open, onClose, transaction, defau
             <Label htmlFor="tx-desc">Description</Label>
             <Input id="tx-desc" placeholder="e.g. Electricity bill" {...register('description')} />
           </div>
+
+          {isSharedAccount && !isTransfer && (
+            <label className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors">
+              <div>
+                <p className="text-sm font-medium leading-none">{t('transactions.sharedWithParticipants')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('transactions.sharedWithParticipantsDesc')}</p>
+              </div>
+              <div className="relative shrink-0" onClick={e => { e.preventDefault(); setValue('isShared', !isShared) }}>
+                <div className={`h-5 w-9 rounded-full transition-colors ${isShared ? 'bg-primary' : 'bg-muted'}`} />
+                <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform ${isShared ? 'left-5' : 'left-1'}`} />
+              </div>
+            </label>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>Cancel</Button>
