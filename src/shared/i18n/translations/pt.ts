@@ -198,6 +198,10 @@ export const pt: typeof en = {
     colAccount:         'Conta',
     colCategory:        'Categoria',
     colAmount:          'Valor',
+    allCategories:      'Todas as categorias',
+    filters:            'Filtros',
+    clearFilters:       'Limpar',
+    filterAll:          'Todos',
   },
 
   recurring: {

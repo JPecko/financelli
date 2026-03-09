@@ -10,6 +10,9 @@ export function useTransactionsPageModel() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Transaction | undefined>()
 
+  const [filterAccountId, setFilterAccountId] = useState<number | null>(null)
+  const [filterCategory, setFilterCategory]   = useState<string | null>(null)
+
   const { data: transactions = [], isLoading } = useTransactionsByMonth(year, month)
   const { data: accounts = [] } = useAccounts()
   const runningBalances = useRunningBalances(year, month)
@@ -21,21 +24,27 @@ export function useTransactionsPageModel() {
 
   const currentDate = useMemo(() => new Date(year, month - 1, 1), [year, month])
 
+  // Categories actually present in the current month (for the filter dropdown)
+  const categoriesInMonth = useMemo(
+    () => [...new Set(transactions.map(tx => tx.category))],
+    [transactions],
+  )
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(tx => {
+      if (filterAccountId !== null && tx.accountId !== filterAccountId && tx.toAccountId !== filterAccountId) return false
+      if (filterCategory !== null && tx.category !== filterCategory) return false
+      return true
+    })
+  }, [transactions, filterAccountId, filterCategory])
+
   const prevMonth = () => {
-    if (month === 1) {
-      setMonth(12)
-      setYear(y => y - 1)
-      return
-    }
+    if (month === 1) { setMonth(12); setYear(y => y - 1); return }
     setMonth(m => m - 1)
   }
 
   const nextMonth = () => {
-    if (month === 12) {
-      setMonth(1)
-      setYear(y => y + 1)
-      return
-    }
+    if (month === 12) { setMonth(1); setYear(y => y + 1); return }
     setMonth(m => m + 1)
   }
 
@@ -66,10 +75,16 @@ export function useTransactionsPageModel() {
     currentDate,
     modalOpen,
     editing,
-    transactions,
+    transactions: filteredTransactions,
     isLoading,
+    accounts,
     accountMap,
     runningBalances,
+    categoriesInMonth,
+    filterAccountId,
+    filterCategory,
+    setFilterAccountId,
+    setFilterCategory,
     prevMonth,
     nextMonth,
     openCreateModal,

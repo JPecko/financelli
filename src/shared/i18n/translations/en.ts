@@ -169,6 +169,10 @@ export const en = {
     colAccount:         'Account',
     colCategory:        'Category',
     colAmount:          'Amount',
+    allCategories:      'All categories',
+    filters:            'Filters',
+    clearFilters:       'Clear all',
+    filterAll:          'All',
   },
 
   recurring: {
