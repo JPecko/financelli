@@ -1,5 +1,5 @@
 import { useNavigate, NavLink } from 'react-router-dom'
-import { TrendingUp, Sun, Moon, LogOut, Settings, Languages } from 'lucide-react'
+import { Sun, Moon, LogOut, Settings, Languages } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/shared/store/themeStore'
 import { useLanguageStore } from '@/shared/store/languageStore'
@@ -12,6 +12,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
+import BrandLogo from '@/shared/components/BrandLogo'
 
 export default function Sidebar() {
   const { theme, toggle } = useThemeStore()
@@ -30,10 +31,7 @@ export default function Sidebar() {
     <aside className="hidden lg:flex h-screen w-60 flex-col border-r border-border bg-sidebar">
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <TrendingUp className="h-4 w-4 text-primary-foreground" />
-        </div>
-        <span className="text-sm font-semibold text-sidebar-foreground">Financelli</span>
+        <BrandLogo variant="wordmark" className="h-7 text-sidebar-foreground" />
         <span className="text-[10px] text-muted-foreground/60 ml-auto">{APP_VERSION}</span>
       </div>
 

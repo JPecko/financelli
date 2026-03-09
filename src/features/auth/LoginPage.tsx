@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { supabase } from '@/data/supabase'
 import { useT } from '@/shared/i18n'
+import BrandLogo from '@/shared/components/BrandLogo'
 
 interface FormValues {
   email:           string
@@ -60,11 +60,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <TrendingUp className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold">Financelli</h1>
+        <div className="flex flex-col items-center gap-2.5">
+          <BrandLogo variant="mark" className="h-14 w-14" />
+          <BrandLogo variant="wordmark" className="h-10 text-foreground" />
+          <h1 className="sr-only">Financelli</h1>
           <p className="text-sm text-muted-foreground">{t('auth.appDescription')}</p>
         </div>
 

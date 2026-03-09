@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, Sun, Moon, LogOut, Settings, Languages } from 'lucide-react'
+import { Sun, Moon, LogOut, Settings, Languages } from 'lucide-react'
 import { useThemeStore } from '@/shared/store/themeStore'
 import { useLanguageStore } from '@/shared/store/languageStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
 import { APP_VERSION } from '@/version'
 import { useT } from '@/shared/i18n'
+import BrandLogo from '@/shared/components/BrandLogo'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -24,12 +25,10 @@ export default function MobileHeader() {
     : (user?.email?.[0] ?? '?').toUpperCase()
 
   return (
-    <header className="lg:hidden flex items-center justify-between gap-3 border-b border-border px-4 py-3 safe-area-top-pad-3 bg-sidebar">
-      <div className="flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
-          <TrendingUp className="h-3.5 w-3.5 text-primary-foreground" />
-        </div>
-        <span className="text-sm font-semibold text-sidebar-foreground">Financelli</span>
+    <header className="lg:hidden flex items-center justify-between gap-3 border-b border-border px-4 py-2 safe-area-top-pad-3 bg-sidebar">
+      <div className="flex items-center gap-1">
+        <BrandLogo variant="mark" className="h-8 w-8" />
+        <span className="text-sm font-semibold text-white tracking-tight">Financelli</span>
         <span className="text-[10px] text-muted-foreground/60">{APP_VERSION}</span>
       </div>
 
@@ -65,4 +64,3 @@ export default function MobileHeader() {
     </header>
   )
 }
-
