@@ -58,8 +58,26 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* Footer — avatar triggers profile menu */}
-      <div className="border-t border-sidebar-border px-3 py-3">
+      {/* Footer — theme/language quick actions + avatar menu */}
+      <div className="border-t border-sidebar-border px-3 py-3 space-y-1">
+        <div className="flex items-center gap-1 px-2 pb-1">
+          <button
+            onClick={toggle}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            disabled
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-40 cursor-not-allowed"
+            aria-label="Language (coming soon)"
+          >
+            <Languages className="h-4 w-4" />
+          </button>
+          <span className="text-[10px] text-muted-foreground/50 ml-1">EN</span>
+        </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 hover:bg-sidebar-accent transition-colors text-left cursor-pointer">

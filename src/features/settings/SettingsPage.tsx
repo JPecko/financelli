@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
 import {
   Download, Upload, Trash2, FileText, Database, LogOut, User, KeyRound,
+  Sun, Moon, Monitor, Languages,
 } from 'lucide-react'
+import { useThemeStore } from '@/shared/store/themeStore'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -17,6 +19,7 @@ import { transactionsToCSV, downloadFile, exportFilename } from '@/shared/utils/
 
 export default function SettingsPage() {
   const { user } = useAuth()
+  const { theme, setTheme } = useThemeStore()
   const importRef  = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState(user?.user_metadata?.full_name ?? '')
@@ -252,6 +255,56 @@ export default function SettingsPage() {
             >
               Change Password
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Monitor className="h-4 w-4" />
+            Preferences
+          </CardTitle>
+          <CardDescription>Appearance and language settings.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">Theme</p>
+              <p className="text-xs text-muted-foreground">Choose light or dark mode</p>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+              <button
+                onClick={() => setTheme('light')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${theme === 'light' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Sun className="h-3.5 w-3.5" /> Light
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${theme === 'dark' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Moon className="h-3.5 w-3.5" /> Dark
+              </button>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">Language</p>
+              <p className="text-xs text-muted-foreground">Coming soon</p>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1 opacity-50">
+              <button disabled className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-background shadow-sm text-foreground cursor-not-allowed">
+                <Languages className="h-3.5 w-3.5" /> EN
+              </button>
+              <button disabled className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground cursor-not-allowed">
+                <Languages className="h-3.5 w-3.5" /> PT
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
