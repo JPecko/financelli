@@ -7,6 +7,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { supabase } from '@/data/supabase'
+import { useT } from '@/shared/i18n'
 
 interface FormValues {
   email:           string
@@ -16,6 +17,7 @@ interface FormValues {
 }
 
 export default function LoginPage() {
+  const t = useT()
   const [mode, setMode]           = useState<'login' | 'signup'>('login')
   const [error, setError]         = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -46,11 +48,11 @@ export default function LoginPage() {
           options: { data: { full_name: name.trim() } },
         })
         if (error) throw error
-        setSuccessMsg('Account created! Check your email to confirm, then log in.')
+        setSuccessMsg(t('auth.accountCreated'))
         switchMode('login')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed.')
+      setError(err instanceof Error ? err.message : t('auth.authFailed'))
     }
   })
 
@@ -63,18 +65,16 @@ export default function LoginPage() {
             <TrendingUp className="h-6 w-6 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold">Financelli</h1>
-          <p className="text-sm text-muted-foreground">Personal finance dashboard</p>
+          <p className="text-sm text-muted-foreground">{t('auth.appDescription')}</p>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">
-              {mode === 'login' ? 'Sign in' : 'Create account'}
+              {mode === 'login' ? t('auth.signInTitle') : t('auth.signUpTitle')}
             </CardTitle>
             <CardDescription>
-              {mode === 'login'
-                ? 'Enter your credentials to access your dashboard'
-                : 'Create a new account to get started'}
+              {mode === 'login' ? t('auth.signInDescription') : t('auth.signUpDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -93,13 +93,13 @@ export default function LoginPage() {
               {/* Name — signup only */}
               {mode === 'signup' && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{t('auth.name')}</Label>
                   <Input
                     id="name"
                     type="text"
-                    placeholder="Your name"
+                    placeholder={t('auth.namePlaceholder')}
                     autoComplete="name"
-                    {...register('name', { required: 'Name is required' })}
+                    {...register('name', { required: t('auth.nameRequired') })}
                   />
                   {errors.name && (
                     <p className="text-xs text-destructive">{errors.name.message}</p>
@@ -108,13 +108,13 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   autoComplete="email"
-                  {...register('email', { required: 'Email is required' })}
+                  {...register('email', { required: t('auth.emailRequired') })}
                 />
                 {errors.email && (
                   <p className="text-xs text-destructive">{errors.email.message}</p>
@@ -122,15 +122,15 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   {...register('password', {
-                    required: 'Password is required',
-                    minLength: { value: 6, message: 'At least 6 characters' },
+                    required: t('auth.passwordRequired'),
+                    minLength: { value: 6, message: t('auth.passwordMinLength') },
                   })}
                 />
                 {errors.password && (
@@ -141,15 +141,15 @@ export default function LoginPage() {
               {/* Confirm password — signup only */}
               {mode === 'signup' && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     placeholder="••••••••"
                     autoComplete="new-password"
                     {...register('confirmPassword', {
-                      required: 'Please confirm your password',
-                      validate: val => val === watch('password') || 'Passwords do not match',
+                      required: t('auth.confirmRequired'),
+                      validate: val => val === watch('password') || t('auth.passwordMismatch'),
                     })}
                   />
                   {errors.confirmPassword && (
@@ -159,18 +159,18 @@ export default function LoginPage() {
               )}
 
               <Button type="submit" className="w-full" loading={isSubmitting}>
-                {mode === 'login' ? 'Sign in' : 'Create account'}
+                {mode === 'login' ? t('auth.signIn') : t('auth.signUp')}
               </Button>
             </form>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+              {mode === 'login' ? t('auth.switchToSignUp') + ' ' : t('auth.switchToSignIn') + ' '}
               <button
                 type="button"
-                className="underline underline-offset-2 hover:text-foreground"
+                className="underline underline-offset-2 hover:text-foreground cursor-pointer"
                 onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
               >
-                {mode === 'login' ? 'Sign up' : 'Sign in'}
+                {mode === 'login' ? t('auth.signUpLink') : t('auth.signInLink')}
               </button>
             </p>
           </CardContent>

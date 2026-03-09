@@ -1,7 +1,11 @@
 import { useRef, useState } from 'react'
 import {
   Download, Upload, Trash2, FileText, Database, LogOut, User, KeyRound,
+  Sun, Moon, Monitor,
 } from 'lucide-react'
+import { useThemeStore } from '@/shared/store/themeStore'
+import { useLanguageStore } from '@/shared/store/languageStore'
+import { useT } from '@/shared/i18n'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -17,6 +21,9 @@ import { transactionsToCSV, downloadFile, exportFilename } from '@/shared/utils/
 
 export default function SettingsPage() {
   const { user } = useAuth()
+  const { theme, setTheme } = useThemeStore()
+  const { lang, setLang } = useLanguageStore()
+  const t = useT()
   const importRef  = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState(user?.user_metadata?.full_name ?? '')
@@ -37,19 +44,19 @@ export default function SettingsPage() {
     const { error } = await supabase.auth.updateUser({ data: { full_name: displayName.trim() } })
     setSavingName(false)
     if (error) showStatus(`Error: ${error.message}`)
-    else showStatus('Name updated successfully.')
+    else showStatus(t('settings.nameUpdated'))
   }
 
   /* ---- Change password ---- */
   const handleChangePassword = async () => {
     setPwError(null)
-    if (newPw.length < 6) { setPwError('At least 6 characters required'); return }
-    if (newPw !== confirmPw) { setPwError('Passwords do not match'); return }
+    if (newPw.length < 6) { setPwError(t('settings.passwordTooShort')); return }
+    if (newPw !== confirmPw) { setPwError(t('settings.passwordMismatch')); return }
     setChangingPw(true)
     const { error } = await supabase.auth.updateUser({ password: newPw })
     setChangingPw(false)
     if (error) setPwError(error.message)
-    else { showStatus('Password changed successfully.'); setNewPw(''); setConfirmPw('') }
+    else { showStatus(t('settings.passwordChanged')); setNewPw(''); setConfirmPw('') }
   }
 
   /* ---- Export JSON ---- */
@@ -65,7 +72,7 @@ export default function SettingsPage() {
       exportFilename('finance-backup', 'json'),
       'application/json',
     )
-    showStatus('JSON backup exported successfully.')
+    showStatus(t('settings.exportedJson'))
   }
 
   /* ---- Import JSON ---- */
@@ -132,7 +139,7 @@ export default function SettingsPage() {
       }
 
       queryClient.invalidateQueries()
-      showStatus('Data imported successfully.')
+      showStatus(t('settings.dataImported'))
     } catch (err) {
       showStatus(`Import failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
@@ -145,7 +152,7 @@ export default function SettingsPage() {
     const transactions = await transactionsRepo.getAll()
     const csv = transactionsToCSV(transactions)
     downloadFile(csv, exportFilename('transactions', 'csv'), 'text/csv')
-    showStatus('CSV exported successfully.')
+    showStatus(t('settings.exportedCsv'))
   }
 
   /* ---- Clear all data ---- */
@@ -156,7 +163,7 @@ export default function SettingsPage() {
     await supabase.from('transactions').delete().neq('id', 0)
     await supabase.from('accounts').delete().neq('id', 0)
     queryClient.invalidateQueries()
-    showStatus('All data cleared.')
+    showStatus(t('settings.dataCleared'))
   }
 
   /* ---- Logout ---- */
@@ -165,10 +172,8 @@ export default function SettingsPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Manage your data, backups, and preferences
-        </p>
+        <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{t('settings.subtitle')}</p>
       </div>
 
       {status && (
@@ -182,30 +187,23 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <User className="h-4 w-4" />
-            Profile
+            {t('settings.profile')}
           </CardTitle>
-          <CardDescription>
-            Your display name is shown in the sidebar.
-          </CardDescription>
+          <CardDescription>{t('settings.profileDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="display-name">Display Name</Label>
+            <Label htmlFor="display-name">{t('settings.displayName')}</Label>
             <div className="flex gap-2">
               <Input
                 id="display-name"
-                placeholder="Your name"
+                placeholder={t('settings.displayNamePlaceholder')}
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSaveName()}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                loading={savingName}
-                onClick={handleSaveName}
-              >
-                Save
+              <Button variant="outline" size="sm" loading={savingName} onClick={handleSaveName}>
+                {t('common.save')}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
@@ -213,14 +211,13 @@ export default function SettingsPage() {
 
           <Separator />
 
-          {/* Change password */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm font-medium">Change Password</p>
+              <p className="text-sm font-medium">{t('settings.changePassword')}</p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">{t('settings.newPassword')}</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -231,7 +228,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Label htmlFor="confirm-password">{t('settings.confirmPassword')}</Label>
               <Input
                 id="confirm-password"
                 type="password"
@@ -250,8 +247,63 @@ export default function SettingsPage() {
               disabled={!newPw || !confirmPw}
               onClick={handleChangePassword}
             >
-              Change Password
+              {t('settings.changePasswordBtn')}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Monitor className="h-4 w-4" />
+            {t('settings.preferences')}
+          </CardTitle>
+          <CardDescription>{t('settings.preferencesDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">{t('settings.theme')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.themeDesc')}</p>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+              <button
+                onClick={() => setTheme('light')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${theme === 'light' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Sun className="h-3.5 w-3.5" /> {t('settings.themeLight')}
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${theme === 'dark' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Moon className="h-3.5 w-3.5" /> {t('settings.themeDark')}
+              </button>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">{t('settings.language')}</p>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+              <button
+                onClick={() => setLang('en')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${lang === 'en' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLang('pt')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${lang === 'pt' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                PT
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -261,21 +313,19 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Database className="h-4 w-4" />
-            Backup & Restore
+            {t('settings.backup')}
           </CardTitle>
-          <CardDescription>
-            Export a full backup of your data or restore from a previous backup.
-          </CardDescription>
+          <CardDescription>{t('settings.backupDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-medium">Export JSON Backup</p>
-              <p className="text-xs text-muted-foreground">All accounts, transactions and rules</p>
+              <p className="text-sm font-medium">{t('settings.exportJson')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.exportJsonDesc')}</p>
             </div>
             <Button variant="outline" size="sm" onClick={handleExportJSON}>
               <Download className="h-4 w-4 mr-2" />
-              Export
+              {t('common.export')}
             </Button>
           </div>
 
@@ -283,20 +333,14 @@ export default function SettingsPage() {
 
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-medium">Import JSON Backup</p>
-              <p className="text-xs text-muted-foreground">This will replace all existing data</p>
+              <p className="text-sm font-medium">{t('settings.importJson')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.importJsonDesc')}</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => importRef.current?.click()}>
               <Upload className="h-4 w-4 mr-2" />
-              Import
+              {t('common.import')}
             </Button>
-            <input
-              ref={importRef}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImportJSON}
-            />
+            <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
           </div>
         </CardContent>
       </Card>
@@ -306,21 +350,19 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <FileText className="h-4 w-4" />
-            CSV Export
+            {t('settings.csvExport')}
           </CardTitle>
-          <CardDescription>
-            Export your transactions as CSV to open in Excel or Google Sheets.
-          </CardDescription>
+          <CardDescription>{t('settings.csvExportDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-medium">Export Transactions (CSV)</p>
-              <p className="text-xs text-muted-foreground">Compatible with Excel, Google Sheets</p>
+              <p className="text-sm font-medium">{t('settings.exportCsv')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.exportCsvDesc')}</p>
             </div>
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              {t('settings.exportCsvBtn')}
             </Button>
           </div>
         </CardContent>
@@ -331,21 +373,19 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <LogOut className="h-4 w-4" />
-            Account
+            {t('settings.account')}
           </CardTitle>
-          <CardDescription>
-            Sign out of your account.
-          </CardDescription>
+          <CardDescription>{t('settings.accountDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-medium">Sign Out</p>
-              <p className="text-xs text-muted-foreground">You will be redirected to the login page</p>
+              <p className="text-sm font-medium">{t('settings.signOut')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.signOutDesc')}</p>
             </div>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              {t('settings.signOut')}
             </Button>
           </div>
         </CardContent>
@@ -356,21 +396,19 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base text-destructive">
             <Trash2 className="h-4 w-4" />
-            Danger Zone
+            {t('settings.dangerZone')}
           </CardTitle>
-          <CardDescription>
-            These actions are permanent and cannot be undone.
-          </CardDescription>
+          <CardDescription>{t('settings.dangerZoneDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-medium">Clear All Data</p>
-              <p className="text-xs text-muted-foreground">Delete all accounts, transactions and rules</p>
+              <p className="text-sm font-medium">{t('settings.clearData')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.clearDataDesc')}</p>
             </div>
             <Button variant="destructive" size="sm" onClick={handleClearData}>
               <Trash2 className="h-4 w-4 mr-2" />
-              Clear Data
+              {t('settings.clearDataBtn')}
             </Button>
           </div>
         </CardContent>

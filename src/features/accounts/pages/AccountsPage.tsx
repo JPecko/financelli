@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Wallet, BarChart2, Users, GripVertical,
   ArrowUpDown, Check, ChevronUp, ChevronDown, Save, X,
   Banknote, PiggyBank, HandCoins, CreditCard,
 } from 'lucide-react'
+
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Badge } from '@/shared/components/ui/badge'
@@ -21,7 +22,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useAccounts, sortAccounts, removeAccount } from '@/shared/hooks/useAccounts'
 import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
-import { BANK_OPTIONS, bankLogoUrl } from '@/shared/config/banks'
+import { BANK_OPTIONS } from '@/shared/config/banks'
+import BankLogo from '@/shared/components/BankLogo'
 import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
@@ -30,14 +32,7 @@ import AccountFormModal from '../components/AccountFormModal'
 import RevalueModal from '../components/RevalueModal'
 import ShareAccountModal from '../components/ShareAccountModal'
 import type { Account } from '@/domain/types'
-
-const TYPE_LABELS: Record<string, string> = {
-  checking:   'Checking',
-  savings:    'Savings',
-  investment: 'Investment',
-  cash:       'Cash',
-  credit:     'Credit Card',
-}
+import { useT } from '@/shared/i18n'
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   checking:   Banknote,
@@ -47,45 +42,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   credit:     CreditCard,
 }
 
-// Module-level blob cache: domain → blob URL or 'failed'
-// Persists for the app lifetime — zero network requests after first load
-const logoCache = new Map<string, string | 'failed'>()
-
-function BankLogo({ domain, name, accountType, imgClassName, iconClassName }: {
-  domain: string; name: string; accountType: string
-  imgClassName?: string; iconClassName?: string
-}) {
-  const [src, setSrc] = useState<string | 'failed' | null>(() => logoCache.get(domain) ?? null)
-  const Icon = TYPE_ICONS[accountType] ?? Wallet
-
-  useEffect(() => {
-    if (logoCache.has(domain)) return
-    fetch(bankLogoUrl(domain))
-      .then(res => { if (!res.ok) throw new Error('not ok'); return res.blob() })
-      .then(blob => {
-        const blobUrl = URL.createObjectURL(blob)
-        logoCache.set(domain, blobUrl)
-        setSrc(blobUrl)
-      })
-      .catch(() => {
-        logoCache.set(domain, 'failed')
-        setSrc('failed')
-      })
-  }, [domain])
-
-  if (src === 'failed') return <Icon className={iconClassName ?? 'h-4 w-4 shrink-0 text-muted-foreground'} />
-  if (!src) return <span className={imgClassName ? imgClassName.replace(/\S+/g, '') : 'h-4 w-4 shrink-0'} />
-  return <img src={src} alt={name} className={imgClassName ?? 'h-4 w-4 rounded-sm object-contain shrink-0'} />
-}
-
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'default', label: 'Creation order' },
-  { value: 'name',    label: 'Name A→Z' },
-  { value: 'type',    label: 'Type' },
-  { value: 'color',   label: 'Color' },
-  { value: 'balance', label: 'Balance ↓' },
-  { value: 'manual',  label: 'Manual' },
-]
+const SORT_KEYS: SortKey[] = ['default', 'name', 'type', 'color', 'balance', 'manual']
 
 interface SortableCardProps {
   account: Account
@@ -122,10 +79,11 @@ function SortableCard({ account, isManual, children }: SortableCardProps) {
 }
 
 export default function AccountsPage() {
+  const t = useT()
   const { data: accounts = [], isLoading } = useAccounts()
   const { user } = useAuth()
   const {
-    sort, manualOrder, colorOrder, loaded,
+    sort, manualOrder, colorOrder,
     setSort, setManualOrder, setColorOrder,
   } = useAccountPrefsStore()
 
@@ -134,41 +92,39 @@ export default function AccountsPage() {
   const [revaluing, setRevaluing] = useState<Account | undefined>()
   const [sharing, setSharing]     = useState<Account | undefined>()
 
-  // True only while actively editing manual order (handles visible, not yet saved)
   const [isManualEditing, setIsManualEditing] = useState(false)
-
-  // Draft order: changes as you drag, only committed on Save
+  // Raw drag order — only populated while editing; accounts added/removed are merged in effectiveDraftOrder
   const [draftOrder, setDraftOrder] = useState<number[]>([])
 
-  // Sync draftOrder once when prefs first load from Supabase
-  useEffect(() => {
-    if (loaded && !isManualEditing) setDraftOrder([...manualOrder])
-  }, [loaded]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Derived: merge drag order with current accounts (handles additions/removals without setState in effects)
+  const effectiveDraftOrder = useMemo(() => {
+    const ids = accounts.map(a => a.id!)
+    if (draftOrder.length === 0) return ids
+    return [...draftOrder.filter(id => ids.includes(id)), ...ids.filter(id => !draftOrder.includes(id))]
+  }, [draftOrder, accounts])
 
-  // Refs to read current store values inside effects without adding them as deps
   const manualOrderRef = useRef(manualOrder)
-  manualOrderRef.current = manualOrder
-  const colorOrderRef = useRef(colorOrder)
-  colorOrderRef.current = colorOrder
+  const colorOrderRef  = useRef(colorOrder)
+  useLayoutEffect(() => { manualOrderRef.current = manualOrder }, [manualOrder])
+  useLayoutEffect(() => { colorOrderRef.current  = colorOrder  }, [colorOrder])
 
-  // Sync manualOrder/draftOrder when accounts are added or removed
+  // Sync store manualOrder when accounts are added/removed (only external store update — no local setState)
   useEffect(() => {
     if (accounts.length === 0) return
-    const ids = accounts.map(a => a.id!)
+    const ids     = accounts.map(a => a.id!)
     const current = manualOrderRef.current
-    const merged = [...current.filter(id => ids.includes(id)), ...ids.filter(id => !current.includes(id))]
+    const merged  = [...current.filter(id => ids.includes(id)), ...ids.filter(id => !current.includes(id))]
     if (merged.length !== current.length || merged.some((id, i) => id !== current[i])) {
       setManualOrder(merged)
     }
-    setDraftOrder(prev => [...prev.filter(id => ids.includes(id)), ...ids.filter(id => !prev.includes(id))])
   }, [accounts.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync colorOrder with colors present in accounts
+  // Sync store colorOrder when account colors change (external store update only)
   useEffect(() => {
     if (accounts.length === 0) return
-    const colors = [...new Set(accounts.map(a => a.color))]
+    const colors  = [...new Set(accounts.map(a => a.color))]
     const current = colorOrderRef.current
-    const merged = [...current.filter(c => colors.includes(c)), ...colors.filter(c => !current.includes(c))]
+    const merged  = [...current.filter(c => colors.includes(c)), ...colors.filter(c => !current.includes(c))]
     if (merged.length !== current.length || merged.some((c, i) => c !== current[i])) {
       setColorOrder(merged)
     }
@@ -180,17 +136,20 @@ export default function AccountsPage() {
     setSort(value)
     if (value === 'manual') {
       setDraftOrder(manualOrder.length > 0 ? [...manualOrder] : accounts.map(a => a.id!))
+      setIsManualEditing(true)
+    } else {
+      setDraftOrder([])
+      setIsManualEditing(false)
     }
-    setIsManualEditing(value === 'manual')
   }
 
   const handleSaveManual = () => {
-    setManualOrder(draftOrder)
+    setManualOrder(effectiveDraftOrder)
     setIsManualEditing(false)
   }
 
   const handleCancelManual = () => {
-    setDraftOrder([...manualOrder])
+    setDraftOrder([])
     setIsManualEditing(false)
   }
 
@@ -198,11 +157,10 @@ export default function AccountsPage() {
     if (!isManualEditing) return
     const { active, over } = event
     if (!over || active.id === over.id) return
-    setDraftOrder(prev => {
-      const oldIdx = prev.indexOf(active.id as number)
-      const newIdx = prev.indexOf(over.id as number)
-      return arrayMove(prev, oldIdx, newIdx)
-    })
+    const oldIdx = effectiveDraftOrder.indexOf(active.id as number)
+    const newIdx = effectiveDraftOrder.indexOf(over.id as number)
+    if (oldIdx === -1 || newIdx === -1) return
+    setDraftOrder(arrayMove([...effectiveDraftOrder], oldIdx, newIdx))
   }
 
   const moveColor = (i: number, dir: -1 | 1) => {
@@ -213,8 +171,21 @@ export default function AccountsPage() {
     setColorOrder(next)
   }
 
+  const sortLabelKey = (key: SortKey): Parameters<typeof t>[0] => {
+    const map: Record<SortKey, Parameters<typeof t>[0]> = {
+      default: 'accounts.sortCreation',
+      name:    'accounts.sortName',
+      type:    'accounts.sortType',
+      color:   'accounts.sortColor',
+      balance: 'accounts.sortBalance',
+      manual:  'accounts.sortManual',
+    }
+    return map[key]
+  }
+
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0)
-  const sorted = sortAccounts(accounts, sort, sort === 'manual' ? draftOrder : manualOrder, colorOrder)
+  const orderForSort = isManualEditing ? effectiveDraftOrder : manualOrder
+  const sorted = sortAccounts(accounts, sort, orderForSort, colorOrder)
   const sortedIds = sorted.map(a => a.id!)
 
   const handleEdit = (account: Account) => {
@@ -229,7 +200,7 @@ export default function AccountsPage() {
 
   const handleDelete = async (id: number | undefined) => {
     if (id == null) return
-    if (confirm('Delete this account? All associated transactions will remain.')) {
+    if (confirm(t('accounts.deleteConfirm'))) {
       await removeAccount(id)
     }
   }
@@ -239,31 +210,31 @@ export default function AccountsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Accounts</h1>
+          <h1 className="text-2xl font-bold">{t('accounts.title')}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Total balance: <span className="font-semibold text-foreground">{formatMoney(totalBalance)}</span>
+            {t('accounts.totalBalance')}: <span className="font-semibold text-foreground">{formatMoney(totalBalance)}</span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col-reverse sm:flex-row items-end sm:items-center gap-2">
 
           {/* Sort dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
                 <ArrowUpDown className="h-4 w-4" />
-                Sort
+                {t('accounts.sort')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">Sort by</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t('accounts.sortBy')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
 
-              {SORT_OPTIONS.map(opt => (
-                <DropdownMenuItem key={opt.value} onClick={() => handleSortChange(opt.value)}>
+              {SORT_KEYS.map(key => (
+                <DropdownMenuItem key={key} onClick={() => handleSortChange(key)}>
                   <span className="w-5 shrink-0">
-                    {sort === opt.value && <Check className="h-3.5 w-3.5" />}
+                    {sort === key && <Check className="h-3.5 w-3.5" />}
                   </span>
-                  {opt.label}
+                  {t(sortLabelKey(key))}
                 </DropdownMenuItem>
               ))}
 
@@ -272,7 +243,7 @@ export default function AccountsPage() {
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-                    Color order
+                    {t('accounts.colorOrder')}
                   </DropdownMenuLabel>
                   {colorOrder.map((color, i) => (
                     <div key={color} className="flex items-center gap-2 px-2 py-1">
@@ -282,14 +253,14 @@ export default function AccountsPage() {
                       />
                       <span className="flex-1 text-xs font-mono text-muted-foreground truncate">{color}</span>
                       <button
-                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
+                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30 cursor-pointer disabled:cursor-default"
                         disabled={i === 0}
                         onClick={(e) => { e.stopPropagation(); moveColor(i, -1) }}
                       >
                         <ChevronUp className="h-3 w-3" />
                       </button>
                       <button
-                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
+                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30 cursor-pointer disabled:cursor-default"
                         disabled={i === colorOrder.length - 1}
                         onClick={(e) => { e.stopPropagation(); moveColor(i, 1) }}
                       >
@@ -305,7 +276,7 @@ export default function AccountsPage() {
 
           <Button onClick={() => setModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Account
+            {t('accounts.addAccount')}
           </Button>
         </div>
       </div>
@@ -315,14 +286,14 @@ export default function AccountsPage() {
         <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 px-4 py-2.5 mb-4">
           <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
             <GripVertical className="h-4 w-4" />
-            Drag cards to reorder
+            {t('accounts.dragToReorder')}
           </p>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" className="h-8 gap-1.5" onClick={handleCancelManual}>
-              <X className="h-3.5 w-3.5" /> Cancel
+              <X className="h-3.5 w-3.5" /> {t('common.cancel')}
             </Button>
             <Button size="sm" className="h-8 gap-1.5" onClick={handleSaveManual}>
-              <Save className="h-3.5 w-3.5" /> Save order
+              <Save className="h-3.5 w-3.5" /> {t('accounts.saveOrder')}
             </Button>
           </div>
         </div>
@@ -330,16 +301,16 @@ export default function AccountsPage() {
 
       {/* List */}
       {isLoading ? (
-        <PageLoader message="Loading accounts..." />
+        <PageLoader message={t('accounts.loading')} />
       ) : accounts.length === 0 ? (
         <EmptyState
           icon={Wallet}
-          title="No accounts yet"
-          description="Add your bank accounts, savings, or cash wallets to start tracking your finances."
+          title={t('accounts.noAccounts')}
+          description={t('accounts.noAccountsDesc')}
           action={
             <Button onClick={() => setModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add your first account
+              {t('accounts.addFirst')}
             </Button>
           }
         />
@@ -397,22 +368,22 @@ export default function AccountsPage() {
                                   {isInvestment && (
                                     <>
                                       <DropdownMenuItem onClick={() => setRevaluing(account)}>
-                                        <BarChart2 className="h-4 w-4 mr-2" /> Update Market Value
+                                        <BarChart2 className="h-4 w-4 mr-2" /> {t('accounts.updateValue')}
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                     </>
                                   )}
                                   <DropdownMenuItem onClick={() => setSharing(account)}>
-                                    <Users className="h-4 w-4 mr-2" /> Share
+                                    <Users className="h-4 w-4 mr-2" /> {t('accounts.share')}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleEdit(account)}>
-                                    <Pencil className="h-4 w-4 mr-2" /> Edit
+                                    <Pencil className="h-4 w-4 mr-2" /> {t('common.edit')}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={() => handleDelete(account.id)}
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                    <Trash2 className="h-4 w-4 mr-2" /> {t('common.delete')}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -423,7 +394,7 @@ export default function AccountsPage() {
                           <div className="mt-3 flex items-end justify-between gap-2">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge variant="secondary" className="text-xs">
-                                {TYPE_LABELS[account.type] ?? account.type}
+                                {t(('accounts.types.' + account.type) as Parameters<typeof t>[0])}
                               </Badge>
                               {(account.participants ?? 1) > 1 && (
                                 <Tooltip>
@@ -440,7 +411,7 @@ export default function AccountsPage() {
                                           ? (user?.user_metadata?.full_name ?? user?.email)
                                           : (account.ownerFullName ?? account.ownerEmail ?? 'Owner')
                                         }
-                                        {' '}<span className="opacity-60">(owner)</span>
+                                        {' '}<span className="opacity-60">({t('accounts.owner')})</span>
                                       </p>
                                       {account.sharedWith?.map(s => (
                                         <p key={s.userId}>{s.fullName ?? s.email}</p>

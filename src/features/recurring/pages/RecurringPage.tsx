@@ -15,6 +15,7 @@ import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
 import RecurringFormModal from '../components/RecurringFormModal'
 import type { RecurringRule } from '@/domain/types'
+import { useT } from '@/shared/i18n'
 
 const FREQ_BADGE: Record<string, string> = {
   weekly:  'bg-blue-500/10 text-blue-600 dark:text-blue-400',
@@ -23,6 +24,7 @@ const FREQ_BADGE: Record<string, string> = {
 }
 
 export default function RecurringPage() {
+  const t = useT()
   const { data: rules    = [], isLoading } = useRecurringRules()
   const { data: accounts = [] } = useAccounts()
   const [modalOpen, setModalOpen] = useState(false)
@@ -43,7 +45,7 @@ export default function RecurringPage() {
 
   const handleDelete = async (id: number | undefined) => {
     if (id == null) return
-    if (confirm('Delete this recurring rule?')) {
+    if (confirm(t('recurring.deleteConfirm'))) {
       await removeRule(id)
     }
   }
@@ -64,28 +66,28 @@ export default function RecurringPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Recurring Rules</h1>
+          <h1 className="text-2xl font-bold">{t('recurring.title')}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Manage your fixed income and expenses
+            {t('recurring.subtitle')}
           </p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Rule
+          {t('recurring.addRule')}
         </Button>
       </div>
 
       {isLoading ? (
-        <PageLoader message="Loading recurring rules..." />
+        <PageLoader message={t('recurring.loading')} />
       ) : rules.length === 0 ? (
         <EmptyState
           icon={RefreshCw}
-          title="No recurring rules"
-          description="Add your fixed monthly expenses like rent, subscriptions, or regular income like your salary."
+          title={t('recurring.noRules')}
+          description={t('recurring.noRulesDesc')}
           action={
             <Button onClick={() => setModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add first rule
+              {t('recurring.addFirst')}
             </Button>
           }
         />
@@ -124,7 +126,7 @@ export default function RecurringPage() {
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-semibold truncate">{rule.name}</p>
                       {!rule.active && (
-                        <Badge variant="secondary" className="text-xs shrink-0">Paused</Badge>
+                        <Badge variant="secondary" className="text-xs shrink-0">{t('recurring.paused')}</Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -155,14 +157,14 @@ export default function RecurringPage() {
                         {cat.label}
                       </Badge>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${FREQ_BADGE[rule.frequency]}`}>
-                        {rule.frequency}
+                        {t(('recurring.frequencies.' + rule.frequency) as Parameters<typeof t>[0])}
                       </span>
                     </div>
                   </div>
 
                   {/* Date column — desktop only */}
                   <div className="hidden sm:flex flex-col items-end shrink-0">
-                    <span className="text-xs text-muted-foreground">Next due</span>
+                    <span className="text-xs text-muted-foreground">{t('recurring.nextDue')}</span>
                     <span className="text-sm font-medium tabular-nums">{formatDate(rule.nextDue)}</span>
                   </div>
 
@@ -195,22 +197,22 @@ export default function RecurringPage() {
                           ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           : <Zap className="h-4 w-4 mr-2" />
                         }
-                        Apply now
+                        {t('recurring.applyNow')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleEdit(rule)}>
-                        <Pencil className="h-4 w-4 mr-2" /> Edit
+                        <Pencil className="h-4 w-4 mr-2" /> {t('common.edit')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleToggle(rule)}>
                         {rule.active
-                          ? <><Pause className="h-4 w-4 mr-2" /> Pause</>
-                          : <><Play  className="h-4 w-4 mr-2" /> Resume</>
+                          ? <><Pause className="h-4 w-4 mr-2" /> {t('recurring.pause')}</>
+                          : <><Play  className="h-4 w-4 mr-2" /> {t('recurring.resume')}</>
                         }
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => handleDelete(rule.id)}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                        <Trash2 className="h-4 w-4 mr-2" /> {t('common.delete')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

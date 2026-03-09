@@ -6,6 +6,7 @@ type Theme = 'light' | 'dark'
 interface ThemeStore {
   theme: Theme
   toggle: () => void
+  setTheme: (t: Theme) => void
 }
 
 function applyTheme(theme: Theme) {
@@ -21,6 +22,7 @@ export const useThemeStore = create<ThemeStore>()(
         applyTheme(next)
         set({ theme: next })
       },
+      setTheme: (t: Theme) => { applyTheme(t); set({ theme: t }) },
     }),
     {
       name: 'finance-theme',

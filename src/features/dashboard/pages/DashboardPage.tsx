@@ -18,17 +18,20 @@ import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import PageLoader from '@/shared/components/PageLoader'
+import BankLogo from '@/shared/components/BankLogo'
+import { BANK_OPTIONS } from '@/shared/config/banks'
+import { useT } from '@/shared/i18n'
 
 const now   = new Date()
 const YEAR  = getYear(now)
 const MONTH = getMonth(now) + 1
 
-const ACCOUNT_TYPE_META: Record<AccountType, { label: string; icon: LucideIcon; color: string }> = {
-  checking:   { label: 'Checking',     icon: Banknote,   color: '#3b82f6' },
-  savings:    { label: 'Savings',      icon: PiggyBank,  color: '#22c55e' },
-  investment: { label: 'Investments',  icon: BarChart2,  color: '#a78bfa' },
-  cash:       { label: 'Cash',         icon: HandCoins,  color: '#f59e0b' },
-  credit:     { label: 'Credit',       icon: CreditCard, color: '#ef4444' },
+const ACCOUNT_TYPE_META: Record<AccountType, { icon: LucideIcon; color: string }> = {
+  checking:   { icon: Banknote,   color: '#3b82f6' },
+  savings:    { icon: PiggyBank,  color: '#22c55e' },
+  investment: { icon: BarChart2,  color: '#a78bfa' },
+  cash:       { icon: HandCoins,  color: '#f59e0b' },
+  credit:     { icon: CreditCard, color: '#ef4444' },
 }
 
 interface ListRowProps {
@@ -54,6 +57,7 @@ function ListRow({ icon, label, sublabel, value }: ListRowProps) {
 }
 
 export default function DashboardPage() {
+  const t = useT()
   const netWorth                   = useNetWorth()
   const summary                    = useMonthSummary(YEAR, MONTH)
   const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(YEAR, MONTH)
@@ -116,7 +120,7 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-0.5">{format(now, 'MMMM yyyy')}</p>
       </div>
 
-      {isLoading && <PageLoader message="Loading your data..." />}
+      {isLoading && <PageLoader message={t('dashboard.loading')} />}
       {isLoading ? null : (<>
 
       {/* Row 1: Net Worth | Month Summary | Account Balances */}
@@ -125,7 +129,7 @@ export default function DashboardPage() {
         {/* Net Worth */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Net Worth</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.netWorth')}</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -133,7 +137,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold mb-3">{formatMoney(netWorth)}</div>
             {netWorthByType.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No accounts yet</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.noAccounts')}</p>
             ) : (
               <div className="space-y-2">
                 {netWorthByType.map(([type, balance]) => {
@@ -146,7 +150,7 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between text-xs mb-0.5">
                         <div className="flex items-center gap-1.5">
                           <Icon className="h-3 w-3 shrink-0" style={{ color: meta.color }} />
-                          <span className="text-muted-foreground">{meta.label}</span>
+                          <span className="text-muted-foreground">{t(('accounts.types.' + type) as Parameters<typeof t>[0])}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className={`font-medium ${balance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}>
@@ -171,7 +175,7 @@ export default function DashboardPage() {
         {/* Month Summary */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Month Summary</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.monthSummary')}</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -182,31 +186,33 @@ export default function DashboardPage() {
             </div>
             {savingsRate != null && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                {savingsRate >= 0 ? `Saved ${savingsRate}% of income` : `Overspent by ${Math.abs(savingsRate)}%`}
+                {savingsRate >= 0
+                  ? t('dashboard.savedPct', { rate: String(savingsRate) })
+                  : t('dashboard.overspentPct', { rate: String(Math.abs(savingsRate)) })}
               </p>
             )}
             <div className="mt-4 space-y-2.5">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1.5">
                   <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-muted-foreground">Income</span>
+                  <span className="text-muted-foreground">{t('dashboard.income')}</span>
                 </div>
                 <div className="text-right">
                   <span className="font-medium text-emerald-600">+{formatMoney(summary.personalIncome)}</span>
                   {summary.personalIncome !== summary.income && (
-                    <p className="text-xs text-muted-foreground">Total {formatMoney(summary.income)}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(summary.income)}</p>
                   )}
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1.5">
                   <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
-                  <span className="text-muted-foreground">Expenses</span>
+                  <span className="text-muted-foreground">{t('dashboard.expenses')}</span>
                 </div>
                 <div className="text-right">
                   <span className="font-medium text-rose-600">-{formatMoney(Math.abs(summary.personalExpenses))}</span>
                   {summary.personalExpenses !== summary.expenses && (
-                    <p className="text-xs text-muted-foreground">Total {formatMoney(Math.abs(summary.expenses))}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(Math.abs(summary.expenses))}</p>
                   )}
                 </div>
               </div>
@@ -217,18 +223,29 @@ export default function DashboardPage() {
         {/* Account Balances */}
         <Card className="sm:col-span-2 xl:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Account Balances</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.accountBalances')}</CardTitle>
           </CardHeader>
           <CardContent className="divide-y divide-border">
             {accounts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No accounts yet.</p>
+              <p className="text-sm text-muted-foreground py-2">{t('dashboard.noAccounts')}</p>
             ) : accounts.map(account => {
               const meta = ACCOUNT_TYPE_META[account.type]
               const Icon = meta.icon
+              const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
               return (
                 <ListRow
                   key={account.id}
-                  icon={<Icon className="h-3.5 w-3.5 shrink-0" style={{ color: meta.color }} />}
+                  icon={bank ? (
+                    <BankLogo
+                      domain={bank.logoDomain}
+                      name={bank.name}
+                      accountType={account.type}
+                      imgClassName="h-6 w-6 rounded-sm object-contain shrink-0"
+                      iconClassName="h-5 w-5 shrink-0 text-muted-foreground"
+                    />
+                  ) : (
+                    <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: meta.color }} />
+                  )}
                   label={account.name}
                   value={
                     <span className={`text-sm font-medium tabular-nums ${account.balance < 0 ? 'text-rose-600' : ''}`}>
@@ -248,7 +265,7 @@ export default function DashboardPage() {
         {/* Income vs Expenses grouped bar chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Income vs Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.incomeVsExpenses')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -258,8 +275,8 @@ export default function DashboardPage() {
                 <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
                 <ReTooltip formatter={(v: number | undefined) => v != null ? formatMoney(v) : ''} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="income"   name="Income"   fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="expenses" name="Expenses" fill="#f43f5e" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="income"   name={t('dashboard.income')}   fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="expenses" name={t('dashboard.expenses')} fill="#f43f5e" radius={[3, 3, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -268,11 +285,11 @@ export default function DashboardPage() {
         {/* Spending by Category — horizontal ranked bars */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Spending by Category</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.spendingByCategory')}</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No expenses this month</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.noExpenses')}</p>
             ) : (
               <div className="space-y-3">
                 {categoryData.slice(0, 7).map(d => {
@@ -305,11 +322,11 @@ export default function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
       <Card className={!hasBenefits ? 'lg:col-span-2' : ''}>
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Top Expenses</CardTitle>
+          <CardTitle className="text-sm font-medium">{t('dashboard.topExpenses')}</CardTitle>
         </CardHeader>
         <CardContent>
           {topExpenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No expenses this month.</p>
+            <p className="text-sm text-muted-foreground">{t('dashboard.noExpenses')}</p>
           ) : (
             <div className="divide-y divide-border">
               {topExpenses.map(tx => {
@@ -336,7 +353,7 @@ export default function DashboardPage() {
       {hasBenefits && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Perks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -345,9 +362,9 @@ export default function DashboardPage() {
                   <BadgePercent className="h-4 w-4 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Cashback</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.cashback')}</p>
                   <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
-                  <p className="text-xs text-muted-foreground">YTD: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -355,9 +372,9 @@ export default function DashboardPage() {
                   <Coins className="h-4 w-4 text-stone-500" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Roundup</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.roundup')}</p>
                   <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
-                  <p className="text-xs text-muted-foreground">YTD: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
                 </div>
               </div>
             </div>
@@ -367,8 +384,8 @@ export default function DashboardPage() {
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
                 <ReTooltip formatter={(v: number | undefined, name: string | undefined) => [v != null ? formatMoney(v) : '', name ?? '']} />
-                <Line type="monotone" dataKey="cashback" name="Cashback" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="roundup"  name="Roundup"  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="cashback" name={t('dashboard.cashback')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="roundup"  name={t('dashboard.roundup')}  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
