@@ -16,15 +16,19 @@ export default function Layout() {
   useEffect(() => { void load() }, [load])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen min-h-0 overflow-hidden bg-background">
       <Sidebar />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <MobileChromeContainer visible={mobileChromeVisible} placement="top">
           <MobileHeader />
         </MobileChromeContainer>
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto">
+        <main
+          ref={mainRef}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           <Outlet />
         </main>
 
