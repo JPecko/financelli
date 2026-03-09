@@ -196,32 +196,42 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); /* + py-3 */
 }
 
-/* ─── Mobile chrome wrappers (top bar / bottom nav) ───────────── */
+/* ─── Mobile chrome ────────────────────────────────────────────── */
 
-.mobile-chrome {
-  flex-shrink: 0;
-  overflow: hidden;
-  transition: max-height 300ms ease-out, opacity 300ms ease-out;
-}
+/*
+ * Topbar is now in-flow inside <main> so it scrolls away naturally.
+ * The safe-area-cap is always fixed at the top to keep the status bar
+ * covered even after the topbar has scrolled off.
+ * The floating topbar appears as a fixed overlay on scroll-up.
+ */
 
-.mobile-chrome-top.mobile-chrome-visible {
-  max-height: calc(env(safe-area-inset-top) + 4.5rem);
-  opacity: 1;
-}
-
-.mobile-chrome-bottom.mobile-chrome-visible {
-  max-height: calc(env(safe-area-inset-bottom) + 4.75rem);
-  opacity: 1;
-}
-
-.mobile-chrome-hidden {
-  max-height: 0;
-  opacity: 0;
+/* Always-on safe-area cap: covers the iPhone status bar area */
+.mobile-safe-area-cap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--sidebar);
+  z-index: 40;
   pointer-events: none;
 }
 
+/* Floating topbar — slides in from the top as a fixed overlay */
+.mobile-chrome-floating {
+  overflow: hidden;
+  animation: topbar-slide-in 220ms ease-out;
+  box-shadow: 0 2px 10px hsl(0 0% 0% / 0.15);
+}
+
+@keyframes topbar-slide-in {
+  from { transform: translateY(-100%); opacity: 0.5; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
 @media (min-width: 1024px) {
-  .mobile-chrome {
+  .mobile-safe-area-cap,
+  .mobile-chrome-floating {
     display: none;
   }
 }

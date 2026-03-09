@@ -5,112 +5,89 @@ import {
   type ScrollDirection,
 } from '@/shared/config/mobileChrome'
 
+export type TopbarState = 'in-flow' | 'floating' | 'hidden'
+
 type ChromeThresholds = typeof MOBILE_CHROME_THRESHOLDS
 
-interface ChromeStepInput {
+interface TopbarStepInput {
   currentY: number
-  maxScroll: number
   lastY: number
   direction: ScrollDirection
   directionTravel: number
-  visible: boolean
+  state: TopbarState
   thresholds?: ChromeThresholds
 }
 
-interface ChromeStepOutput {
-  visible: boolean
+interface TopbarStepOutput {
+  state: TopbarState
   lastY: number
   direction: ScrollDirection
   directionTravel: number
 }
 
-export function computeNextChromeState({
+export function computeNextTopbarState({
   currentY,
-  maxScroll,
   lastY,
   direction,
   directionTravel,
-  visible,
+  state,
   thresholds = MOBILE_CHROME_THRESHOLDS,
-}: ChromeStepInput): ChromeStepOutput {
+}: TopbarStepInput): TopbarStepOutput {
   const y = Math.max(currentY, 0)
   const delta = y - lastY
   if (Math.abs(delta) < thresholds.minDelta) {
-    return { visible, lastY, direction, directionTravel }
+    return { state, lastY, direction, directionTravel }
   }
 
-  const nearTop = y <= thresholds.nearTop
-  const nearBottom = Math.max(maxScroll, 0) - y <= thresholds.nearBottom
-  if (nearTop || nearBottom) {
-    return {
-      visible: true,
-      lastY: y,
-      direction: 0,
-      directionTravel: 0,
-    }
+  // Back at top → always in-flow
+  if (y <= thresholds.nearTop) {
+    return { state: 'in-flow', lastY: y, direction: 0, directionTravel: 0 }
   }
 
   const nextDirection: ScrollDirection = delta > 0 ? 1 : -1
   const baseTravel = nextDirection === direction ? directionTravel : 0
   const nextTravel = baseTravel + Math.abs(delta)
 
-  if (nextDirection === 1 && visible && nextTravel > thresholds.hideDelta) {
-    return {
-      visible: false,
-      lastY: y,
-      direction: nextDirection,
-      directionTravel: 0,
-    }
-  }
-  if (nextDirection === -1 && !visible && nextTravel > thresholds.showDelta) {
-    return {
-      visible: true,
-      lastY: y,
-      direction: nextDirection,
-      directionTravel: 0,
-    }
+  // Scrolling down → hide (from in-flow or floating)
+  if (nextDirection === 1 && state !== 'hidden' && nextTravel > thresholds.hideDelta) {
+    return { state: 'hidden', lastY: y, direction: nextDirection, directionTravel: 0 }
   }
 
-  return {
-    visible,
-    lastY: y,
-    direction: nextDirection,
-    directionTravel: nextTravel,
+  // Scrolling up from hidden → float over content
+  if (nextDirection === -1 && state === 'hidden' && nextTravel > thresholds.showDelta) {
+    return { state: 'floating', lastY: y, direction: nextDirection, directionTravel: 0 }
   }
+
+  return { state, lastY: y, direction: nextDirection, directionTravel: nextTravel }
 }
 
-interface UseMobileChromeVisibilityOptions {
-  pathname: string
-  scrollerRef: RefObject<HTMLElement | null>
-}
-
-export function useMobileChromeVisibility({
+export function useTopbarState({
   pathname,
   scrollerRef,
-}: UseMobileChromeVisibilityOptions) {
-  const [visible, setVisible] = useState(true)
+}: {
+  pathname: string
+  scrollerRef: RefObject<HTMLElement | null>
+}): TopbarState {
+  const [topbarState, setTopbarState] = useState<TopbarState>('in-flow')
 
-  const visibleRef = useRef(true)
-  const lastYRef = useRef(0)
-  const directionRef = useRef<ScrollDirection>(0)
+  const stateRef          = useRef<TopbarState>('in-flow')
+  const lastYRef          = useRef(0)
+  const directionRef      = useRef<ScrollDirection>(0)
   const directionTravelRef = useRef(0)
-  const rafRef = useRef<number | null>(null)
+  const rafRef            = useRef<number | null>(null)
 
+  // Reset on route change
   useEffect(() => {
     const scroller = scrollerRef.current
-    const commitVisibility = (nextVisible: boolean) => {
-      if (visibleRef.current === nextVisible) return
-      visibleRef.current = nextVisible
-      setVisible(nextVisible)
-    }
-
     scroller?.scrollTo({ top: 0, behavior: 'auto' })
-    commitVisibility(true)
+    stateRef.current = 'in-flow'
+    setTopbarState('in-flow')
     directionRef.current = 0
     directionTravelRef.current = 0
     lastYRef.current = scroller?.scrollTop ?? 0
   }, [pathname, scrollerRef])
 
+  // Scroll listener
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
@@ -119,35 +96,32 @@ export function useMobileChromeVisibility({
     directionRef.current = 0
     directionTravelRef.current = 0
 
-    const commitVisibility = (nextVisible: boolean) => {
-      if (visibleRef.current === nextVisible) return
-      visibleRef.current = nextVisible
-      setVisible(nextVisible)
+    const commit = (next: TopbarState) => {
+      if (stateRef.current === next) return
+      stateRef.current = next
+      setTopbarState(next)
     }
 
     const onScroll = () => {
       if (!window.matchMedia(MOBILE_CHROME_MEDIA_QUERY).matches) {
-        commitVisibility(true)
+        commit('in-flow')
         return
       }
       if (rafRef.current != null) return
 
       rafRef.current = window.requestAnimationFrame(() => {
         rafRef.current = null
-
-        const next = computeNextChromeState({
+        const next = computeNextTopbarState({
           currentY: scroller.scrollTop,
-          maxScroll: scroller.scrollHeight - scroller.clientHeight,
           lastY: lastYRef.current,
           direction: directionRef.current,
           directionTravel: directionTravelRef.current,
-          visible: visibleRef.current,
+          state: stateRef.current,
         })
-
         lastYRef.current = next.lastY
         directionRef.current = next.direction
         directionTravelRef.current = next.directionTravel
-        commitVisibility(next.visible)
+        commit(next.state)
       })
     }
 
@@ -161,5 +135,5 @@ export function useMobileChromeVisibility({
     }
   }, [scrollerRef])
 
-  return visible
+  return topbarState
 }
