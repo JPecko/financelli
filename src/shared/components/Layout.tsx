@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { TrendingUp, Sun, Moon, LogOut, Settings, Languages } from 'lucide-react'
 import Sidebar from './Sidebar'
 import { useAccountPrefsStore } from '@/shared/store/accountPrefsStore'
@@ -96,7 +96,12 @@ function MobileHeader() {
 
 export default function Layout() {
   const load = useAccountPrefsStore(s => s.load)
+  const { pathname } = useLocation()
+  const mainRef = useRef<HTMLElement | null>(null)
   useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'auto' })
+  }, [pathname])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -105,7 +110,7 @@ export default function Layout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <MobileHeader />
 
-        <main className="flex-1 overflow-y-auto">
+        <main ref={mainRef} className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
 

@@ -123,7 +123,7 @@ export default function DashboardPage() {
       {isLoading && <PageLoader message={t('dashboard.loading')} />}
       {isLoading ? null : (<>
 
-      {/* Row 1: Net Worth | Month Summary | Account Balances */}
+      {/* Row 1: Net Worth | Month Summary | Account Balances (+ Perks on mobile only) */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
         {/* Net Worth */}
@@ -257,6 +257,48 @@ export default function DashboardPage() {
             })}
           </CardContent>
         </Card>
+
+        {hasBenefits && (
+          <Card className="lg:hidden sm:col-span-2 xl:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                    <BadgePercent className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.cashback')}</p>
+                    <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-500/10">
+                    <Coins className="h-4 w-4 text-stone-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.roundup')}</p>
+                    <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
+                  </div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={benefitsData} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
+                  <ReTooltip formatter={(v: number | undefined, name: string | undefined) => [v != null ? formatMoney(v) : '', name ?? '']} />
+                  <Line type="monotone" dataKey="cashback" name={t('dashboard.cashback')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="roundup"  name={t('dashboard.roundup')}  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Row 2: Income vs Expenses bar chart | Spending by Category ranked bars */}
@@ -318,79 +360,79 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Row 3+4: Top Expenses + Perks side by side on desktop */}
+      {/* Row 3: Top Expenses (+ Perks on desktop only) */}
       <div className="grid gap-4 lg:grid-cols-2">
-      <Card className={!hasBenefits ? 'lg:col-span-2' : ''}>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">{t('dashboard.topExpenses')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {topExpenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('dashboard.noExpenses')}</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {topExpenses.map(tx => {
-                const cat = getCategoryById(tx.category)
-                return (
-                  <ListRow
-                    key={tx.id}
-                    icon={<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />}
-                    label={tx.description || cat.label}
-                    sublabel={`${cat.label} · ${formatDate(tx.date)}`}
-                    value={
-                      <span className="text-sm font-semibold text-rose-600 tabular-nums">
-                        {formatMoney(tx.amount)}
-                      </span>
-                    }
-                  />
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {hasBenefits && (
-        <Card>
+        <Card className={!hasBenefits ? 'lg:col-span-2' : ''}>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.topExpenses')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                  <BadgePercent className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('dashboard.cashback')}</p>
-                  <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
-                  <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
-                </div>
+          <CardContent>
+            {topExpenses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('dashboard.noExpenses')}</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {topExpenses.map(tx => {
+                  const cat = getCategoryById(tx.category)
+                  return (
+                    <ListRow
+                      key={tx.id}
+                      icon={<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />}
+                      label={tx.description || cat.label}
+                      sublabel={`${cat.label} · ${formatDate(tx.date)}`}
+                      value={
+                        <span className="text-sm font-semibold text-rose-600 tabular-nums">
+                          {formatMoney(tx.amount)}
+                        </span>
+                      }
+                    />
+                  )
+                })}
               </div>
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-500/10">
-                  <Coins className="h-4 w-4 text-stone-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('dashboard.roundup')}</p>
-                  <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
-                  <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
-                </div>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={benefitsData} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
-                <ReTooltip formatter={(v: number | undefined, name: string | undefined) => [v != null ? formatMoney(v) : '', name ?? '']} />
-                <Line type="monotone" dataKey="cashback" name={t('dashboard.cashback')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="roundup"  name={t('dashboard.roundup')}  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
-      )}
+
+        {hasBenefits && (
+          <Card className="hidden lg:block">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                    <BadgePercent className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.cashback')}</p>
+                    <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-500/10">
+                    <Coins className="h-4 w-4 text-stone-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.roundup')}</p>
+                    <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
+                  </div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={benefitsData} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
+                  <ReTooltip formatter={(v: number | undefined, name: string | undefined) => [v != null ? formatMoney(v) : '', name ?? '']} />
+                  <Line type="monotone" dataKey="cashback" name={t('dashboard.cashback')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="roundup"  name={t('dashboard.roundup')}  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       </>)}
