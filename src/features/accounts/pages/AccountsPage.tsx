@@ -253,14 +253,14 @@ export default function AccountsPage() {
                       />
                       <span className="flex-1 text-xs font-mono text-muted-foreground truncate">{color}</span>
                       <button
-                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
+                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30 cursor-pointer disabled:cursor-default"
                         disabled={i === 0}
                         onClick={(e) => { e.stopPropagation(); moveColor(i, -1) }}
                       >
                         <ChevronUp className="h-3 w-3" />
                       </button>
                       <button
-                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
+                        className="p-0.5 rounded hover:bg-muted disabled:opacity-30 cursor-pointer disabled:cursor-default"
                         disabled={i === colorOrder.length - 1}
                         onClick={(e) => { e.stopPropagation(); moveColor(i, 1) }}
                       >

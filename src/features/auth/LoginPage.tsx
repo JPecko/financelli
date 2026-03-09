@@ -167,7 +167,7 @@ export default function LoginPage() {
               {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <button
                 type="button"
-                className="underline underline-offset-2 hover:text-foreground"
+                className="underline underline-offset-2 hover:text-foreground cursor-pointer"
                 onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
               >
                 {mode === 'login' ? 'Sign up' : 'Sign in'}

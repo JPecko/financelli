@@ -59,7 +59,7 @@ function MobileHeader() {
       {/* Avatar — opens profile menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+          <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold cursor-pointer hover:opacity-90 transition-opacity">
             {initials}
           </button>
         </DropdownMenuTrigger>
