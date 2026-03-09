@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Plus, ArrowLeftRight, ChevronLeft, ChevronRight, SlidersHorizontal, Check, X } from "lucide-react";
+import { Plus, ArrowLeftRight, ChevronLeft, ChevronRight, SlidersHorizontal, Check, X, Building2, Shapes } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { Separator } from "@/shared/components/ui/separator";
@@ -109,106 +109,107 @@ export default function TransactionsPage() {
             <Separator />
 
             {/* Account section */}
-            <div>
-              <p className="px-4 pt-3 pb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="pt-3 pb-1">
+              <p className="pb-1 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 {t('transactions.colAccount')}
               </p>
-              <div className="max-h-48 overflow-y-auto">
-                {/* All accounts */}
-                <button
-                  onClick={() => setFilterAccountId(null)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
-                >
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <span className="text-xs font-semibold text-muted-foreground">{t('transactions.filterAll')}</span>
-                  </div>
-                  <span className="flex-1 text-sm font-medium">{t('transactions.allAccounts')}</span>
-                  {filterAccountId === null && <Check className="h-4 w-4 text-primary shrink-0" />}
-                </button>
+              <div className="relative">
+                <div className="max-h-44 overflow-y-auto">
+                  <button
+                    onClick={() => setFilterAccountId(null)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <span className="flex-1 text-sm font-medium">{t('transactions.allAccounts')}</span>
+                    {filterAccountId === null && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
 
-                {accounts.map(acc => {
-                  const bank = acc.bankCode ? BANK_OPTIONS.find(b => b.code === acc.bankCode) : undefined
-                  const isSelected = filterAccountId === acc.id
-                  return (
-                    <button
-                      key={acc.id}
-                      onClick={() => setFilterAccountId(acc.id!)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left ${isSelected ? 'bg-accent' : ''}`}
-                    >
-                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                        {bank ? (
-                          <BankLogo
-                            domain={bank.logoDomain}
-                            name={bank.name}
-                            accountType={acc.type}
-                            imgClassName="h-5 w-5 object-contain"
-                            iconClassName="h-4 w-4 text-muted-foreground"
-                          />
-                        ) : (
-                          <span
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: acc.color }}
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{acc.name}</p>
-                        {bank && (
-                          <p className="text-xs text-muted-foreground truncate">{bank.name}</p>
-                        )}
-                      </div>
-                      {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
-                    </button>
-                  )
-                })}
+                  {accounts.map(acc => {
+                    const bank = acc.bankCode ? BANK_OPTIONS.find(b => b.code === acc.bankCode) : undefined
+                    const isSelected = filterAccountId === acc.id
+                    return (
+                      <button
+                        key={acc.id}
+                        onClick={() => setFilterAccountId(acc.id!)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left ${isSelected ? 'bg-accent' : ''}`}
+                      >
+                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                          {bank ? (
+                            <BankLogo
+                              domain={bank.logoDomain}
+                              name={bank.name}
+                              accountType={acc.type}
+                              imgClassName="h-5 w-5 object-contain"
+                              iconClassName="h-4 w-4 text-muted-foreground"
+                            />
+                          ) : (
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: acc.color }} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{acc.name}</p>
+                          {bank && <p className="text-xs text-muted-foreground truncate">{bank.name}</p>}
+                        </div>
+                        {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </div>
+                {/* Bottom fade — hints at more items below */}
+                <div className="pointer-events-none absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-popover to-transparent" />
               </div>
             </div>
 
             <Separator />
 
             {/* Category section */}
-            <div>
-              <p className="px-4 pt-3 pb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="pt-3 pb-1">
+              <p className="pb-1 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 {t('transactions.colCategory')}
               </p>
-              <div className="max-h-48 overflow-y-auto pb-1">
-                {/* All categories */}
-                <button
-                  onClick={() => setFilterCategory(null)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
-                >
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <span className="text-xs font-semibold text-muted-foreground">{t('transactions.filterAll')}</span>
-                  </div>
-                  <span className="flex-1 text-sm font-medium">{t('transactions.allCategories')}</span>
-                  {filterCategory === null && <Check className="h-4 w-4 text-primary shrink-0" />}
-                </button>
+              <div className="relative">
+                <div className="max-h-44 overflow-y-auto">
+                  <button
+                    onClick={() => setFilterCategory(null)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <Shapes className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <span className="flex-1 text-sm font-medium">{t('transactions.allCategories')}</span>
+                    {filterCategory === null && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
 
-                {categoriesInMonth.map(catId => {
-                  const cat = getCategoryById(catId)
-                  const isSelected = filterCategory === catId
-                  const CatIcon = cat.icon
-                  return (
-                    <button
-                      key={catId}
-                      onClick={() => setFilterCategory(catId)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left ${isSelected ? 'bg-accent' : ''}`}
-                    >
-                      <div
-                        className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: `${cat.color}20` }}
+                  {categoriesInMonth.map(catId => {
+                    const cat = getCategoryById(catId)
+                    const isSelected = filterCategory === catId
+                    const CatIcon = cat.icon
+                    return (
+                      <button
+                        key={catId}
+                        onClick={() => setFilterCategory(catId)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left ${isSelected ? 'bg-accent' : ''}`}
                       >
-                        <CatIcon className="h-4 w-4" style={{ color: cat.color }} />
-                      </div>
-                      <span className="flex-1 text-sm font-medium truncate">{cat.label}</span>
-                      {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
-                    </button>
-                  )
-                })}
+                        <div
+                          className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${cat.color}20` }}
+                        >
+                          <CatIcon className="h-4 w-4" style={{ color: cat.color }} />
+                        </div>
+                        <span className="flex-1 text-sm font-medium truncate">{cat.label}</span>
+                        {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                      </button>
+                    )
+                  })}
 
-                {categoriesInMonth.length === 0 && (
-                  <p className="px-4 py-3 text-sm text-muted-foreground">{t('common.noData')}</p>
-                )}
+                  {categoriesInMonth.length === 0 && (
+                    <p className="px-4 py-3 text-sm text-muted-foreground">{t('common.noData')}</p>
+                  )}
+                </div>
+                {/* Bottom fade */}
+                <div className="pointer-events-none absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-popover to-transparent" />
               </div>
             </div>
           </PopoverContent>

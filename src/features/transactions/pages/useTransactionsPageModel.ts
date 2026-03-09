@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { getYear, getMonth } from 'date-fns'
 import { useTransactionsByMonth, useRunningBalances, removeTransaction } from '@/shared/hooks/useTransactions'
-import { useAccounts } from '@/shared/hooks/useAccounts'
+import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import type { Transaction } from '@/domain/types'
 
 export function useTransactionsPageModel() {
@@ -14,7 +14,7 @@ export function useTransactionsPageModel() {
   const [filterCategory, setFilterCategory]   = useState<string | null>(null)
 
   const { data: transactions = [], isLoading } = useTransactionsByMonth(year, month)
-  const { data: accounts = [] } = useAccounts()
+  const { data: accounts = [] } = useSortedAccounts()
   const runningBalances = useRunningBalances(year, month)
 
   const accountMap = useMemo(
