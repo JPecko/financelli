@@ -1,16 +1,20 @@
-import { NavLink } from 'react-router-dom'
-import { TrendingUp, Sun, Moon, LogOut } from 'lucide-react'
+import { useNavigate, NavLink } from 'react-router-dom'
+import { TrendingUp, Sun, Moon, LogOut, Settings, Languages } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/shared/store/themeStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
-import { Button } from '@/shared/components/ui/button'
 import { navItems } from '@/shared/config/nav'
 import { APP_VERSION } from '@/version'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu'
 
 export default function Sidebar() {
   const { theme, toggle } = useThemeStore()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const handleLogout = () => supabase.auth.signOut()
 
   const displayName = user?.user_metadata?.full_name as string | undefined
@@ -54,26 +58,43 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-sidebar-border px-3 py-3 space-y-2">
-        {/* User info */}
-        <div className="flex items-center gap-2 px-1">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-            {initials}
-          </div>
-          <span className="truncate text-xs font-medium text-sidebar-foreground">
-            {displayName ?? user?.email}
-          </span>
-        </div>
-        {/* Actions */}
-        <div className="flex items-center justify-between px-1">
-          <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sign out" className="h-7 w-7">
-            <LogOut className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="h-7 w-7">
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-        </div>
+      {/* Footer — avatar triggers profile menu */}
+      <div className="border-t border-sidebar-border px-3 py-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 hover:bg-sidebar-accent transition-colors text-left">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-medium text-sidebar-foreground">{displayName ?? user?.email}</p>
+                {displayName && <p className="truncate text-[11px] text-muted-foreground">{user?.email}</p>}
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-52">
+            <DropdownMenuItem onClick={toggle}>
+              {theme === 'dark'
+                ? <Sun className="h-4 w-4 mr-2" />
+                : <Moon className="h-4 w-4 mr-2" />}
+              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled>
+              <Languages className="h-4 w-4 mr-2" />
+              Language
+              <span className="ml-auto text-xs text-muted-foreground">EN</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   )

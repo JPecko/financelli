@@ -1,14 +1,17 @@
 import { useEffect } from 'react'
-import { Outlet, NavLink } from 'react-router-dom'
-import { TrendingUp, Sun, Moon, LogOut } from 'lucide-react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { TrendingUp, Sun, Moon, LogOut, Settings, Languages } from 'lucide-react'
 import Sidebar from './Sidebar'
-import { Button } from '@/shared/components/ui/button'
 import { useAccountPrefsStore } from '@/shared/store/accountPrefsStore'
 import { useThemeStore } from '@/shared/store/themeStore'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
 import { navItems } from '@/shared/config/nav'
 import { APP_VERSION } from '@/version'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu'
 
 const MOBILE_NAV_ORDER = ['/dashboard', '/transactions', '/accounts', '/recurring', '/settings']
 const mobileNavItems = MOBILE_NAV_ORDER.map(to => navItems.find(n => n.to === to)!)
@@ -36,6 +39,7 @@ function BottomNav() {
 function MobileHeader() {
   const { theme, toggle } = useThemeStore()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const displayName = user?.user_metadata?.full_name as string | undefined
   const initials = displayName
@@ -52,18 +56,36 @@ function MobileHeader() {
         <span className="text-sm font-semibold text-sidebar-foreground">Financelli</span>
         <span className="text-[10px] text-muted-foreground/60">{APP_VERSION}</span>
       </div>
-      {/* User + theme actions */}
-      <div className="flex items-center gap-1">
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-          {initials}
-        </div>
-        <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="h-7 w-7">
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Sign out" className="h-7 w-7">
-          <LogOut className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Avatar — opens profile menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+            {initials}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom" align="end" className="w-52">
+          <DropdownMenuItem onClick={toggle}>
+            {theme === 'dark'
+              ? <Sun className="h-4 w-4 mr-2" />
+              : <Moon className="h-4 w-4 mr-2" />}
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled>
+            <Languages className="h-4 w-4 mr-2" />
+            Language
+            <span className="ml-auto text-xs text-muted-foreground">EN</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate('/settings')}>
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="text-destructive focus:text-destructive">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   )
 }
