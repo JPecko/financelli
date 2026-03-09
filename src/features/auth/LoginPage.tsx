@@ -61,7 +61,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="flex flex-col items-center gap-2.5">
-          <BrandLogo variant="mark" className="h-14 w-14" />
+          {/* <BrandLogo variant="mark" className="h-14 w-14" /> */}
           <BrandLogo variant="wordmark" className="h-10 text-foreground" />
           <h1 className="sr-only">Financelli</h1>
           <p className="text-sm text-muted-foreground">{t('auth.appDescription')}</p>

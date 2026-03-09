@@ -16,7 +16,9 @@ export default function MobileChromeContainer({
     <div
       className={cn(
         'mobile-chrome',
-        placement === 'top' ? 'mobile-chrome-top' : 'mobile-chrome-bottom',
+        placement === 'top'
+          ? 'mobile-chrome-top relative z-30 bg-sidebar'
+          : 'mobile-chrome-bottom relative z-30 bg-sidebar',
         visible ? 'mobile-chrome-visible' : 'mobile-chrome-hidden',
       )}
     >
@@ -24,4 +26,3 @@ export default function MobileChromeContainer({
     </div>
   )
 }
-

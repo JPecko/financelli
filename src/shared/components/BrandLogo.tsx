@@ -78,16 +78,17 @@ export default function BrandLogo({
 
   return (
     <svg
-      viewBox="0 0 442 72"
+      viewBox="0 0 340 72"
       role="img"
       aria-label={title}
-      className={cn('h-8 w-auto', className)}
+      preserveAspectRatio="xMidYMid meet"
+      className={cn('block h-8 w-auto', className)}
     >
-      <g transform="translate(2 0)">
+      <g transform="translate(0 0)">
         <BrandMark idPrefix={idPrefix} />
       </g>
       <text
-        x="86"
+        x="78"
         y="49"
         fill="currentColor"
         fontSize="56"
@@ -100,4 +101,3 @@ export default function BrandLogo({
     </svg>
   )
 }
-
