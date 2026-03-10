@@ -17,19 +17,24 @@ export function useTransactionsByMonth(year: number, month: number) {
   })
 }
 
-/** Fetches income, expenses, investing and roundup for the 6 months ending at (year, month). */
+/** Fetches personal income, expenses, investing and roundup for the 6 months ending at (year, month). */
 export function useMonthlyNetFlow(year: number, month: number) {
+  const { data: accounts = [] } = useAccounts()
+
   return useQuery({
     queryKey: queryKeys.transactions.netFlow(year, month),
     queryFn:  async () => {
+      const divisorFor = (t: Transaction) =>
+        t.isPersonal ? 1 : (t.splitN ?? accounts.find(a => a.id === t.accountId)?.participants ?? 1)
+
       const result: { month: string; income: number; expenses: number; investing: number; roundup: number; net: number }[] = []
       for (let i = 5; i >= 0; i--) {
         const d    = new Date(year, month - 1 - i, 1)
         const cash = (await transactionsRepo.getByMonth(getYear(d), getMonth(d) + 1)).filter(isCashFlow)
-        const income    = cash.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)
-        const investing = cash.filter(t => t.amount < 0 && t.category === 'investing').reduce((s, t) => s + Math.abs(t.amount), 0)
-        const roundup   = cash.filter(t => t.amount < 0 && t.category === 'roundup').reduce((s, t) => s + Math.abs(t.amount), 0)
-        const expenses  = cash.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0) - investing - roundup
+        const income    = cash.filter(t => t.amount > 0).reduce((s, t) => s + t.amount / divisorFor(t), 0)
+        const investing = cash.filter(t => t.amount < 0 && t.category === 'investing').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
+        const roundup   = cash.filter(t => t.amount < 0 && t.category === 'roundup').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
+        const expenses  = cash.filter(t => t.amount < 0 && t.category !== 'investing' && t.category !== 'roundup').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
         result.push({ month: format(d, 'MMM yy'), income, expenses, investing, roundup, net: income - expenses - investing - roundup })
       }
       return result
