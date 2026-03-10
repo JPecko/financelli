@@ -139,7 +139,10 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
   const handleTypeChange = (t: TransactionType) => {
     setValue('type', t)
     setValue('category', t === 'transfer' ? 'transfer' : 'other')
-    if (t !== 'transfer') {
+    if (t === 'income') {
+      setValue('isShared', false)
+      setValue('splitN', 2)
+    } else if (t !== 'transfer') {
       const acct   = accounts.find(a => String(a.id) === selectedAccount)
       const shared = (acct?.participants ?? 1) > 1
       setValue('isShared', shared)
@@ -246,10 +249,12 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
               <Label>Account</Label>
               <Select value={selectedAccount} onValueChange={v => {
                 setValue('accountId', v)
-                const acct   = accounts.find(a => String(a.id) === v)
-                const shared = (acct?.participants ?? 1) > 1
-                setValue('isShared', shared)
-                setValue('splitN', shared ? (acct!.participants ?? 2) : 2)
+                if (selectedType !== 'income') {
+                  const acct   = accounts.find(a => String(a.id) === v)
+                  const shared = (acct?.participants ?? 1) > 1
+                  setValue('isShared', shared)
+                  setValue('splitN', shared ? (acct!.participants ?? 2) : 2)
+                }
               }}>
                 <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
                 <SelectContent>

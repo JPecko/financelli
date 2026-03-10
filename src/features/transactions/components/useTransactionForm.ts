@@ -65,7 +65,7 @@ function buildDefaultValues(
     category:    defaultType === 'transfer' ? 'transfer' : 'other',
     description: '',
     date:        isoToday(),
-    isShared:    isSharedAccount,
+    isShared:    defaultType === 'income' ? false : isSharedAccount,
     splitN:      defaultSplitN,
   }
 }
@@ -141,7 +141,12 @@ export function useTransactionForm({
   const accountOptions = (exclude?: string) =>
     accounts.filter(a => String(a.id) !== exclude)
 
-  const applySharedDefaults = (accountId: string) => {
+  const applySharedDefaults = (accountId: string, type: TransactionType = selectedType) => {
+    if (type === 'income') {
+      setValue('isShared', false)
+      setValue('splitN', 2)
+      return
+    }
     const acct   = accounts.find(a => String(a.id) === accountId)
     const shared = (acct?.participants ?? 1) > 1
     setValue('isShared', shared)
@@ -166,7 +171,7 @@ export function useTransactionForm({
       setValue('fromId', firstId)
       setValue('toId',   secondId)
     }
-    if (t !== 'transfer') applySharedDefaults(firstId)
+    if (t !== 'transfer') applySharedDefaults(firstId, t)
   }
 
   useEffect(() => {

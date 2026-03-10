@@ -2,7 +2,7 @@ import { getYear, getMonth, format } from 'date-fns'
 import {
   Wallet, TrendingUp, TrendingDown, DollarSign,
   Banknote, PiggyBank, BarChart2, HandCoins, CreditCard,
-  BadgePercent, Coins, ArrowRight,
+  BadgePercent, Coins, ArrowRight, Landmark,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { AccountType } from '@/domain/types'
@@ -212,32 +212,55 @@ export default function DashboardPage() {
                   : t('dashboard.overspentPct', { rate: String(Math.abs(savingsRate)) })}
               </p>
             )}
-            <div className="mt-4 space-y-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1.5">
-                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-muted-foreground">{t('dashboard.income')}</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-medium text-emerald-600">+{formatMoney(summary.personalIncome)}</span>
-                  {summary.personalIncome !== summary.income && (
-                    <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(summary.income)}</p>
+            {(() => {
+              const coreExpenses = summary.personalExpenses - summary.personalInvesting - summary.personalRoundup
+              return (
+                <div className="mt-4 space-y-2.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                      <span className="text-muted-foreground">{t('dashboard.income')}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-medium text-emerald-600">+{formatMoney(summary.personalIncome)}</span>
+                      {summary.personalIncome !== summary.income && (
+                        <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(summary.income)}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+                      <span className="text-muted-foreground">{t('dashboard.expenses')}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-medium text-rose-600">-{formatMoney(Math.abs(coreExpenses))}</span>
+                      {coreExpenses !== summary.coreExpenses && (
+                        <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(Math.abs(summary.coreExpenses))}</p>
+                      )}
+                    </div>
+                  </div>
+                  {summary.personalInvesting < 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Landmark className="h-3.5 w-3.5 text-violet-500" />
+                        <span className="text-muted-foreground">{t('dashboard.investing')}</span>
+                      </div>
+                      <span className="font-medium text-violet-600">{formatMoney(summary.personalInvesting)}</span>
+                    </div>
+                  )}
+                  {summary.personalRoundup < 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Coins className="h-3.5 w-3.5 text-stone-400" />
+                        <span className="text-muted-foreground">{t('dashboard.roundup')}</span>
+                      </div>
+                      <span className="font-medium text-stone-500">{formatMoney(summary.personalRoundup)}</span>
+                    </div>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1.5">
-                  <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
-                  <span className="text-muted-foreground">{t('dashboard.expenses')}</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-medium text-rose-600">-{formatMoney(Math.abs(summary.personalExpenses))}</span>
-                  {summary.personalExpenses !== summary.expenses && (
-                    <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(Math.abs(summary.expenses))}</p>
-                  )}
-                </div>
-              </div>
-            </div>
+              )
+            })()}
           </CardContent>
         </Card>
 
@@ -325,10 +348,10 @@ export default function DashboardPage() {
       {/* Row 2: Income vs Expenses bar chart | Spending by Category ranked bars */}
       <div className="grid gap-4 lg:grid-cols-2">
 
-        {/* Income vs Expenses grouped bar chart */}
+        {/* Income vs Outcome grouped bar chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('dashboard.incomeVsExpenses')}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.incomeVsOutcome')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -338,8 +361,10 @@ export default function DashboardPage() {
                 <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
                 <ReTooltip formatter={value => formatTooltipValue(value)} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="income"   name={t('dashboard.income')}   fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="expenses" name={t('dashboard.expenses')} fill="#f43f5e" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="income"    name={t('dashboard.income')}    fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="expenses"  name={t('dashboard.expenses')}  fill="#f43f5e" radius={[3, 3, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="investing" name={t('dashboard.investing')}  fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="roundup"   name={t('dashboard.roundup')}   fill="#78716c" radius={[3, 3, 0, 0]} maxBarSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
