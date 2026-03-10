@@ -1,13 +1,38 @@
-import { Pencil, Trash2, ArrowRight } from 'lucide-react'
+import { Pencil, Trash2, ArrowRight, Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
+import BankLogo from '@/shared/components/BankLogo'
+import { BANK_OPTIONS } from '@/shared/config/banks'
 import { formatMoney } from '@/domain/money'
 import { formatDate } from '@/shared/utils/format'
 import { getCategoryById } from '@/domain/categories'
-import type { Transaction } from '@/domain/types'
+import type { Transaction, Account } from '@/domain/types'
+
+const TYPE_ICONS: Record<string, React.ElementType> = {
+  checking:   Banknote,
+  savings:    PiggyBank,
+  investment: BarChart2,
+  cash:       HandCoins,
+  credit:     CreditCard,
+}
+
+function AccountPill({ accountId, accountsById }: { accountId: number; accountsById: Record<number, Account> }) {
+  const account = accountsById[accountId]
+  const bank = account?.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
+  const Icon = account ? (TYPE_ICONS[account.type] ?? Wallet) : null
+  return (
+    <span className="flex items-center gap-1.5 min-w-0">
+      {bank
+        ? <BankLogo domain={bank.logoDomain} name={bank.name} accountType={account!.type} imgClassName="h-3.5 w-3.5 rounded-sm object-contain shrink-0" iconClassName="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+        : Icon && <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+      }
+      <span className="truncate">{account?.name ?? '—'}</span>
+    </span>
+  )
+}
 
 export const TRANSACTIONS_GRID_COLS = 'md:grid-cols-[54px_1fr_220px_120px_80px_28px]'
 
@@ -16,7 +41,7 @@ const ROW_BASE_CLASS =
 
 interface TransactionRowProps {
   tx: Transaction
-  accountMap: Record<number, string>
+  accountsById: Record<number, Account>
   runningBalances: Record<number, number>
   onEdit: (tx: Transaction) => void
   onDelete: (id: number) => Promise<void>
@@ -36,24 +61,24 @@ function formatTxAmount(tx: Transaction): string {
   return `${tx.amount >= 0 ? '+' : ''}${formatMoney(tx.amount)}`
 }
 
-function accountLabel(tx: Transaction, accountMap: Record<number, string>) {
+function accountLabel(tx: Transaction, accountsById: Record<number, Account>) {
   if (isInternalTransfer(tx)) {
     return (
       <span className="flex flex-col min-w-0 leading-tight">
-        <span className="truncate">{accountMap[tx.accountId] ?? '?'}</span>
+        <AccountPill accountId={tx.accountId} accountsById={accountsById} />
         <span className="flex items-center gap-1 min-w-0">
           <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-          <span className="truncate">{accountMap[tx.toAccountId!] ?? '?'}</span>
+          <AccountPill accountId={tx.toAccountId!} accountsById={accountsById} />
         </span>
       </span>
     )
   }
-  return <span className="truncate">{accountMap[tx.accountId] ?? '—'}</span>
+  return <AccountPill accountId={tx.accountId} accountsById={accountsById} />
 }
 
 export default function TransactionRow({
   tx,
-  accountMap,
+  accountsById,
   runningBalances,
   onEdit,
   onDelete,
@@ -62,7 +87,7 @@ export default function TransactionRow({
   const transfer = isInternalTransfer(tx)
   const txBalance = tx.id != null ? runningBalances[tx.id] : undefined
   const amountColor = amountClassName(tx)
-  const accountCell = accountLabel(tx, accountMap)
+  const accountCell = accountLabel(tx, accountsById)
 
   return (
     <div

@@ -22,7 +22,7 @@ export default function TransactionsPage() {
     transactions,
     isLoading,
     accounts,
-    accountMap,
+    accountsById,
     runningBalances,
     categoriesInMonth,
     filterAccountId,
@@ -249,7 +249,7 @@ export default function TransactionsPage() {
               <TransactionRow
                 key={tx.id}
                 tx={tx}
-                accountMap={accountMap}
+                accountsById={accountsById}
                 runningBalances={runningBalances}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

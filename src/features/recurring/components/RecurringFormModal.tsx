@@ -1,17 +1,42 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
+import { Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import BankLogo from '@/shared/components/BankLogo'
+import { BANK_OPTIONS } from '@/shared/config/banks'
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/categories'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
-import type { RecurringRule, TransactionType, RecurringFrequency } from '@/domain/types'
+import type { RecurringRule, TransactionType, RecurringFrequency, Account } from '@/domain/types'
 import { useT } from '@/shared/i18n'
+
+const TYPE_ICONS: Record<string, React.ElementType> = {
+  checking:   Banknote,
+  savings:    PiggyBank,
+  investment: BarChart2,
+  cash:       HandCoins,
+  credit:     CreditCard,
+}
+
+function AccountOption({ account }: { account: Account }) {
+  const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
+  const Icon = TYPE_ICONS[account.type] ?? Wallet
+  return (
+    <span className="flex items-center gap-2">
+      {bank
+        ? <BankLogo domain={bank.logoDomain} name={bank.name} accountType={account.type} imgClassName="h-4 w-4 rounded-sm object-contain shrink-0" iconClassName="h-4 w-4 shrink-0 text-muted-foreground" />
+        : <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      }
+      {account.name}
+    </span>
+  )
+}
 
 interface FormValues {
   accountId:    string
@@ -185,7 +210,9 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
                   <SelectTrigger><SelectValue placeholder="Source" /></SelectTrigger>
                   <SelectContent>
                     {accounts.filter(a => String(a.id) !== selectedTo).map(a => (
-                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                      <SelectItem key={a.id} value={String(a.id)}>
+                        <AccountOption account={a} />
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -196,7 +223,9 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
                   <SelectTrigger><SelectValue placeholder="Destination" /></SelectTrigger>
                   <SelectContent>
                     {accounts.filter(a => String(a.id) !== selectedAccount).map(a => (
-                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                      <SelectItem key={a.id} value={String(a.id)}>
+                        <AccountOption account={a} />
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -209,7 +238,9 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
                 <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
                 <SelectContent>
                   {accounts.map(a => (
-                    <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                    <SelectItem key={a.id} value={String(a.id)}>
+                      <AccountOption account={a} />
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
