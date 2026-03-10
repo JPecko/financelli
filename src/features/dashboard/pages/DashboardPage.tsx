@@ -22,6 +22,7 @@ import PageLoader from '@/shared/components/PageLoader'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
+import InvestmentAccountCard from '../components/InvestmentAccountCard'
 import { useT } from '@/shared/i18n'
 
 const now   = new Date()
@@ -116,6 +117,9 @@ export default function DashboardPage() {
     setFilterCategory(catId)
     navigate('/transactions')
   }
+
+  // Investment accounts
+  const investmentAccounts = accounts.filter(a => a.type === 'investment')
 
   // Savings rate
   const savingsRate = summary.personalIncome > 0
@@ -459,6 +463,20 @@ export default function DashboardPage() {
           </Card>
         )}
       </div>
+
+      {/* Investment account evolution */}
+      {investmentAccounts.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            {t('dashboard.investmentHistory')}
+          </p>
+          <div className={`grid gap-4 ${investmentAccounts.length > 1 ? 'lg:grid-cols-2' : ''}`}>
+            {investmentAccounts.map(acc => (
+              <InvestmentAccountCard key={acc.id} account={acc} />
+            ))}
+          </div>
+        </div>
+      )}
 
       </>)}
     </div>

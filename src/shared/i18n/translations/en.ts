@@ -113,6 +113,9 @@ export const en = {
     ytd:                'YTD',
     savedPct:           'Saved {{rate}}% of income',
     overspentPct:       'Overspent by {{rate}}%',
+    investmentHistory:  'Investment History',
+    invested:           'Invested',
+    portfolioValue:     'Portfolio value',
   },
 
   accounts: {

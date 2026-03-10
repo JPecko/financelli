@@ -142,6 +142,9 @@ export const pt: typeof en = {
     ytd:                'Ano',
     savedPct:           'Poupaste {{rate}}% do rendimento',
     overspentPct:       'Gastos {{rate}}% acima do rendimento',
+    investmentHistory:  'Histórico de Investimento',
+    invested:           'Investido',
+    portfolioValue:     'Valor da carteira',
   },
 
   accounts: {

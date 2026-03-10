@@ -96,7 +96,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
 
   const categories =
     selectedType === 'income'   ? INCOME_CATEGORIES :
-    selectedType === 'transfer' ? CATEGORIES.filter(c => ['transfer', 'capital', 'other'].includes(c.id)) :
+    selectedType === 'transfer' ? CATEGORIES.filter(c => ['invest-move', 'transfer', 'capital', 'other'].includes(c.id)) :
     EXPENSE_CATEGORIES
 
   useEffect(() => {
