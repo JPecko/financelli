@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { getYear, getMonth } from 'date-fns'
 import { useTransactionsByMonth, useRunningBalances, removeTransaction } from '@/shared/hooks/useTransactions'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
+import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
 import type { Transaction, Account } from '@/domain/types'
 
 export function useTransactionsPageModel() {
@@ -10,8 +11,7 @@ export function useTransactionsPageModel() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Transaction | undefined>()
 
-  const [filterAccountId, setFilterAccountId] = useState<number | null>(null)
-  const [filterCategory, setFilterCategory]   = useState<string | null>(null)
+  const { filterAccountId, filterCategory, setFilterAccountId, setFilterCategory } = useTransactionsFilterStore()
 
   const { data: transactions = [], isLoading } = useTransactionsByMonth(year, month)
   const { data: accounts = [] } = useSortedAccounts()

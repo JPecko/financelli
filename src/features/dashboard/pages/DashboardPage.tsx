@@ -2,8 +2,9 @@ import { getYear, getMonth, format } from 'date-fns'
 import {
   Wallet, TrendingUp, TrendingDown, DollarSign,
   Banknote, PiggyBank, BarChart2, HandCoins, CreditCard,
-  BadgePercent, Coins,
+  BadgePercent, Coins, ArrowRight,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import type { AccountType } from '@/domain/types'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -20,6 +21,8 @@ import { formatDate } from '@/shared/utils/format'
 import PageLoader from '@/shared/components/PageLoader'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
+import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
+import InvestmentAccountCard from '../components/InvestmentAccountCard'
 import { useT } from '@/shared/i18n'
 
 const now   = new Date()
@@ -63,7 +66,9 @@ function ListRow({ icon, label, sublabel, value }: ListRowProps) {
 }
 
 export default function DashboardPage() {
-  const t = useT()
+  const t        = useT()
+  const navigate = useNavigate()
+  const { setFilterCategory, setFilterAccountId } = useTransactionsFilterStore()
   const netWorth                   = useNetWorth()
   const summary                    = useMonthSummary(YEAR, MONTH)
   const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(YEAR, MONTH)
@@ -93,18 +98,28 @@ export default function DashboardPage() {
   })()
   const positiveTotal = netWorthByType.filter(([, v]) => v > 0).reduce((s, [, v]) => s + v, 0)
 
-  // Spending by category
+  // Spending by category — personal share (÷ participants, same logic as useMonthSummary)
   const categoryData = (() => {
     const map: Record<string, number> = {}
     for (const tx of transactions) {
       if (!isCashFlow(tx) || tx.amount >= 0) continue
-      map[tx.category] = (map[tx.category] ?? 0) + Math.abs(tx.amount)
+      const participants = tx.isPersonal ? 1 : (accounts.find(a => a.id === tx.accountId)?.participants ?? 1)
+      map[tx.category] = (map[tx.category] ?? 0) + Math.abs(tx.amount) / participants
     }
     return Object.entries(map)
-      .map(([id, value]) => { const cat = getCategoryById(id); return { name: cat.label, value, color: cat.color } })
+      .map(([id, value]) => { const cat = getCategoryById(id); return { id, name: cat.label, value, color: cat.color } })
       .sort((a, b) => b.value - a.value)
   })()
   const categoryTotal = categoryData.reduce((s, d) => s + d.value, 0)
+
+  function handleCategoryClick(catId: string) {
+    setFilterAccountId(null)
+    setFilterCategory(catId)
+    navigate('/transactions')
+  }
+
+  // Investment accounts
+  const investmentAccounts = accounts.filter(a => a.type === 'investment')
 
   // Savings rate
   const savingsRate = summary.personalIncome > 0
@@ -339,25 +354,33 @@ export default function DashboardPage() {
             {categoryData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.noExpenses')}</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {categoryData.slice(0, 7).map(d => {
                   const pct = categoryTotal > 0 ? Math.round((d.value / categoryTotal) * 100) : 0
                   return (
-                    <div key={d.name}>
-                      <div className="flex items-center justify-between text-xs mb-1">
+                    <button
+                      key={d.id}
+                      onClick={() => handleCategoryClick(d.id)}
+                      className="group w-full rounded-lg px-2 py-1.5 -mx-2 text-left transition-colors hover:bg-muted/60"
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                          <span className="text-muted-foreground">{d.name}</span>
+                          <span
+                            className="h-2 w-2 rounded-full shrink-0 transition-transform group-hover:scale-125"
+                            style={{ backgroundColor: d.color }}
+                          />
+                          <span className="text-muted-foreground group-hover:text-foreground transition-colors">{d.name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <span className="font-medium">{formatMoney(d.value)}</span>
                           <span className="text-muted-foreground w-7 text-right">{pct}%</span>
+                          <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         </div>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: d.color }} />
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
@@ -440,6 +463,20 @@ export default function DashboardPage() {
           </Card>
         )}
       </div>
+
+      {/* Investment account evolution */}
+      {investmentAccounts.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            {t('dashboard.investmentHistory')}
+          </p>
+          <div className={`grid gap-4 ${investmentAccounts.length > 1 ? 'lg:grid-cols-2' : ''}`}>
+            {investmentAccounts.map(acc => (
+              <InvestmentAccountCard key={acc.id} account={acc} />
+            ))}
+          </div>
+        </div>
+      )}
 
       </>)}
     </div>

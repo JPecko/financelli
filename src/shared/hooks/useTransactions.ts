@@ -6,7 +6,7 @@ import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { queryClient } from '@/app/queryClient'
 import { queryKeys } from '@/data/queryKeys'
 import { useAccounts } from '@/shared/hooks/useAccounts'
-import type { Transaction } from '@/domain/types'
+import type { Transaction, Account } from '@/domain/types'
 
 // ─── Queries ────────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ export function useMonthlyNetFlow(year: number, month: number) {
 export function isCashFlow(t: Transaction): boolean {
   if (t.type === 'revaluation') return false
   if (t.type === 'transfer' && t.toAccountId != null) return false
-  if (t.type === 'transfer' && t.category === 'capital') return false
+  if (t.type === 'transfer' && (t.category === 'capital' || t.category === 'invest-move')) return false
   return true
 }
 
@@ -260,6 +260,64 @@ export function useRunningBalances(year: number, month: number): Record<number, 
     }
     return result
   }, [accounts, txs, laterSums])
+}
+
+// ─── Investment account history ──────────────────────────────────────────────
+
+/**
+ * Returns 12 months of { month, invested, balance } for a single investment account.
+ * - invested: net positive non-revaluation inflows that month (new money in)
+ * - balance:  account balance at end of that month (includes market gains)
+ */
+export function useInvestmentAccountHistory(account: Account, months = 12) {
+  const now   = new Date()
+  const year  = getYear(now)
+  const month = getMonth(now) + 1
+
+  const startStr = format(new Date(year, month - months, 1), 'yyyy-MM-dd')
+
+  return useQuery({
+    queryKey: ['investment-history', account.id, year, month],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('transactions')
+        .select('amount, date, type, category, account_id, to_account_id')
+        .or(`account_id.eq.${account.id},to_account_id.eq.${account.id}`)
+        .gte('date', startStr)
+
+      const txs = (data ?? []) as {
+        amount: number; date: string; type: string; category: string
+        account_id: number; to_account_id: number | null
+      }[]
+
+      // How a transaction affects THIS account's balance
+      const effectOn = (tx: typeof txs[0]): number => {
+        if (tx.account_id    === account.id) return tx.amount
+        if (tx.to_account_id === account.id) return -tx.amount
+        return 0
+      }
+
+      return Array.from({ length: months }, (_, i) => {
+        const d        = new Date(year, month - months + i, 1)
+        const monthKey = format(d, 'yyyy-MM')
+        const nextStr  = format(new Date(d.getFullYear(), d.getMonth() + 1, 1), 'yyyy-MM-dd')
+
+        // Sum of positive inflows this month = new money invested
+        // Excludes: revaluations (market updates) + 'investment' category (Investment Return — dividends, etc.)
+        const invested = txs
+          .filter(tx => tx.date.startsWith(monthKey) && tx.type !== 'revaluation' && tx.category !== 'investment')
+          .reduce((s, tx) => { const e = effectOn(tx); return e > 0 ? s + e : s }, 0)
+
+        // Balance at month-end = current balance minus all effects that came AFTER this month
+        const laterEffect = txs
+          .filter(tx => tx.date >= nextStr)
+          .reduce((s, tx) => s + effectOn(tx), 0)
+
+        return { month: format(d, 'MMM yy'), invested, balance: account.balance - laterEffect }
+      })
+    },
+    enabled: account.id != null,
+  })
 }
 
 // ─── Mutations ───────────────────────────────────────────────────────────────

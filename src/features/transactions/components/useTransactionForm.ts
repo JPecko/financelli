@@ -82,19 +82,22 @@ function buildEditValues(transaction: Transaction): TransactionFormValues {
 }
 
 interface UseTransactionFormProps {
-  open:         boolean
-  onClose:      () => void
-  transaction?: Transaction
-  defaultType?: TransactionType
+  open:              boolean
+  onClose:           () => void
+  transaction?:      Transaction
+  defaultType?:      TransactionType
+  defaultAccountId?: string
 }
 
 export function useTransactionForm({
-  open, onClose, transaction, defaultType = 'expense',
+  open, onClose, transaction, defaultType = 'expense', defaultAccountId,
 }: UseTransactionFormProps) {
   const isEdit   = !!transaction
   const { data: accounts = [] } = useSortedAccounts()
-  const firstId  = accounts[0]?.id != null ? String(accounts[0].id) : ''
-  const secondId = accounts[1]?.id != null ? String(accounts[1].id) : EXTERNAL
+  const firstId  = defaultAccountId ?? (accounts[0]?.id != null ? String(accounts[0].id) : '')
+  const secondId = accounts.find(a => String(a.id) !== firstId)?.id != null
+    ? String(accounts.find(a => String(a.id) !== firstId)!.id)
+    : EXTERNAL
 
   const form = useForm<TransactionFormValues>({
     defaultValues: buildDefaultValues(defaultType, firstId, secondId),
@@ -116,7 +119,7 @@ export function useTransactionForm({
 
   const categories =
     selectedType === 'income'   ? INCOME_CATEGORIES :
-    selectedType === 'transfer' ? CATEGORIES.filter(c => ['transfer', 'capital', 'other'].includes(c.id)) :
+    selectedType === 'transfer' ? CATEGORIES.filter(c => ['invest-move', 'transfer', 'capital', 'other'].includes(c.id)) :
     EXPENSE_CATEGORIES
 
   const accountOptions = (exclude?: string) =>
