@@ -24,14 +24,15 @@ export default function TransactionFormModal({ open, onClose, transaction, defau
     isEdit,
     isTransfer,
     isValid,
-    isSharedAccount,
     categories,
     accounts,
     accountOptions,
     selectedType,
     selectedFrom,
     selectedTo,
+    splitN,
     handleTypeChange,
+    handleFromChange,
     onSubmit,
   } = useTransactionForm({ open, onClose, transaction, defaultType, defaultAccountId })
 
@@ -53,7 +54,7 @@ export default function TransactionFormModal({ open, onClose, transaction, defau
             isTransfer={isTransfer}
             fromId={selectedFrom}
             toId={selectedTo}
-            onFromChange={v => setValue('fromId', v)}
+            onFromChange={handleFromChange}
             onToChange={v => setValue('toId', v)}
             accountOptions={accountOptions}
           />
@@ -88,17 +89,42 @@ export default function TransactionFormModal({ open, onClose, transaction, defau
             <Input id="tx-desc" placeholder="e.g. Electricity bill" {...register('description')} />
           </div>
 
-          {isSharedAccount && !isTransfer && (
-            <label className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors">
-              <div>
-                <p className="text-sm font-medium leading-none">{t('transactions.sharedWithParticipants')}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t('transactions.sharedWithParticipantsDesc')}</p>
-              </div>
-              <div className="relative shrink-0" onClick={e => { e.preventDefault(); setValue('isShared', !isShared) }}>
-                <div className={`h-5 w-9 rounded-full transition-colors ${isShared ? 'bg-primary' : 'bg-muted'}`} />
-                <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform ${isShared ? 'left-5' : 'left-1'}`} />
-              </div>
-            </label>
+          {!isTransfer && (
+            <div className="rounded-lg border overflow-hidden">
+              <label
+                className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors"
+                onClick={e => { e.preventDefault(); setValue('isShared', !isShared) }}
+              >
+                <div>
+                  <p className="text-sm font-medium leading-none">{t('transactions.sharedWithParticipants')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('transactions.sharedWithParticipantsDesc')}</p>
+                </div>
+                <div className="relative shrink-0">
+                  <div className={`h-5 w-9 rounded-full transition-colors ${isShared ? 'bg-primary' : 'bg-muted'}`} />
+                  <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform ${isShared ? 'left-5' : 'left-1'}`} />
+                </div>
+              </label>
+              {isShared && (
+                <div className="flex items-center gap-2 px-4 py-2.5 border-t bg-muted/30">
+                  <span className="text-xs text-muted-foreground">{t('transactions.splitBy')}</span>
+                  <Input
+                    type="number"
+                    min={2}
+                    step={1}
+                    className="h-7 w-16 text-sm text-center"
+                    {...register('splitN', { valueAsNumber: true, min: 2 })}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {t('transactions.people')}
+                    {splitN >= 2 && (
+                      <span className="ml-1 text-muted-foreground/60">
+                        · {t('transactions.myShare')}: {Math.round(100 / splitN)}%
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
 
           <DialogFooter>

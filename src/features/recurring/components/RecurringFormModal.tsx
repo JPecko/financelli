@@ -48,7 +48,8 @@ interface FormValues {
   description:  string
   frequency:    RecurringFrequency
   startDate:    string
-  isShared:     boolean   // UI field: true = shared (default), false = personal
+  isShared:     boolean
+  splitN:       number
 }
 
 interface Props {
@@ -80,6 +81,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
       frequency:    'monthly',
       startDate:    format(new Date(), 'yyyy-MM-dd'),
       isShared:     true,
+      splitN:       2,
     },
   })
 
@@ -89,10 +91,8 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
   const selectedCategory = watch('category')
   const selectedFreq     = watch('frequency')
   const isShared         = watch('isShared')
+  const splitN           = watch('splitN')
   const isTransfer       = selectedType === 'transfer'
-
-  const primaryAccount   = accounts.find(a => String(a.id) === selectedAccount)
-  const isSharedAccount  = (primaryAccount?.participants ?? 1) > 1
 
   const categories =
     selectedType === 'income'   ? INCOME_CATEGORIES :
@@ -112,10 +112,13 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
         frequency:    rule.frequency,
         startDate:    rule.startDate,
         isShared:     !(rule.isPersonal ?? false),
+      splitN:       rule.splitN ?? 2,
       })
     } else if (open) {
-      const firstId  = accounts[0]?.id != null ? String(accounts[0].id) : ''
-      const secondId = accounts[1]?.id != null ? String(accounts[1].id) : ''
+      const firstId     = accounts[0]?.id != null ? String(accounts[0].id) : ''
+      const secondId    = accounts[1]?.id != null ? String(accounts[1].id) : ''
+      const firstAcct   = accounts.find(a => String(a.id) === firstId)
+      const firstShared = (firstAcct?.participants ?? 1) > 1
       reset({
         accountId:    firstId,
         toAccountId:  secondId,
@@ -126,7 +129,8 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
         description:  '',
         frequency:    'monthly',
         startDate:    format(new Date(), 'yyyy-MM-dd'),
-        isShared:     true,
+        isShared:     firstShared,
+        splitN:       firstShared ? (firstAcct!.participants ?? 2) : 2,
       })
     }
   }, [open, rule, accounts, reset])
@@ -135,7 +139,12 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
   const handleTypeChange = (t: TransactionType) => {
     setValue('type', t)
     setValue('category', t === 'transfer' ? 'transfer' : 'other')
-    setValue('isShared', true)
+    if (t !== 'transfer') {
+      const acct   = accounts.find(a => String(a.id) === selectedAccount)
+      const shared = (acct?.participants ?? 1) > 1
+      setValue('isShared', shared)
+      setValue('splitN', shared ? (acct!.participants ?? 2) : 2)
+    }
   }
 
   const onSubmit = async (values: FormValues) => {
@@ -155,6 +164,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
       nextDue:      values.startDate,
       active:       true,
       isPersonal:   isTransfer ? false : !values.isShared,
+      splitN:       (!isTransfer && values.isShared) ? Math.max(2, Math.round(values.splitN ?? 2)) : null,
     }
 
     if (isEdit && rule?.id != null) {
@@ -234,7 +244,13 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
           ) : (
             <div className="space-y-1">
               <Label>Account</Label>
-              <Select value={selectedAccount} onValueChange={v => setValue('accountId', v)}>
+              <Select value={selectedAccount} onValueChange={v => {
+                setValue('accountId', v)
+                const acct   = accounts.find(a => String(a.id) === v)
+                const shared = (acct?.participants ?? 1) > 1
+                setValue('isShared', shared)
+                setValue('splitN', shared ? (acct!.participants ?? 2) : 2)
+              }}>
                 <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
                 <SelectContent>
                   {accounts.map(a => (
@@ -304,17 +320,42 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
             </div>
           </div>
 
-          {isSharedAccount && !isTransfer && (
-            <label className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors">
-              <div>
-                <p className="text-sm font-medium leading-none">{t('recurring.sharedWithParticipants')}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t('recurring.sharedWithParticipantsDesc')}</p>
-              </div>
-              <div className="relative shrink-0" onClick={e => { e.preventDefault(); setValue('isShared', !isShared) }}>
-                <div className={`h-5 w-9 rounded-full transition-colors ${isShared ? 'bg-primary' : 'bg-muted'}`} />
-                <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform ${isShared ? 'left-5' : 'left-1'}`} />
-              </div>
-            </label>
+          {!isTransfer && (
+            <div className="rounded-lg border overflow-hidden">
+              <label
+                className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors"
+                onClick={e => { e.preventDefault(); setValue('isShared', !isShared) }}
+              >
+                <div>
+                  <p className="text-sm font-medium leading-none">{t('recurring.sharedWithParticipants')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('recurring.sharedWithParticipantsDesc')}</p>
+                </div>
+                <div className="relative shrink-0">
+                  <div className={`h-5 w-9 rounded-full transition-colors ${isShared ? 'bg-primary' : 'bg-muted'}`} />
+                  <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform ${isShared ? 'left-5' : 'left-1'}`} />
+                </div>
+              </label>
+              {isShared && (
+                <div className="flex items-center gap-2 px-4 py-2.5 border-t bg-muted/30">
+                  <span className="text-xs text-muted-foreground">{t('transactions.splitBy')}</span>
+                  <Input
+                    type="number"
+                    min={2}
+                    step={1}
+                    className="h-7 w-16 text-sm text-center"
+                    {...register('splitN', { valueAsNumber: true, min: 2 })}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {t('transactions.people')}
+                    {isShared && (splitN ?? 2) >= 2 && (
+                      <span className="ml-1 text-muted-foreground/60">
+                        · {t('transactions.myShare')}: {Math.round(100 / (splitN ?? 2))}%
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
 
           <DialogFooter>

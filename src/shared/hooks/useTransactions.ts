@@ -54,19 +54,16 @@ export function useMonthSummary(year: number, month: number) {
   const income   = real.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const expenses = real.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)
 
+  const divisorFor = (t: Transaction) =>
+    t.isPersonal ? 1 : (t.splitN ?? accounts.find(a => a.id === t.accountId)?.participants ?? 1)
+
   const personalExpenses = real
     .filter(t => t.amount < 0)
-    .reduce((s, t) => {
-      const participants = t.isPersonal ? 1 : (accounts.find(a => a.id === t.accountId)?.participants ?? 1)
-      return s + t.amount / participants
-    }, 0)
+    .reduce((s, t) => s + t.amount / divisorFor(t), 0)
 
   const personalIncome = real
     .filter(t => t.amount > 0)
-    .reduce((s, t) => {
-      const participants = t.isPersonal ? 1 : (accounts.find(a => a.id === t.accountId)?.participants ?? 1)
-      return s + t.amount / participants
-    }, 0)
+    .reduce((s, t) => s + t.amount / divisorFor(t), 0)
 
   const marketGain = txs
     .filter(t => t.type === 'revaluation')

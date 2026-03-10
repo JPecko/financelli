@@ -207,6 +207,9 @@ export const pt: typeof en = {
     filterAll:                'Todos',
     sharedWithParticipants:   'Partilhado com participantes',
     sharedWithParticipantsDesc: 'O valor é dividido entre todos os participantes da conta',
+    splitBy:  'Dividir por',
+    people:   'pessoas',
+    myShare:  'minha parte',
   },
 
   recurring: {
