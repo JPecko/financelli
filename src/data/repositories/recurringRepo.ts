@@ -17,6 +17,7 @@ type RuleRow = {
   end_date: string | null
   active: boolean
   is_personal: boolean
+  split_n: number | null
   created_at: string
 }
 
@@ -36,6 +37,7 @@ function toRule(row: RuleRow): RecurringRule {
     endDate:     row.end_date ?? undefined,
     active:      row.active,
     isPersonal:  row.is_personal ?? false,
+    splitN:      row.split_n ?? null,
     createdAt:   row.created_at,
   }
 }
@@ -55,6 +57,7 @@ function toRow(rule: Partial<RecurringRule>): Record<string, unknown> {
   if (rule.endDate     !== undefined) row.end_date    = rule.endDate
   if (rule.active      !== undefined) row.active      = rule.active
   if (rule.isPersonal  !== undefined) row.is_personal = rule.isPersonal
+  if (rule.splitN      !== undefined) row.split_n     = rule.splitN ?? null
   return row
 }
 

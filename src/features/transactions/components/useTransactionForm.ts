@@ -17,7 +17,8 @@ export interface TransactionFormValues {
   category:    string
   description: string
   date:        string
-  isShared:    boolean  // UI field: true = shared (default for shared accounts), false = personal
+  isShared:    boolean  // true = split enabled (default), false = full expense mine
+  splitN:      number   // how many people to split between (only used when isShared = true)
 }
 
 function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | 'createdAt'> {
@@ -29,7 +30,8 @@ function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | '
     category:    values.category,
     description: values.description.trim(),
     date:        values.date,
-    isPersonal:  !values.isShared,   // invert: shared=false → isPersonal=false; unshared=true → isPersonal=true
+    isPersonal:  !values.isShared,
+    splitN:      values.isShared ? Math.max(2, Math.round(values.splitN ?? 2)) : null,
   }
 
   if (values.type === 'transfer') {
@@ -50,6 +52,8 @@ function buildDefaultValues(
   defaultType: TransactionType,
   firstId: string,
   secondId: string,
+  defaultSplitN: number,
+  isSharedAccount: boolean,
 ): TransactionFormValues {
   return {
     type:        defaultType,
@@ -61,12 +65,23 @@ function buildDefaultValues(
     category:    defaultType === 'transfer' ? 'transfer' : 'other',
     description: '',
     date:        isoToday(),
-    isShared:    true,
+    isShared:    isSharedAccount,
+    splitN:      defaultSplitN,
   }
 }
 
-function buildEditValues(transaction: Transaction): TransactionFormValues {
-  const isInternalTransfer = transaction.type === 'transfer' && transaction.toAccountId != null
+function buildEditValues(transaction: Transaction, account: { participants?: number } | undefined): TransactionFormValues {
+  const isInternalTransfer  = transaction.type === 'transfer' && transaction.toAccountId != null
+  const accountParticipants = account?.participants ?? 1
+  const isSharedAccount     = accountParticipants > 1
+
+  // Priority: explicit isPersonal → explicit splitN → account default
+  const isShared = transaction.isPersonal
+    ? false
+    : transaction.splitN != null
+    ? true
+    : isSharedAccount
+
   return {
     type:        transaction.type,
     fromId:      transaction.type === 'income' ? EXTERNAL : String(transaction.accountId),
@@ -77,7 +92,8 @@ function buildEditValues(transaction: Transaction): TransactionFormValues {
     category:    transaction.category,
     description: transaction.description,
     date:        transaction.date,
-    isShared:    !(transaction.isPersonal ?? false),
+    isShared,
+    splitN:      transaction.splitN ?? (isShared ? accountParticipants : 2),
   }
 }
 
@@ -99,23 +115,23 @@ export function useTransactionForm({
     ? String(accounts.find(a => String(a.id) !== firstId)!.id)
     : EXTERNAL
 
+  const primaryAccount  = accounts.find(a => String(a.id) === firstId)
+  const isSharedAccount = (primaryAccount?.participants ?? 1) > 1
+  const defaultSplitN   = isSharedAccount ? primaryAccount!.participants! : 2
+  const editAccount     = transaction ? accounts.find(a => a.id === transaction.accountId) : undefined
+
   const form = useForm<TransactionFormValues>({
-    defaultValues: buildDefaultValues(defaultType, firstId, secondId),
+    defaultValues: buildDefaultValues(defaultType, firstId, secondId, defaultSplitN, isSharedAccount),
   })
 
   const { setValue, watch, reset, handleSubmit } = form
   const selectedType = watch('type')
   const selectedFrom = watch('fromId')
   const selectedTo   = watch('toId')
+  const splitN       = watch('splitN')
 
   const isTransfer = selectedType === 'transfer'
   const isValid    = !isTransfer || selectedFrom !== EXTERNAL || selectedTo !== EXTERNAL
-
-  // Which account is "primary" for shared-split purposes
-  const primaryAccountId = isTransfer ? null
-    : selectedType === 'income' ? parseInt(selectedTo) : parseInt(selectedFrom)
-  const isSharedAccount = primaryAccountId != null &&
-    (accounts.find(a => a.id === primaryAccountId)?.participants ?? 1) > 1
 
   const categories =
     selectedType === 'income'   ? INCOME_CATEGORIES :
@@ -125,10 +141,21 @@ export function useTransactionForm({
   const accountOptions = (exclude?: string) =>
     accounts.filter(a => String(a.id) !== exclude)
 
+  const applySharedDefaults = (accountId: string) => {
+    const acct   = accounts.find(a => String(a.id) === accountId)
+    const shared = (acct?.participants ?? 1) > 1
+    setValue('isShared', shared)
+    setValue('splitN', shared ? (acct!.participants ?? 2) : 2)
+  }
+
+  const handleFromChange = (v: string) => {
+    setValue('fromId', v)
+    if (!isTransfer) applySharedDefaults(v)
+  }
+
   const handleTypeChange = (t: TransactionType) => {
     setValue('type', t)
     setValue('category', t === 'transfer' ? 'transfer' : 'other')
-    setValue('isShared', true)
     if (t === 'income') {
       setValue('fromId', EXTERNAL)
       setValue('toId',   firstId)
@@ -139,12 +166,13 @@ export function useTransactionForm({
       setValue('fromId', firstId)
       setValue('toId',   secondId)
     }
+    if (t !== 'transfer') applySharedDefaults(firstId)
   }
 
   useEffect(() => {
     if (!open) return
-    reset(transaction ? buildEditValues(transaction) : buildDefaultValues(defaultType, firstId, secondId))
-  }, [open, transaction, firstId, secondId, defaultType, reset])
+    reset(transaction ? buildEditValues(transaction, editAccount) : buildDefaultValues(defaultType, firstId, secondId, defaultSplitN, isSharedAccount))
+  }, [open, transaction, firstId, secondId, defaultType, defaultSplitN, isSharedAccount, editAccount, reset])
 
   const onSubmit = handleSubmit(async (values) => {
     const payload = buildPayload(values)
@@ -161,14 +189,15 @@ export function useTransactionForm({
     isEdit,
     isTransfer,
     isValid,
-    isSharedAccount,
     categories,
     accounts,
     accountOptions,
     selectedType,
     selectedFrom,
     selectedTo,
+    splitN,
     handleTypeChange,
+    handleFromChange,
     onSubmit,
   }
 }

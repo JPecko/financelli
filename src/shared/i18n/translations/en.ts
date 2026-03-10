@@ -178,6 +178,9 @@ export const en = {
     filterAll:                'All',
     sharedWithParticipants:   'Shared with participants',
     sharedWithParticipantsDesc: 'Amount split between all account participants',
+    splitBy:  'Split by',
+    people:   'people',
+    myShare:  'my share',
   },
 
   recurring: {
