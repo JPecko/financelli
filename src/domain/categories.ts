@@ -15,6 +15,8 @@ import {
   BarChart2,
   Coins,
   BadgePercent,
+  Landmark,
+  Dumbbell,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -36,6 +38,8 @@ export const CATEGORIES: Category[] = [
   { id: 'utilities',     label: 'Utilities',        icon: Zap,            color: '#eab308', type: 'expense' },
   { id: 'education',     label: 'Education',        icon: GraduationCap,  color: '#06b6d4', type: 'expense' },
   { id: 'travel',        label: 'Travel',           icon: Plane,          color: '#14b8a6', type: 'expense' },
+  { id: 'investing',     label: 'Investing',        icon: Landmark,       color: '#7c3aed', type: 'expense' },
+  { id: 'sport',         label: 'Sport',            icon: Dumbbell,       color: '#16a34a', type: 'expense' },
   { id: 'roundup',       label: 'Roundup',          icon: Coins,          color: '#78716c', type: 'expense' },
   { id: 'cashback',      label: 'Cashback',         icon: BadgePercent,   color: '#10b981', type: 'expense' },
   { id: 'salary',        label: 'Salary',           icon: Briefcase,      color: '#22c55e', type: 'income' },
