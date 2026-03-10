@@ -259,7 +259,12 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      <TransactionFormModal open={modalOpen} onClose={handleClose} transaction={editing} />
+      <TransactionFormModal
+        open={modalOpen}
+        onClose={handleClose}
+        transaction={editing}
+        defaultAccountId={!editing && filterAccountId != null ? String(filterAccountId) : undefined}
+      />
     </div>
   );
 }

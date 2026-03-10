@@ -10,13 +10,14 @@ import type { Transaction, TransactionType } from '@/domain/types'
 import { useT } from '@/shared/i18n'
 
 interface Props {
-  open:         boolean
-  onClose:      () => void
-  transaction?: Transaction
-  defaultType?: TransactionType
+  open:              boolean
+  onClose:           () => void
+  transaction?:      Transaction
+  defaultType?:      TransactionType
+  defaultAccountId?: string
 }
 
-export default function TransactionFormModal({ open, onClose, transaction, defaultType }: Props) {
+export default function TransactionFormModal({ open, onClose, transaction, defaultType, defaultAccountId }: Props) {
   const t = useT()
   const {
     form,
@@ -32,7 +33,7 @@ export default function TransactionFormModal({ open, onClose, transaction, defau
     selectedTo,
     handleTypeChange,
     onSubmit,
-  } = useTransactionForm({ open, onClose, transaction, defaultType })
+  } = useTransactionForm({ open, onClose, transaction, defaultType, defaultAccountId })
 
   const { register, watch, setValue, formState: { errors, isSubmitting } } = form
   const isShared = watch('isShared')
