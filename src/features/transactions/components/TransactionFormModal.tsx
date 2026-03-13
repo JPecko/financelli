@@ -331,7 +331,7 @@ export default function TransactionFormModal({
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Transaction' : 'New Transaction'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('transactions.editTitle') : t('transactions.newTitle')}</DialogTitle>
         </DialogHeader>
 
         {/* ── Splitwise form ───────────────────────────────────────────────── */}
@@ -458,7 +458,7 @@ export default function TransactionFormModal({
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
               <Button type="submit" loading={seSubmitting} disabled={!swCanSubmit}>
-                {isEdit ? t('common.save') : 'Add Transaction'}
+                {isEdit ? t('common.save') : t('transactions.addTransaction')}
               </Button>
             </DialogFooter>
           </form>
@@ -616,7 +616,7 @@ export default function TransactionFormModal({
             <DialogFooter>
               <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>{t('common.cancel')}</Button>
               <Button type="submit" loading={isSubmitting} disabled={!stdCanSubmit}>
-                {isEdit ? t('common.save') : 'Add Transaction'}
+                {isEdit ? t('common.save') : t('transactions.addTransaction')}
               </Button>
             </DialogFooter>
           </form>

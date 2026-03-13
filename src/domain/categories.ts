@@ -61,3 +61,11 @@ export const INCOME_CATEGORIES  = CATEGORIES.filter(c => c.type === 'income'  ||
 export function getCategoryById(id: string): Category {
   return CATEGORIES.find(c => c.id === id) ?? CATEGORIES[CATEGORIES.length - 1]
 }
+
+/** Returns the translated category label. Pass the `t` function from `useT()`. */
+export function tCategory(id: string, t: (key: TKey) => string): string {
+  return t(`categories.${id}` as TKey) || getCategoryById(id).label
+}
+
+// Import TKey type — kept at bottom to avoid circular reference issues
+import type { TKey } from '@/shared/i18n'

@@ -12,7 +12,7 @@ import SharedExpenseRow from "../components/SharedExpenseRow";
 import { useTransactionsPageModel } from "./useTransactionsPageModel";
 import { useT } from "@/shared/i18n";
 import { BANK_OPTIONS } from "@/shared/config/banks";
-import { getCategoryById } from "@/domain/categories";
+import { getCategoryById, tCategory } from "@/domain/categories";
 
 export default function TransactionsPage() {
   const t = useT()
@@ -242,7 +242,7 @@ export default function TransactionsPage() {
                         >
                           <CatIcon className="h-4 w-4" style={{ color: cat.color }} />
                         </div>
-                        <span className="flex-1 text-sm font-medium truncate">{cat.label}</span>
+                        <span className="flex-1 text-sm font-medium truncate">{tCategory(cat.id, t)}</span>
                         {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
                       </button>
                     )

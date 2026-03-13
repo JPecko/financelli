@@ -9,7 +9,7 @@ import {
 import { useRecurringRules, removeRule, updateRule, applyRule } from '@/shared/hooks/useRecurringRules'
 import { useAccounts } from '@/shared/hooks/useAccounts'
 import { formatMoney } from '@/domain/money'
-import { getCategoryById } from '@/domain/categories'
+import { getCategoryById, tCategory } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
@@ -154,7 +154,7 @@ export default function RecurringPage() {
                         className="text-xs px-1.5 py-0 h-5 shrink-0"
                         style={{ borderLeft: `2px solid ${cat.color}` }}
                       >
-                        {cat.label}
+                        {tCategory(cat.id, t)}
                       </Badge>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${FREQ_BADGE[rule.frequency]}`}>
                         {t(('recurring.frequencies.' + rule.frequency) as Parameters<typeof t>[0])}

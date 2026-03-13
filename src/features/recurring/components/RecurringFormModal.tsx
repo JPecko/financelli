@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { toCents, fromCents } from '@/domain/money'
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/categories'
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES, tCategory } from '@/domain/categories'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
 import type { RecurringRule, TransactionType, RecurringFrequency, Account } from '@/domain/types'
@@ -313,7 +313,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
                   <SelectItem key={c.id} value={c.id}>
                     <span className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
-                      {c.label}
+                      {tCategory(c.id, t)}
                     </span>
                   </SelectItem>
                 ))}

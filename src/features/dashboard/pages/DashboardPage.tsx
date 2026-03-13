@@ -17,7 +17,7 @@ import { useSortedAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
 import { useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow, useMonthlyBenefits, useYearBenefits, isCashFlow } from '@/shared/hooks/useTransactions'
 import { useSharedExpensesByMonth } from '@/shared/hooks/useSharedExpenses'
 import { formatMoney } from '@/domain/money'
-import { getCategoryById } from '@/domain/categories'
+import { getCategoryById, tCategory } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import PageLoader from '@/shared/components/PageLoader'
 import BankLogo from '@/shared/components/BankLogo'
@@ -125,7 +125,7 @@ export default function DashboardPage() {
       map[se.category] = (map[se.category] ?? 0) + se.myShare
     }
     return Object.entries(map)
-      .map(([id, value]) => { const cat = getCategoryById(id); return { id, name: cat.label, value, color: cat.color } })
+      .map(([id, value]) => { const cat = getCategoryById(id); return { id, name: tCategory(id, t), value, color: cat.color } })
       .sort((a, b) => b.value - a.value)
   })()
   const categoryTotal = categoryData.reduce((s, d) => s + d.value, 0)
@@ -454,8 +454,8 @@ export default function DashboardPage() {
                     <ListRow
                       key={tx.id}
                       icon={<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />}
-                      label={tx.description || cat.label}
-                      sublabel={`${cat.label} · ${formatDate(tx.date)}`}
+                      label={tx.description || tCategory(cat.id, t)}
+                      sublabel={`${tCategory(cat.id, t)} · ${formatDate(tx.date)}`}
                       value={
                         <span className="text-sm font-semibold text-rose-600 tabular-nums">
                           {formatMoney(tx.amount)}

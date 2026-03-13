@@ -6,7 +6,7 @@ import {
 } from '@/shared/components/ui/dropdown-menu'
 import { formatMoney } from '@/domain/money'
 import { formatDate } from '@/shared/utils/format'
-import { getCategoryById } from '@/domain/categories'
+import { getCategoryById, tCategory } from '@/domain/categories'
 import { useT } from '@/shared/i18n'
 import type { SharedExpense } from '@/domain/types'
 import { TRANSACTIONS_GRID_COLS } from './TransactionRow'
@@ -68,7 +68,7 @@ export default function SharedExpenseRow({ se, onEdit, onDelete, onReopen }: Sha
           className="text-xs px-1.5 py-0 h-5 max-w-full truncate"
           style={{ borderLeft: `2px solid ${cat.color}` }}
         >
-          {cat.label}
+          {tCategory(cat.id, t)}
         </Badge>
       </div>
 
@@ -86,7 +86,7 @@ export default function SharedExpenseRow({ se, onEdit, onDelete, onReopen }: Sha
             className="text-xs px-1.5 py-0 h-5 shrink-0"
             style={{ borderLeft: `2px solid ${cat.color}` }}
           >
-            {cat.label}
+            {tCategory(cat.id, t)}
           </Badge>
           {se.status === 'open' && (
             <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 shrink-0 border-amber-500/50 text-amber-600 dark:text-amber-400 uppercase">

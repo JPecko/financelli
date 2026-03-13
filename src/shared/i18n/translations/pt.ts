@@ -1,6 +1,31 @@
 import type { en } from './en'
 
 export const pt: typeof en = {
+  categories: {
+    housing:       'Habitação',
+    food:          'Restauração & Bar',
+    groceries:     'Supermercado',
+    transport:     'Transporte',
+    health:        'Saúde',
+    entertainment: 'Entretenimento',
+    shopping:      'Shopping',
+    utilities:     'Serviços',
+    education:     'Educação',
+    travel:        'Viagem',
+    investing:     'Investimento',
+    sport:         'Desporto',
+    roundup:       'Arredondamento',
+    cashback:      'Cashback',
+    salary:        'Salário',
+    freelance:     'Freelance',
+    investment:    'Retorno de Investimento',
+    'invest-move': 'Movimento de Investimento',
+    capital:       'Movimento de Capital',
+    transfer:      'Transferência',
+    revaluation:   'Atualização de Mercado',
+    other:         'Outro',
+  },
+
   sharedExpenses: {
     title:          'Splitwise',
     typeLabel:      'Splitwise',
@@ -238,6 +263,9 @@ export const pt: typeof en = {
     myShare:  'minha parte',
     reimbursable:     'Reembolsável',
     reimbursableDesc: 'Pago em nome de outra pessoa — não contabilizado nas tuas despesas pessoais',
+    newTitle:         'Novo Movimento',
+    editTitle:        'Editar Movimento',
+    category:         'Categoria',
   },
 
   recurring: {

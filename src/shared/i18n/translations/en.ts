@@ -1,4 +1,29 @@
 export const en = {
+  categories: {
+    housing:       'Housing',
+    food:          'Food & Drinks',
+    groceries:     'Groceries',
+    transport:     'Transport',
+    health:        'Health',
+    entertainment: 'Entertainment',
+    shopping:      'Shopping',
+    utilities:     'Utilities',
+    education:     'Education',
+    travel:        'Travel',
+    investing:     'Investing',
+    sport:         'Sport',
+    roundup:       'Roundup',
+    cashback:      'Cashback',
+    salary:        'Salary',
+    freelance:     'Freelance',
+    investment:    'Investment Return',
+    'invest-move': 'Investment Move',
+    capital:       'Capital Movement',
+    transfer:      'Transfer',
+    revaluation:   'Market Update',
+    other:         'Other',
+  },
+
   sharedExpenses: {
     title:              'Splitwise',
     typeLabel:          'Splitwise',
@@ -209,6 +234,9 @@ export const en = {
     myShare:  'my share',
     reimbursable:     'Reimbursable',
     reimbursableDesc: 'Paid on behalf of someone else — not counted in your personal expenses',
+    newTitle:         'New Transaction',
+    editTitle:        'Edit Transaction',
+    category:         'Category',
   },
 
   recurring: {

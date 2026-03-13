@@ -8,7 +8,7 @@ import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { formatMoney } from '@/domain/money'
 import { formatDate } from '@/shared/utils/format'
-import { getCategoryById } from '@/domain/categories'
+import { getCategoryById, tCategory } from '@/domain/categories'
 import { useT } from '@/shared/i18n'
 import type { Transaction, Account, SharedExpense } from '@/domain/types'
 
@@ -131,7 +131,7 @@ export default function TransactionRow({
           className="text-xs px-1.5 py-0 h-5 max-w-full truncate"
           style={{ borderLeft: `2px solid ${cat.color}` }}
         >
-          {cat.label}
+          {tCategory(cat.id, t)}
         </Badge>
       </div>
 
@@ -148,7 +148,7 @@ export default function TransactionRow({
             className="text-xs px-1.5 py-0 h-5 shrink-0"
             style={{ borderLeft: `2px solid ${cat.color}` }}
           >
-            {cat.label}
+            {tCategory(cat.id, t)}
           </Badge>
           {linkedSE && (
             <Badge

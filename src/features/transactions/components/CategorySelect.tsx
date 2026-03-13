@@ -1,6 +1,7 @@
 import { Label } from '@/shared/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
-import type { Category } from '@/domain/categories'
+import { tCategory, type Category } from '@/domain/categories'
+import { useT } from '@/shared/i18n'
 
 interface Props {
   categories: Category[]
@@ -9,9 +10,10 @@ interface Props {
 }
 
 export default function CategorySelect({ categories, value, onChange }: Props) {
+  const t = useT()
   return (
     <div className="space-y-1">
-      <Label>Category</Label>
+      <Label>{t('transactions.category')}</Label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -19,7 +21,7 @@ export default function CategorySelect({ categories, value, onChange }: Props) {
             <SelectItem key={c.id} value={c.id}>
               <span className="flex items-center gap-2">
                 <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
-                {c.label}
+                {tCategory(c.id, t)}
               </span>
             </SelectItem>
           ))}
