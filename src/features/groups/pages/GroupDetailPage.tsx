@@ -6,7 +6,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Badge } from '@/shared/components/ui/badge'
+// Badge intentionally removed — import kept for potential future use
+// import { Badge } from '@/shared/components/ui/badge'
 import { Input } from '@/shared/components/ui/input'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -24,7 +25,7 @@ import { getCategoryById } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useT } from '@/shared/i18n'
-import type { Group, GroupEntry, GroupEntrySplit, GroupMember } from '@/domain/types'
+import type { GroupEntry, GroupEntrySplit, GroupMember } from '@/domain/types'
 import GroupFormModal from '../components/GroupFormModal'
 import GroupEntryModal from '../components/GroupEntryModal'
 

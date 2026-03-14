@@ -321,7 +321,7 @@ export const groupsRepo = {
       .in('shared_expense_id', seIds)
     if (error || !data) return {}
     const result: Record<number, { groupId: number; groupName: string }> = {}
-    for (const row of data as Array<{ shared_expense_id: number; group_id: number; groups: { name: string } }>) {
+    for (const row of (data as unknown as Array<{ shared_expense_id: number; group_id: number; groups: { name: string } }>)) {
       if (row.shared_expense_id != null) {
         result[row.shared_expense_id] = { groupId: row.group_id, groupName: row.groups.name }
       }
@@ -338,7 +338,7 @@ export const groupsRepo = {
       .in('transaction_id', transactionIds)
     if (error || !data) return {}
     const result: Record<number, { groupId: number; groupName: string }> = {}
-    for (const row of data as Array<{ transaction_id: number; group_id: number; groups: { name: string } }>) {
+    for (const row of (data as unknown as Array<{ transaction_id: number; group_id: number; groups: { name: string } }>)) {
       if (row.transaction_id != null) {
         result[row.transaction_id] = { groupId: row.group_id, groupName: row.groups.name }
       }
@@ -396,7 +396,7 @@ export const groupsRepo = {
         payer: { name: string } | null
       }
     }
-    return (data as Row[]).map(row => ({
+    return (data as unknown as Row[]).map(row => ({
       entryId:     row.group_entries.id,
       groupId:     row.group_entries.group_id,
       groupName:   row.group_entries.groups.name,

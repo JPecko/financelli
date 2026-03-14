@@ -17,7 +17,7 @@ function GroupBalanceSummary({ group }: { group: Group }) {
   const navigate   = useNavigate()
   const { data: members = [] } = useGroupMembers(group.id!)
   const { data: entries = [] } = useGroupEntries(group.id!)
-  const { data: splits  = [] } = useGroupSplits(group.id!)
+  const { data: _splits = [] } = useGroupSplits(group.id!)
   const { balances, debts }    = useGroupBalances(group.id!)
 
   const myMember  = members.find(m => m.userId === user?.id)
@@ -63,8 +63,7 @@ function GroupBalanceSummary({ group }: { group: Group }) {
       {latestEntries.length > 0 && (
         <div className="pl-9 space-y-1">
           {latestEntries.map(entry => {
-            const cat    = getCategoryById(entry.category)
-            const paidBy = members.find(m => m.id === entry.paidByMemberId)
+            const cat = getCategoryById(entry.category)
             return (
               <div key={entry.id} className="flex items-center gap-2 text-xs">
                 <span
