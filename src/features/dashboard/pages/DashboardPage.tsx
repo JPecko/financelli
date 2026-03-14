@@ -24,6 +24,7 @@ import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
 import InvestmentAccountCard from '../components/InvestmentAccountCard'
+import GroupsWidget from '../components/GroupsWidget'
 import { useT } from '@/shared/i18n'
 
 const now   = new Date()
@@ -525,6 +526,9 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Groups widget */}
+      <GroupsWidget />
 
       </>)}
     </div>

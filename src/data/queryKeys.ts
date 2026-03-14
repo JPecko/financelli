@@ -22,4 +22,11 @@ export const queryKeys = {
     byMonth: (year: number, month: number) => ['sharedExpenses', 'byMonth', year, month] as const,
     open:    ()                            => ['sharedExpenses', 'open']                 as const,
   },
+  groups: {
+    all:     ()             => ['groups']                      as const,
+    detail:  (id: number)   => ['groups', 'detail', id]        as const,
+    members: (id: number)   => ['groups', 'members', id]       as const,
+    entries: (id: number)   => ['groups', 'entries', id]       as const,
+    splits:  (entryId: number) => ['groups', 'splits', entryId] as const,
+  },
 } as const

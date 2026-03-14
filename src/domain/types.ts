@@ -89,3 +89,59 @@ export interface AppSettings {
   currency: string      // default 'EUR'
   theme: 'light' | 'dark' | 'system'
 }
+
+// ---- Groups (Phase 1) ------------------------------------------
+
+export interface Group {
+  id?: number
+  name: string
+  currency: string      // e.g. 'EUR'
+  createdBy: string     // user_id
+  createdAt: string
+}
+
+export interface GroupMember {
+  id?: number
+  groupId: number
+  userId?: string        // null = non-app member
+  name: string           // display name / alias
+  email?: string
+  createdAt: string
+}
+
+export interface GroupEntry {
+  id?: number
+  groupId: number
+  description: string
+  date: string           // YYYY-MM-DD
+  category: string
+  totalAmount: number    // cents, positive
+  paidByMemberId: number
+  notes?: string
+  createdBy: string
+  createdAt: string
+}
+
+export interface GroupEntrySplit {
+  id?: number
+  entryId: number
+  memberId: number
+  amount: number         // cents, owed by this member
+}
+
+// Computed from entries + splits
+export interface MemberBalance {
+  memberId: number
+  memberName: string
+  paid: number           // total amount paid on behalf of group
+  owed: number           // total owed (their share across all entries)
+  net: number            // paid - owed: positive = others owe them, negative = they owe
+}
+
+export interface SimplifiedDebt {
+  fromMemberId: number
+  fromMemberName: string
+  toMemberId: number
+  toMemberName: string
+  amount: number         // cents
+}

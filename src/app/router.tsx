@@ -7,6 +7,8 @@ import TransactionsPage from '@/features/transactions/pages/TransactionsPage'
 import AccountsPage from '@/features/accounts/pages/AccountsPage'
 import RecurringPage from '@/features/recurring/pages/RecurringPage'
 import SettingsPage from '@/features/settings/SettingsPage'
+import GroupsPage from '@/features/groups/pages/GroupsPage'
+import GroupDetailPage from '@/features/groups/pages/GroupDetailPage'
 
 function ProtectedRoute() {
   const { user, loading } = useAuth()
@@ -38,6 +40,8 @@ export const router = createBrowserRouter([
           { path: 'accounts',         element: <AccountsPage /> },
           { path: 'transactions',     element: <TransactionsPage /> },
           { path: 'recurring',        element: <RecurringPage /> },
+          { path: 'groups',           element: <GroupsPage /> },
+          { path: 'groups/:id',       element: <GroupDetailPage /> },
           { path: 'settings',         element: <SettingsPage /> },
         ],
       },
