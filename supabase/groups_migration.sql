@@ -74,10 +74,15 @@ as $$
 $$;
 
 -- ---- RLS: groups ----------------------------------------------
--- View any group you're a member of
+drop policy if exists "members can view group"                  on public.groups;
+drop policy if exists "authenticated users can create group"    on public.groups;
+drop policy if exists "members can update group"                on public.groups;
+drop policy if exists "creator can delete group"                on public.groups;
+
+-- View any group you're a member of, or created
 create policy "members can view group"
   on public.groups for select
-  using (public.is_group_member(id));
+  using (auth.uid() = created_by or public.is_group_member(id));
 
 -- Create group: anyone authenticated
 create policy "authenticated users can create group"
@@ -95,13 +100,24 @@ create policy "creator can delete group"
   using (auth.uid() = created_by);
 
 -- ---- RLS: group_members ----------------------------------------
+drop policy if exists "members can view group members"   on public.group_members;
+drop policy if exists "members can insert group members" on public.group_members;
+drop policy if exists "members can update group members" on public.group_members;
+drop policy if exists "members can delete group members" on public.group_members;
+
 create policy "members can view group members"
   on public.group_members for select
   using (public.is_group_member(group_id));
 
 create policy "members can insert group members"
   on public.group_members for insert
-  with check (public.is_group_member(group_id));
+  with check (
+    public.is_group_member(group_id)
+    or exists (
+      select 1 from public.groups
+      where id = group_id and created_by = auth.uid()
+    )
+  );
 
 create policy "members can update group members"
   on public.group_members for update
@@ -112,6 +128,11 @@ create policy "members can delete group members"
   using (public.is_group_member(group_id));
 
 -- ---- RLS: group_entries ----------------------------------------
+drop policy if exists "members can view group entries"   on public.group_entries;
+drop policy if exists "members can insert group entries" on public.group_entries;
+drop policy if exists "members can update group entries" on public.group_entries;
+drop policy if exists "members can delete group entries" on public.group_entries;
+
 create policy "members can view group entries"
   on public.group_entries for select
   using (public.is_group_member(group_id));
@@ -129,6 +150,11 @@ create policy "members can delete group entries"
   using (public.is_group_member(group_id));
 
 -- ---- RLS: group_entry_splits -----------------------------------
+drop policy if exists "members can view splits"   on public.group_entry_splits;
+drop policy if exists "members can insert splits" on public.group_entry_splits;
+drop policy if exists "members can update splits" on public.group_entry_splits;
+drop policy if exists "members can delete splits" on public.group_entry_splits;
+
 create policy "members can view splits"
   on public.group_entry_splits for select
   using (
@@ -186,10 +212,14 @@ as $$
 declare
   v_name text;
 begin
-  -- Try to get the user's display name from profiles table
-  select coalesce(full_name, '') into v_name
-  from public.profiles
-  where id = NEW.created_by;
+  -- Try to get the user's display name from profiles table (may not exist)
+  begin
+    select coalesce(full_name, '') into v_name
+    from public.profiles
+    where id = NEW.created_by;
+  exception when undefined_table then
+    v_name := null;
+  end;
 
   if v_name is null or v_name = '' then
     v_name := split_part((select email from auth.users where id = NEW.created_by), '@', 1);
@@ -203,6 +233,7 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_add_creator_as_member on public.groups;
 create trigger trg_add_creator_as_member
   after insert on public.groups
   for each row execute function public.add_creator_as_member();

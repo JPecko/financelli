@@ -43,7 +43,7 @@ export default function GroupFormModal({ open, onClose, group }: Props) {
 
   async function onSubmit(values: FormValues) {
     if (!user) return
-    if (isEdit && group?.id != null) {
+if (isEdit && group?.id != null) {
       await updateGroup(group.id, { name: values.name.trim(), currency: values.currency })
     } else {
       await createGroup({ name: values.name.trim(), currency: values.currency, createdBy: user.id })

@@ -26,3 +26,9 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Local docs/prompts
+docs/*
+
+# Claude local workspace files
+claude/*
