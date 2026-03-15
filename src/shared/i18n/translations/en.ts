@@ -71,6 +71,7 @@ export const en = {
     noData:     'No data yet.',
     signOut:    'Sign Out',
     comingSoon: 'Coming soon',
+    open:       'Open',
   },
 
   sidebar: {
@@ -325,6 +326,12 @@ export const en = {
     debitAccount:     'Account to debit',
     reimbursableNote: 'Full amount debited · others owe you {{amount}}',
     inGroup:          'Group: {{name}}',
+    settleUp:         'Settle Up',
+    settleUpConfirm:  'This will create settlement entries for all current debts, resetting all balances to zero.',
+    settleUpEntry:    'Settlement',
+    settleUpDone:     'All settled up!',
+    settleUpPayFrom:  'Pay from account',
+    settleUpReceiveTo: 'Receive into account',
   },
 
   auth: {

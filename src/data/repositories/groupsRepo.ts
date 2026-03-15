@@ -271,11 +271,20 @@ export const groupsRepo = {
   },
 
   getSplitsForGroup: async (groupId: number): Promise<GroupEntrySplit[]> => {
-    // Join via group_entries to get all splits for the group
+    // Two-step query: get entry IDs for this group, then fetch their splits.
+    // Avoids relying on PostgREST embedded-table filters which can silently mis-filter.
+    const { data: entryData, error: entryErr } = await supabase
+      .from('group_entries')
+      .select('id')
+      .eq('group_id', groupId)
+    if (entryErr) throw entryErr
+    if (!entryData?.length) return []
+
+    const entryIds = (entryData as { id: number }[]).map(e => e.id)
     const { data, error } = await supabase
       .from('group_entry_splits')
-      .select('*, group_entries!inner(group_id)')
-      .eq('group_entries.group_id', groupId)
+      .select('*')
+      .in('entry_id', entryIds)
     if (error) throw error
     return (data as GroupEntrySplitRow[]).map(toSplit)
   },

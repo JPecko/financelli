@@ -73,6 +73,7 @@ export const pt: typeof en = {
     noData:     'Sem dados.',
     signOut:    'Sair',
     comingSoon: 'Em breve',
+    open:       'Abrir',
   },
 
   sidebar: {
@@ -142,6 +143,12 @@ export const pt: typeof en = {
     debitAccount:     'Conta a debitar',
     reimbursableNote: 'Valor total debitado · os outros devem-te {{amount}}',
     inGroup:          'Grupo: {{name}}',
+    settleUp:         'Acertar Contas',
+    settleUpConfirm:  'Isto irá criar entradas de liquidação para todas as dívidas atuais, repondo todos os saldos a zero.',
+    settleUpEntry:    'Liquidação',
+    settleUpDone:     'Tudo acertado!',
+    settleUpPayFrom:  'Pagar da conta',
+    settleUpReceiveTo: 'Receber na conta',
   },
 
   auth: {

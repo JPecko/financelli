@@ -101,7 +101,7 @@ export default function GroupsWidget() {
           className="h-7 text-xs"
           onClick={() => navigate('/groups')}
         >
-          {t('common.add')} <ArrowRight className="h-3 w-3 ml-1" />
+          {t('common.open')} <ArrowRight className="h-3 w-3 ml-1" />
         </Button>
       </CardHeader>
       <CardContent className="space-y-5 divide-y divide-border">

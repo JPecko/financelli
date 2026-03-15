@@ -369,6 +369,9 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* Groups widget — right after account balances */}
+      <GroupsWidget />
+
       {/* Row 2: Income vs Expenses bar chart | Spending by Category ranked bars */}
       <div className="grid gap-4 lg:grid-cols-2">
 
@@ -512,9 +515,6 @@ export default function DashboardPage() {
           </Card>
         )}
       </div>
-
-      {/* Groups widget */}
-      <GroupsWidget />
 
       {/* Investment account evolution */}
       {investmentAccounts.length > 0 && (
