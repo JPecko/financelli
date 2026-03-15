@@ -12,11 +12,13 @@ import SharedExpenseRow from "../components/SharedExpenseRow";
 import GroupExpenseRow from "../components/GroupExpenseRow";
 import { useTransactionsPageModel } from "./useTransactionsPageModel";
 import { useT } from "@/shared/i18n";
+import { useAuth } from "@/features/auth/AuthContext";
 import { BANK_OPTIONS } from "@/shared/config/banks";
 import { getCategoryById, tCategory } from "@/domain/categories";
 
 export default function TransactionsPage() {
   const t = useT()
+  const { user } = useAuth()
   const {
     currentDate,
     modalOpen,
@@ -303,6 +305,7 @@ export default function TransactionsPage() {
                   linkedSE={item.data.id != null ? txSeMap[item.data.id] : undefined}
                   linkedGroup={item.data.id != null ? txGroupMap[item.data.id] : undefined}
                   onReopenSE={handleReopen}
+                  currentUserId={user?.id}
                 />
               ) : item.kind === 'se' ? (
                 <SharedExpenseRow

@@ -7,6 +7,7 @@ import { queryClient } from '@/app/queryClient'
 import { queryKeys } from '@/data/queryKeys'
 import { useAccounts } from '@/shared/hooks/useAccounts'
 import { useSharedExpensesByMonth } from '@/shared/hooks/useSharedExpenses'
+import { useAuth } from '@/features/auth/AuthContext'
 import type { Transaction, Account } from '@/domain/types'
 
 // ─── Queries ────────────────────────────────────────────────────────────────
@@ -20,13 +21,14 @@ export function useTransactionsByMonth(year: number, month: number) {
 
 /** Fetches personal income, expenses, investing and roundup for the 6 months ending at (year, month). */
 export function useMonthlyNetFlow(year: number, month: number) {
+  const { user }                = useAuth()
   const { data: accounts = [] } = useAccounts()
+  const userId = user?.id
 
   return useQuery({
     queryKey: queryKeys.transactions.netFlow(year, month),
     queryFn:  async () => {
-      const divisorFor = (t: Transaction) =>
-        t.isPersonal ? 1 : (t.splitN ?? accounts.find(a => a.id === t.accountId)?.participants ?? 1)
+      const divisorFor = (t: Transaction) => personalDivisorFor(t, userId, accounts)
 
       const result: { month: string; income: number; expenses: number; investing: number; roundup: number; net: number }[] = []
       for (let i = 5; i >= 0; i--) {
@@ -45,6 +47,22 @@ export function useMonthlyNetFlow(year: number, month: number) {
 
 // ─── Derived / computed hooks ────────────────────────────────────────────────
 
+/** Computes the personal divisor for a transaction. Returns Infinity to exclude from personal stats. */
+export function personalDivisorFor(
+  tx: Transaction,
+  currentUserId: string | undefined,
+  accounts: Account[],
+): number {
+  if (tx.isReimbursable) return Infinity
+  // Expense assigned to a specific user in a shared account
+  if (tx.personalUserId != null) {
+    return tx.personalUserId === currentUserId ? 1 : Infinity
+  }
+  // Legacy isPersonal (not shared, but no specific user assigned)
+  if (tx.isPersonal) return 1
+  return tx.splitN ?? accounts.find(a => a.id === tx.accountId)?.participants ?? 1
+}
+
 /** Returns true for transactions that represent real cash flow (not internal moves or capital gains). */
 export function isCashFlow(t: Transaction): boolean {
   if (t.type === 'revaluation') return false
@@ -55,6 +73,7 @@ export function isCashFlow(t: Transaction): boolean {
 
 /** Computes monthly income/expense summary, dividing shared-account values by participants. */
 export function useMonthSummary(year: number, month: number) {
+  const { user }                       = useAuth()
   const { data: txs            = [] } = useTransactionsByMonth(year, month)
   const { data: accounts       = [] } = useAccounts()
   const { data: sharedExpenses = [] } = useSharedExpensesByMonth(year, month)
@@ -64,10 +83,7 @@ export function useMonthSummary(year: number, month: number) {
   const expenses     = real.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)
   const coreExpenses = real.filter(t => t.amount < 0 && t.category !== 'investing' && t.category !== 'roundup').reduce((s, t) => s + t.amount, 0)
 
-  const divisorFor = (t: Transaction) => {
-    if (t.isReimbursable) return Infinity
-    return t.isPersonal ? 1 : (t.splitN ?? accounts.find(a => a.id === t.accountId)?.participants ?? 1)
-  }
+  const divisorFor = (t: Transaction) => personalDivisorFor(t, user?.id, accounts)
 
   // payer='me' SEs: map transactionId → SE for personal cost override
   const txSeMap: Record<number, typeof sharedExpenses[0]> = {}

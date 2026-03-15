@@ -39,6 +39,7 @@ export interface Transaction {
   isPersonal?: boolean     // if true, don't divide by participants (even in shared accounts)
   splitN?: number | null   // override divisor: split expense/income by this many people
   isReimbursable?: boolean // if true, exclude entirely from personal stats (fronted for someone else)
+  personalUserId?: string  // if set, only this user counts it as a personal expense; others exclude it
   createdAt: string
 }
 

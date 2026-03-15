@@ -15,6 +15,7 @@ type TransactionRow = {
   is_personal: boolean
   split_n: number | null
   is_reimbursable: boolean
+  personal_user_id: string | null
   created_at: string
 }
 
@@ -32,6 +33,7 @@ function toTransaction(row: TransactionRow): Transaction {
     isPersonal:      row.is_personal ?? false,
     splitN:          row.split_n ?? null,
     isReimbursable:  row.is_reimbursable ?? false,
+    personalUserId:  row.personal_user_id ?? undefined,
     createdAt:       row.created_at,
   }
 }
@@ -49,6 +51,7 @@ function toRow(tx: Omit<Transaction, 'id' | 'createdAt'>): Record<string, unknow
     is_personal:       tx.isPersonal ?? false,
     split_n:           tx.splitN ?? null,
     is_reimbursable:   tx.isReimbursable ?? false,
+    personal_user_id:  tx.personalUserId ?? null,
   }
 }
 

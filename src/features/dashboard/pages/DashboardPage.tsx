@@ -14,7 +14,8 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { useSortedAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
-import { useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow, useMonthlyBenefits, useYearBenefits, isCashFlow } from '@/shared/hooks/useTransactions'
+import { useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow, useMonthlyBenefits, useYearBenefits, isCashFlow, personalDivisorFor } from '@/shared/hooks/useTransactions'
+import { useAuth } from '@/features/auth/AuthContext'
 import { useSharedExpensesByMonth } from '@/shared/hooks/useSharedExpenses'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById, tCategory } from '@/domain/categories'
@@ -70,6 +71,7 @@ function ListRow({ icon, label, sublabel, value }: ListRowProps) {
 export default function DashboardPage() {
   const t        = useT()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { setFilterCategory, setFilterAccountId } = useTransactionsFilterStore()
   const netWorth                   = useNetWorth()
   const summary                    = useMonthSummary(YEAR, MONTH)
@@ -111,13 +113,14 @@ export default function DashboardPage() {
 
     const map: Record<string, number> = {}
     for (const tx of transactions) {
-      if (!isCashFlow(tx) || tx.amount >= 0 || tx.isReimbursable) continue
+      if (!isCashFlow(tx) || tx.amount >= 0) continue
       let amount: number
       if (tx.id != null && txSeMap[tx.id] != null) {
         amount = txSeMap[tx.id].myShare
       } else {
-        const participants = tx.isPersonal ? 1 : (tx.splitN ?? accounts.find(a => a.id === tx.accountId)?.participants ?? 1)
-        amount = Math.abs(tx.amount) / participants
+        const divisor = personalDivisorFor(tx, user?.id, accounts)
+        if (divisor === Infinity) continue
+        amount = Math.abs(tx.amount) / divisor
       }
       map[tx.category] = (map[tx.category] ?? 0) + amount
     }

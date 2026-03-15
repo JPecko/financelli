@@ -49,6 +49,7 @@ interface TransactionRowProps {
   linkedSE?:    SharedExpense
   onReopenSE?:  (id: number) => Promise<void>
   linkedGroup?: { groupId: number; groupName: string }
+  currentUserId?: string
 }
 
 function isInternalTransfer(tx: Transaction): boolean {
@@ -89,9 +90,15 @@ export default function TransactionRow({
   linkedSE,
   onReopenSE,
   linkedGroup,
+  currentUserId,
 }: TransactionRowProps) {
   const t   = useT()
   const cat = getCategoryById(tx.category)
+  const personalBadge = tx.personalUserId != null
+    ? (tx.personalUserId === currentUserId
+        ? { label: t('transactions.personalForMe'),    cls: 'border-teal-500/50 text-teal-600 dark:text-teal-400' }
+        : { label: t('transactions.personalForOther'), cls: 'border-muted text-muted-foreground' })
+    : null
   const transfer = isInternalTransfer(tx)
   const txBalance = tx.id != null ? runningBalances[tx.id] : undefined
   const amountColor = amountClassName(tx)
@@ -109,6 +116,9 @@ export default function TransactionRow({
         <p className="text-sm font-semibold truncate leading-snug">{tx.description || '—'}</p>
         {tx.isReimbursable && (
           <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 shrink-0 border-amber-500/50 text-amber-600 dark:text-amber-400">↩</Badge>
+        )}
+        {personalBadge && (
+          <Badge variant="secondary" className={`text-xs px-1.5 py-0 h-5 shrink-0 ${personalBadge.cls}`}>{personalBadge.label}</Badge>
         )}
         {linkedGroup && (
           <Badge
@@ -151,6 +161,9 @@ export default function TransactionRow({
           <p className="text-sm font-semibold truncate leading-snug">{tx.description || '—'}</p>
           {tx.isReimbursable && (
             <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 shrink-0 border-amber-500/50 text-amber-600 dark:text-amber-400">↩</Badge>
+          )}
+          {personalBadge && (
+            <Badge variant="secondary" className={`text-xs px-1.5 py-0 h-5 shrink-0 ${personalBadge.cls}`}>{personalBadge.label}</Badge>
           )}
         </div>
         <div className="mt-1 flex items-center gap-1.5 flex-wrap">

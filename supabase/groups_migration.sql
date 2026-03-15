@@ -277,3 +277,9 @@ alter table public.group_entries
 create index if not exists idx_group_entries_shared_expense_id
   on public.group_entries(shared_expense_id)
   where shared_expense_id is not null;
+
+-- ============================================================
+-- Phase 4: personal_user_id on transactions
+-- ============================================================
+alter table public.transactions
+  add column if not exists personal_user_id uuid references auth.users(id) on delete set null;

@@ -4,6 +4,7 @@ import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/categories'
 import { addTransaction, updateTransaction } from '@/shared/hooks/useTransactions'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
+import { useAuth } from '@/features/auth/AuthContext'
 import { isoToday } from '@/shared/utils/format'
 import type { Transaction, TransactionType } from '@/domain/types'
 
@@ -20,6 +21,7 @@ export interface TransactionFormValues {
   isShared:       boolean  // true = split enabled (default), false = full expense mine
   splitN:         number   // how many people to split between (only used when isShared = true)
   isReimbursable: boolean  // true = exclude entirely from personal stats
+  personalUserId: string   // if non-empty and !isShared, only this user owns the expense
 }
 
 function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | 'createdAt'> {
@@ -34,6 +36,7 @@ function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | '
     isPersonal:     !values.isShared,
     splitN:         values.isShared ? Math.max(2, Math.round(values.splitN ?? 2)) : null,
     isReimbursable: values.isReimbursable,
+    personalUserId: !values.isShared && values.personalUserId ? values.personalUserId : undefined,
   }
 
   if (values.type === 'transfer') {
@@ -70,6 +73,7 @@ function buildDefaultValues(
     isShared:       defaultType === 'income' ? false : isSharedAccount,
     splitN:         defaultSplitN,
     isReimbursable: false,
+    personalUserId: '',
   }
 }
 
@@ -98,6 +102,7 @@ function buildEditValues(transaction: Transaction, account: { participants?: num
     isShared,
     splitN:         transaction.splitN ?? (isShared ? accountParticipants : 2),
     isReimbursable: transaction.isReimbursable ?? false,
+    personalUserId: transaction.personalUserId ?? '',
   }
 }
 
@@ -114,6 +119,7 @@ export function useTransactionForm({
   open, onClose, transaction, defaultType = 'expense', defaultAccountId, onAfterSubmit,
 }: UseTransactionFormProps) {
   const isEdit   = !!transaction
+  const { user } = useAuth()
   const { data: accounts = [] } = useSortedAccounts()
   const firstId  = defaultAccountId ?? (accounts[0]?.id != null ? String(accounts[0].id) : '')
   const secondId = accounts.find(a => String(a.id) !== firstId)?.id != null
@@ -135,6 +141,17 @@ export function useTransactionForm({
   const selectedTo   = watch('toId')
   const splitN           = watch('splitN')
   const isReimbursable   = watch('isReimbursable')
+  const personalUserId   = watch('personalUserId')
+
+  // Shared account participants list (for "personal for" selector when split is off)
+  const selectedAccount = accounts.find(a => String(a.id) === selectedFrom)
+  const isSharedAccountSelected = (selectedAccount?.participants ?? 1) > 1
+  const sharedAccountParticipants = isSharedAccountSelected && selectedAccount
+    ? [
+        { userId: selectedAccount.ownerId ?? '', name: selectedAccount.ownerFullName || selectedAccount.ownerEmail || 'Owner', isMe: selectedAccount.ownerId === user?.id },
+        ...(selectedAccount.sharedWith ?? []).map(s => ({ userId: s.userId, name: s.fullName || s.email, isMe: s.userId === user?.id })),
+      ].filter(p => p.userId)
+    : []
 
   const isTransfer = selectedType === 'transfer'
   const isValid    = !isTransfer || selectedFrom !== EXTERNAL || selectedTo !== EXTERNAL
@@ -210,6 +227,9 @@ export function useTransactionForm({
     selectedTo,
     splitN,
     isReimbursable,
+    personalUserId,
+    isSharedAccount: isSharedAccountSelected,
+    sharedAccountParticipants,
     handleTypeChange,
     handleFromChange,
     onSubmit,

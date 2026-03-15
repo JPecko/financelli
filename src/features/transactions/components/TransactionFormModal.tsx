@@ -146,6 +146,9 @@ export default function TransactionFormModal({
     selectedTo,
     splitN,
     isReimbursable,
+    personalUserId,
+    isSharedAccount,
+    sharedAccountParticipants,
     handleTypeChange,
     handleFromChange,
     onSubmit,
@@ -761,7 +764,13 @@ export default function TransactionFormModal({
               <div className="rounded-lg border overflow-hidden">
                 <label
                   className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors"
-                  onClick={e => { e.preventDefault(); setValue('isShared', !isShared) }}
+                  onClick={e => {
+                    e.preventDefault()
+                    setValue('isShared', !isShared)
+                    if (isShared && isSharedAccount) {  // turning OFF sharing
+                      setValue('personalUserId', user?.id ?? '')
+                    }
+                  }}
                 >
                   <div>
                     <p className="text-sm font-medium leading-none">{t('transactions.sharedWithParticipants')}</p>
@@ -787,6 +796,26 @@ export default function TransactionFormModal({
                         </span>
                       )}
                     </span>
+                  </div>
+                )}
+                {!isShared && isSharedAccount && sharedAccountParticipants.length > 1 && (
+                  <div className="px-4 pb-3 border-t bg-muted/20 pt-3 space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">{t('transactions.personalFor')}</Label>
+                    <Select
+                      value={personalUserId || ''}
+                      onValueChange={v => setValue('personalUserId', v)}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Select participant..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sharedAccountParticipants.map(p => (
+                          <SelectItem key={p.userId} value={p.userId}>
+                            {p.name}{p.isMe ? ` (${t('groups.youInGroup')})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </div>
