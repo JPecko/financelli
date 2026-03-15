@@ -22,6 +22,8 @@ export interface TransactionFormValues {
   splitN:         number   // how many people to split between (only used when isShared = true)
   isReimbursable: boolean  // true = exclude entirely from personal stats
   personalUserId: string   // if non-empty and !isShared, only this user owns the expense
+  holdingId:      string   // '' = no link, '123' = holding ID — investment accounts only
+  units:          string   // units bought/sold — investment accounts only
 }
 
 function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | 'createdAt'> {
@@ -37,6 +39,8 @@ function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | '
     splitN:         values.isShared ? Math.max(2, Math.round(values.splitN ?? 2)) : null,
     isReimbursable: values.isReimbursable,
     personalUserId: !values.isShared && values.personalUserId ? values.personalUserId : undefined,
+    holdingId:      values.holdingId ? parseInt(values.holdingId) : undefined,
+    units:          values.holdingId && values.units ? parseFloat(values.units) : undefined,
   }
 
   if (values.type === 'transfer') {
@@ -74,6 +78,8 @@ function buildDefaultValues(
     splitN:         defaultSplitN,
     isReimbursable: false,
     personalUserId: '',
+    holdingId:      '',
+    units:          '',
   }
 }
 
@@ -103,6 +109,8 @@ function buildEditValues(transaction: Transaction, account: { participants?: num
     splitN:         transaction.splitN ?? (isShared ? accountParticipants : 2),
     isReimbursable: transaction.isReimbursable ?? false,
     personalUserId: transaction.personalUserId ?? '',
+    holdingId:      transaction.holdingId != null ? String(transaction.holdingId) : '',
+    units:          transaction.units != null ? String(transaction.units) : '',
   }
 }
 
@@ -142,6 +150,8 @@ export function useTransactionForm({
   const splitN           = watch('splitN')
   const isReimbursable   = watch('isReimbursable')
   const personalUserId   = watch('personalUserId')
+  const holdingId        = watch('holdingId')
+  const units            = watch('units')
 
   // Shared account participants list (for "personal for" selector when split is off)
   const selectedAccount = accounts.find(a => String(a.id) === selectedFrom)
@@ -228,8 +238,11 @@ export function useTransactionForm({
     splitN,
     isReimbursable,
     personalUserId,
+    holdingId,
+    units,
     isSharedAccount: isSharedAccountSelected,
     sharedAccountParticipants,
+    selectedAccount,
     handleTypeChange,
     handleFromChange,
     onSubmit,

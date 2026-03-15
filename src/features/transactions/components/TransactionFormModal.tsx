@@ -14,6 +14,7 @@ import { EXPENSE_CATEGORIES } from '@/domain/categories'
 import { toCents, fromCents } from '@/domain/money'
 import { addTransaction } from '@/shared/hooks/useTransactions'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
+import { useHoldingsByAccount } from '@/shared/hooks/useHoldings'
 import { useGroups, addGroupEntry, updateGroupEntry } from '@/shared/hooks/useGroups'
 import { groupsRepo } from '@/data/repositories/groupsRepo'
 import { useAuth } from '@/features/auth/AuthContext'
@@ -147,14 +148,21 @@ export default function TransactionFormModal({
     splitN,
     isReimbursable,
     personalUserId,
+    holdingId,
     isSharedAccount,
     sharedAccountParticipants,
+    selectedAccount,
     handleTypeChange,
     handleFromChange,
     onSubmit,
   } = txHook
   const { register, watch, setValue, formState: { errors, isSubmitting } } = form
   const isShared = watch('isShared')
+
+  // Investment account detection
+  const isInvestmentAccount = selectedAccount?.type === 'investment' && !isTransfer
+  const investAccountId = isInvestmentAccount && selectedAccount?.id != null ? selectedAccount.id : undefined
+  const { data: accountHoldings = [] } = useHoldingsByAccount(investAccountId)
 
   // ── Load linked group entry when editing a transaction or SE ────────────
   useEffect(() => {
@@ -832,6 +840,49 @@ export default function TransactionFormModal({
                 </div>
                 <Toggle on={isReimbursable} color="bg-amber-500" />
               </label>
+            )}
+
+            {/* Investment details — only for investment accounts */}
+            {isInvestmentAccount && (
+              <div className="rounded-lg border overflow-hidden">
+                <div className="px-4 py-2.5 bg-muted/30 border-b">
+                  <p className="text-sm font-medium">{t('investments.investmentDetails')}</p>
+                </div>
+                <div className="px-4 py-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label>{t('investments.holding')}</Label>
+                    <Select
+                      value={holdingId ?? ''}
+                      onValueChange={v => setValue('holdingId', v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('investments.noLink')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">{t('investments.noLink')}</SelectItem>
+                        {accountHoldings.map(h => (
+                          <SelectItem key={h.id} value={String(h.id)}>
+                            {h.name}{h.ticker ? ` (${h.ticker.toUpperCase()})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {holdingId && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="tx-units">{t('investments.units')}</Label>
+                      <Input
+                        id="tx-units"
+                        type="number"
+                        step="0.000001"
+                        min="0"
+                        placeholder="0"
+                        {...register('units')}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             <DialogFooter>

@@ -22,6 +22,20 @@ export interface Account {
   bankCode?: string        // e.g. 'revolut' — matches BANK_OPTIONS code
   cashbackPct?: number     // e.g. 1 = 1% cashback on expenses (null = disabled)
   roundupMultiplier?: number // e.g. 5 = ×5 roundup on expenses (null = disabled)
+  investedBase?: number    // total capital invested (cost basis), in cents — investment accounts only
+}
+
+// ---- Holdings (investment portfolio tracking) --------------------------
+
+export interface Holding {
+  id?: number
+  accountId: number
+  name: string           // e.g. "VWCE ETF", "Apple Inc."
+  ticker?: string        // e.g. "VWCE", "AAPL"
+  quantity: number       // number of units/shares (decimal)
+  avgCost: number        // cents per unit (average cost basis)
+  currentPrice: number   // cents per unit (manually updated market price)
+  createdAt: string
 }
 
 export type TransactionType = 'income' | 'expense' | 'transfer' | 'revaluation'
@@ -40,6 +54,8 @@ export interface Transaction {
   splitN?: number | null   // override divisor: split expense/income by this many people
   isReimbursable?: boolean // if true, exclude entirely from personal stats (fronted for someone else)
   personalUserId?: string  // if set, only this user counts it as a personal expense; others exclude it
+  holdingId?: number       // linked holding (investment accounts only)
+  units?: number           // units bought (income) or sold (expense) for linked holding
   createdAt: string
 }
 

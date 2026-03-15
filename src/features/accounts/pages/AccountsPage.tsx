@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Wallet, BarChart2, Users, GripVertical,
   ArrowUpDown, Check, ChevronUp, ChevronDown, Save, X,
-  Banknote, PiggyBank, HandCoins, CreditCard,
+  Banknote, PiggyBank, HandCoins, CreditCard, ExternalLink,
 } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAccounts, sortAccounts, removeAccount } from '@/shared/hooks/useAccounts'
+import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import BankLogo from '@/shared/components/BankLogo'
@@ -33,6 +34,7 @@ import RevalueModal from '../components/RevalueModal'
 import ShareAccountModal from '../components/ShareAccountModal'
 import type { Account } from '@/domain/types'
 import { useT } from '@/shared/i18n'
+import { NavLink } from 'react-router-dom'
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   checking:   Banknote,
@@ -48,6 +50,128 @@ interface SortableCardProps {
   account: Account
   isManual: boolean
   children: React.ReactNode
+}
+
+interface AccountCardProps {
+  account: Account
+  bank: { logoDomain: string; name: string } | undefined
+  isManualEditing: boolean
+  user: ReturnType<typeof useAuth>['user']
+  t: ReturnType<typeof useT>
+  onEdit:   (a: Account) => void
+  onDelete: (id: number | undefined) => void
+  onRevalue: (a: Account) => void
+  onShare:   (a: Account) => void
+}
+
+function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete, onRevalue, onShare }: AccountCardProps) {
+  const isInvestment = account.type === 'investment'
+  return (
+    <Card className="overflow-hidden card-hoverable">
+      <CardContent className="p-0">
+        <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
+        <div className={`py-3 sm:py-5 px-3 sm:px-5 ${isManualEditing ? 'pl-9' : ''}`}>
+          {/* Top row: logo + name + menu */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                {bank ? (
+                  <BankLogo
+                    domain={bank.logoDomain}
+                    name={bank.name}
+                    accountType={account.type}
+                    imgClassName="h-6 w-6 object-contain"
+                    iconClassName="h-5 w-5 text-muted-foreground"
+                  />
+                ) : (
+                  (() => { const Icon = TYPE_ICONS[account.type] ?? Wallet; return <Icon className="h-5 w-5 text-muted-foreground" /> })()
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-base sm:text-lg font-semibold leading-tight truncate">{account.name}</p>
+                {bank && <p className="text-xs text-muted-foreground truncate">{bank.name}</p>}
+              </div>
+            </div>
+            <div className="flex items-center shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                    <span className="sr-only">Actions</span>
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="5"  r="1.5" />
+                      <circle cx="12" cy="12" r="1.5" />
+                      <circle cx="12" cy="19" r="1.5" />
+                    </svg>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {isInvestment && (
+                    <>
+                      <DropdownMenuItem onClick={() => onRevalue(account)}>
+                        <BarChart2 className="h-4 w-4 mr-2" /> {t('accounts.updateValue')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={() => onShare(account)}>
+                    <Users className="h-4 w-4 mr-2" /> {t('accounts.share')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(account)}>
+                    <Pencil className="h-4 w-4 mr-2" /> {t('common.edit')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => onDelete(account.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> {t('common.delete')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Bottom row: badges + balance */}
+          <div className="mt-3 flex items-end justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Badge variant="secondary" className="text-xs">
+                {t(('accounts.types.' + account.type) as Parameters<typeof t>[0])}
+              </Badge>
+              {(account.participants ?? 1) > 1 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs gap-1 cursor-default">
+                      <Users className="h-3 w-3" />
+                      {account.participants}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <div className="space-y-0.5">
+                      <p>
+                        {account.ownerId === user?.id
+                          ? (user?.user_metadata?.full_name ?? user?.email)
+                          : (account.ownerFullName ?? account.ownerEmail ?? 'Owner')
+                        }
+                        {' '}<span className="opacity-60">({t('accounts.owner')})</span>
+                      </p>
+                      {account.sharedWith?.map(s => (
+                        <p key={s.userId}>{s.fullName ?? s.email}</p>
+                      ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                {formatMoney(account.balance, account.currency)}
+              </p>
+              <p className="text-[11px] text-muted-foreground">{account.currency}</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 function SortableCard({ account, isManual, children }: SortableCardProps) {
@@ -183,10 +307,15 @@ export default function AccountsPage() {
     return map[key]
   }
 
+  const { data: holdings = [] } = useHoldings()
+
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0)
   const orderForSort = isManualEditing ? effectiveDraftOrder : manualOrder
   const sorted = sortAccounts(accounts, sort, orderForSort, colorOrder)
-  const sortedIds = sorted.map(a => a.id!)
+
+  const nonInvAccounts = sorted.filter(a => a.type !== 'investment')
+  const invAccounts    = sorted.filter(a => a.type === 'investment')
+  const sortedIds      = nonInvAccounts.map(a => a.id!)
 
   const handleEdit = (account: Account) => {
     setEditing(account)
@@ -315,19 +444,66 @@ export default function AccountsPage() {
           }
         />
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={sortedIds} strategy={rectSortingStrategy}>
-            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-              {sorted.map(account => {
-                const isInvestment = account.type === 'investment'
-                const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
-                return (
-                  <SortableCard key={account.id} account={account} isManual={isManualEditing}>
-                    <Card className="overflow-hidden card-hoverable">
+        <div className="space-y-8">
+          {/* ── Regular accounts ──────────────────────────────────────────── */}
+          {nonInvAccounts.length > 0 && (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={sortedIds} strategy={rectSortingStrategy}>
+                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                  {nonInvAccounts.map(account => {
+                    const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
+                    return (
+                      <SortableCard key={account.id} account={account} isManual={isManualEditing}>
+                        <AccountCard
+                          account={account}
+                          bank={bank}
+                          isManualEditing={isManualEditing}
+                          user={user}
+                          t={t}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          onRevalue={setRevaluing}
+                          onShare={setSharing}
+                        />
+                      </SortableCard>
+                    )
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+
+          {/* ── Investment accounts ───────────────────────────────────────── */}
+          {invAccounts.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t('accounts.types.investment')}
+                </p>
+                <NavLink to="/investments">
+                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs">
+                    <ExternalLink className="h-3 w-3" />
+                    {t('investments.viewHoldings')}
+                  </Button>
+                </NavLink>
+              </div>
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                {invAccounts.map(account => {
+                  const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
+                  const accountHoldings = holdings.filter(h => h.accountId === account.id)
+                  const marketValue = accountHoldings.length > 0
+                    ? accountHoldings.reduce((s, h) => s + h.quantity * h.currentPrice, 0)
+                    : null
+                  const costBasis = accountHoldings.length > 0
+                    ? accountHoldings.reduce((s, h) => s + h.quantity * h.avgCost, 0)
+                    : null
+                  const pnl = marketValue != null && costBasis != null ? marketValue - costBasis : null
+                  return (
+                    <Card key={account.id} className="overflow-hidden card-hoverable">
                       <CardContent className="p-0">
                         <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
-                        <div className={`py-3 sm:py-5 px-3 sm:px-0  ${isManualEditing ? 'pl-9' : ''}`}>
-                          {/* Top row: logo + name + menu */}
+                        <div className="py-3 sm:py-5 px-3 sm:px-5">
+                          {/* Top row */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
                               <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
@@ -340,16 +516,12 @@ export default function AccountsPage() {
                                     iconClassName="h-5 w-5 text-muted-foreground"
                                   />
                                 ) : (
-                                  (() => { const Icon = TYPE_ICONS[account.type] ?? Wallet; return <Icon className="h-5 w-5 text-muted-foreground" /> })()
+                                  <BarChart2 className="h-5 w-5 text-muted-foreground" />
                                 )}
                               </div>
                               <div className="min-w-0">
-                                <p className="text-base sm:text-lg font-semibold leading-tight truncate">
-                                  {account.name}
-                                </p>
-                                {bank && (
-                                  <p className="text-xs text-muted-foreground truncate">{bank.name}</p>
-                                )}
+                                <p className="text-base sm:text-lg font-semibold leading-tight truncate">{account.name}</p>
+                                {bank && <p className="text-xs text-muted-foreground truncate">{bank.name}</p>}
                               </div>
                             </div>
                             <div className="flex items-center shrink-0">
@@ -365,14 +537,10 @@ export default function AccountsPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  {isInvestment && (
-                                    <>
-                                      <DropdownMenuItem onClick={() => setRevaluing(account)}>
-                                        <BarChart2 className="h-4 w-4 mr-2" /> {t('accounts.updateValue')}
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                    </>
-                                  )}
+                                  <DropdownMenuItem onClick={() => setRevaluing(account)}>
+                                    <BarChart2 className="h-4 w-4 mr-2" /> {t('accounts.updateValue')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => setSharing(account)}>
                                     <Users className="h-4 w-4 mr-2" /> {t('accounts.share')}
                                   </DropdownMenuItem>
@@ -390,38 +558,26 @@ export default function AccountsPage() {
                             </div>
                           </div>
 
-                          {/* Bottom row: badges + balance */}
+                          {/* Bottom row */}
                           <div className="mt-3 flex items-end justify-between gap-2">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <Badge variant="secondary" className="text-xs">
-                                {t(('accounts.types.' + account.type) as Parameters<typeof t>[0])}
-                              </Badge>
-                              {(account.participants ?? 1) > 1 && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge variant="outline" className="text-xs gap-1 cursor-default">
-                                      <Users className="h-3 w-3" />
-                                      {account.participants}
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="bottom">
-                                    <div className="space-y-0.5">
-                                      <p>
-                                        {account.ownerId === user?.id
-                                          ? (user?.user_metadata?.full_name ?? user?.email)
-                                          : (account.ownerFullName ?? account.ownerEmail ?? 'Owner')
-                                        }
-                                        {' '}<span className="opacity-60">({t('accounts.owner')})</span>
-                                      </p>
-                                      {account.sharedWith?.map(s => (
-                                        <p key={s.userId}>{s.fullName ?? s.email}</p>
-                                      ))}
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
+                            <div className="space-y-0.5">
+                              {account.investedBase != null && (
+                                <p className="text-xs text-muted-foreground">
+                                  {t('investments.investedBase')}: <span className="font-medium text-foreground">{formatMoney(account.investedBase, account.currency)}</span>
+                                </p>
+                              )}
+                              {pnl != null && (
+                                <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                  {t('investments.pnl')}: {pnl >= 0 ? '+' : ''}{formatMoney(pnl, account.currency)}
+                                </p>
+                              )}
+                              {accountHoldings.length === 0 && (
+                                <p className="text-xs text-muted-foreground">{accountHoldings.length} holdings</p>
+                              )}
+                              {accountHoldings.length > 0 && (
+                                <p className="text-xs text-muted-foreground">{accountHoldings.length} {accountHoldings.length === 1 ? 'holding' : 'holdings'}</p>
                               )}
                             </div>
-
                             <div className="text-right shrink-0">
                               <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
                                 {formatMoney(account.balance, account.currency)}
@@ -432,12 +588,12 @@ export default function AccountsPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  </SortableCard>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </SortableContext>
-        </DndContext>
+          )}
+        </div>
       )}
 
       <AccountFormModal open={modalOpen} onClose={handleCloseForm} account={editing} />

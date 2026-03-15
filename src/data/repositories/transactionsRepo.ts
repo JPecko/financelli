@@ -1,6 +1,7 @@
 import { supabase } from '@/data/supabase'
 import type { Transaction } from '@/domain/types'
 import { accountsRepo } from './accountsRepo'
+import { holdingsRepo } from './holdingsRepo'
 
 type TransactionRow = {
   id: number
@@ -16,6 +17,8 @@ type TransactionRow = {
   split_n: number | null
   is_reimbursable: boolean
   personal_user_id: string | null
+  holding_id: number | null
+  units: number | null
   created_at: string
 }
 
@@ -34,6 +37,8 @@ function toTransaction(row: TransactionRow): Transaction {
     splitN:          row.split_n ?? null,
     isReimbursable:  row.is_reimbursable ?? false,
     personalUserId:  row.personal_user_id ?? undefined,
+    holdingId:       row.holding_id ?? undefined,
+    units:           row.units != null ? Number(row.units) : undefined,
     createdAt:       row.created_at,
   }
 }
@@ -52,6 +57,8 @@ function toRow(tx: Omit<Transaction, 'id' | 'createdAt'>): Record<string, unknow
     split_n:           tx.splitN ?? null,
     is_reimbursable:   tx.isReimbursable ?? false,
     personal_user_id:  tx.personalUserId ?? null,
+    holding_id:        tx.holdingId ?? null,
+    units:             tx.units ?? null,
   }
 }
 
@@ -151,6 +158,11 @@ export const transactionsRepo = {
       await createAutoTransactions(tx, account)
     }
 
+    // Update linked holding quantity/avgCost
+    if (tx.holdingId) {
+      await holdingsRepo.recalculate(tx.holdingId)
+    }
+
     return (data as { id: number }).id
   },
 
@@ -167,6 +179,16 @@ export const transactionsRepo = {
     const { error } = await supabase.from('transactions').update(toRow(updated)).eq('id', id)
     if (error) throw error
     await applyBalances(updated)
+
+    // Recalculate old and new holdings if holdingId changed
+    const oldHoldingId = existingTx.holdingId
+    const newHoldingId = updated.holdingId
+    if (oldHoldingId && oldHoldingId !== newHoldingId) {
+      await holdingsRepo.recalculate(oldHoldingId)
+    }
+    if (newHoldingId) {
+      await holdingsRepo.recalculate(newHoldingId)
+    }
   },
 
   remove: async (id: number): Promise<void> => {
@@ -180,5 +202,10 @@ export const transactionsRepo = {
     await reverseBalances(tx)
     const { error } = await supabase.from('transactions').delete().eq('id', id)
     if (error) throw error
+
+    // Recalculate holding after transaction removed
+    if (tx.holdingId) {
+      await holdingsRepo.recalculate(tx.holdingId)
+    }
   },
 }

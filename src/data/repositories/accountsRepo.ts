@@ -14,6 +14,7 @@ type AccountRow = {
   bank_code: string | null
   cashback_pct: number | null
   roundup_multiplier: number | null
+  invested_base: number | null
 }
 
 function toAccount(row: AccountRow): Account {
@@ -31,6 +32,7 @@ function toAccount(row: AccountRow): Account {
     bankCode:          row.bank_code ?? undefined,
     cashbackPct:       row.cashback_pct ?? undefined,
     roundupMultiplier: row.roundup_multiplier ?? undefined,
+    investedBase:      row.invested_base ?? undefined,
   }
 }
 
@@ -113,6 +115,7 @@ export const accountsRepo = {
         bank_code:          account.bankCode ?? null,
         cashback_pct:       account.cashbackPct ?? null,
         roundup_multiplier: account.roundupMultiplier ?? null,
+        invested_base:      account.investedBase ?? null,
       })
       .select()
       .single()
@@ -130,6 +133,7 @@ export const accountsRepo = {
     if (changes.bankCode          !== undefined) row.bank_code          = changes.bankCode ?? null
     if (changes.cashbackPct       !== undefined) row.cashback_pct       = changes.cashbackPct ?? null
     if (changes.roundupMultiplier !== undefined) row.roundup_multiplier = changes.roundupMultiplier ?? null
+    if (changes.investedBase      !== undefined) row.invested_base      = changes.investedBase ?? null
     const { error } = await supabase.from('accounts').update(row).eq('id', id)
     if (error) throw error
   },

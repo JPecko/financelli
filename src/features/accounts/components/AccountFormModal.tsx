@@ -42,6 +42,7 @@ interface FormValues {
   color: string
   cashbackPct: string
   roundupMultiplier: string
+  investedBase: string
 }
 
 interface Props {
@@ -63,6 +64,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       color: COLORS[0],
       cashbackPct: '',
       roundupMultiplier: '',
+      investedBase: '',
     },
   })
 
@@ -82,6 +84,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         color:             account.color,
         cashbackPct:       account.cashbackPct != null ? String(account.cashbackPct) : '',
         roundupMultiplier: account.roundupMultiplier != null ? String(account.roundupMultiplier) : 'off',
+        investedBase:      account.investedBase != null ? fromCents(account.investedBase).toFixed(2) : '',
       })
     } else if (open) {
       reset({
@@ -93,6 +96,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         color: COLORS[0],
         cashbackPct: '',
         roundupMultiplier: 'off',
+        investedBase: '',
       })
     }
   }, [open, account, reset])
@@ -107,6 +111,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       bankCode:          values.bankCode !== 'none' ? values.bankCode : undefined,
       cashbackPct:       values.cashbackPct ? parseFloat(values.cashbackPct) : undefined,
       roundupMultiplier: values.roundupMultiplier && values.roundupMultiplier !== 'off' ? parseInt(values.roundupMultiplier) : undefined,
+      investedBase:      values.type === 'investment' && values.investedBase ? toCents(parseFloat(values.investedBase)) : undefined,
     }
     if (isEdit && account?.id != null) {
       await updateAccount(account.id, payload)
@@ -211,6 +216,22 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
               ))}
             </div>
           </div>
+
+          {/* Invested Base — investment accounts only */}
+          {selectedType === 'investment' && (
+            <div className="space-y-1">
+              <Label htmlFor="acc-invested">Invested Base</Label>
+              <Input
+                id="acc-invested"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Total capital invested (optional)"
+                {...register('investedBase')}
+              />
+              <p className="text-xs text-muted-foreground">Total amount invested (cost basis) — used for P&L tracking</p>
+            </div>
+          )}
 
           {/* Cashback & Roundup */}
           <div className="grid grid-cols-2 gap-3">
