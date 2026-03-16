@@ -24,7 +24,7 @@ import PageLoader from '@/shared/components/PageLoader'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
-import InvestmentAccountCard from '../components/InvestmentAccountCard'
+import InvestmentAccountCard, { computeInvestmentBalance } from '../components/InvestmentAccountCard'
 import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
 import GroupsWidget from '../components/GroupsWidget'
@@ -75,7 +75,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { setFilterCategory, setFilterAccountId } = useTransactionsFilterStore()
-  const netWorth                   = useNetWorth()
+  const netWorthFromHook           = useNetWorth()
   const summary                    = useMonthSummary(YEAR, MONTH)
   const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(YEAR, MONTH)
   const { data: accounts     = [], isLoading: accLoading } = useSortedAccounts()
@@ -95,10 +95,23 @@ export default function DashboardPage() {
   const roundupMonth = transactions.filter(t => t.category === 'roundup').reduce((s, t) => s + Math.abs(t.amount), 0)
   const hasBenefits  = accounts.some(a => a.cashbackPct || a.roundupMultiplier)
 
-  // Net worth breakdown by account type
+  // Investment accounts + holdings + assets (must be before netWorthByType)
+  const { data: allHoldings = [] } = useHoldings()
+  const { data: allAssets   = [] } = useAssets()
+  const investmentAccounts = accounts.filter(a => a.type === 'investment')
+
+  // Compute effective balance per account: investment accounts use calculated value
+  const allAssetMap = Object.fromEntries(allAssets.map(a => [a.id!, a]))
+  function effectiveBalance(account: typeof accounts[0]): number {
+    if (account.type !== 'investment') return account.balance
+    const accountHoldings = allHoldings.filter(h => h.accountId === account.id)
+    return computeInvestmentBalance(account, accountHoldings, allAssetMap)
+  }
+
+  // Net worth breakdown by account type (investment accounts use computed balance)
   const netWorthByType = (() => {
     const map: Partial<Record<AccountType, number>> = {}
-    for (const a of accounts) map[a.type] = (map[a.type] ?? 0) + a.balance
+    for (const a of accounts) map[a.type] = (map[a.type] ?? 0) + effectiveBalance(a)
     return (Object.entries(map) as [AccountType, number][])
       .filter(([, v]) => v !== 0)
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
@@ -142,11 +155,6 @@ export default function DashboardPage() {
     navigate('/transactions')
   }
 
-  // Investment accounts + holdings + assets
-  const { data: allHoldings = [] } = useHoldings()
-  const { data: allAssets   = [] } = useAssets()
-  const investmentAccounts = accounts.filter(a => a.type === 'investment')
-
   // Savings rate
   const savingsRate = summary.personalIncome > 0
     ? Math.round((summary.personalBalance / summary.personalIncome) * 100)
@@ -182,7 +190,7 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-3">{formatMoney(netWorth)}</div>
+            <div className="text-2xl font-bold mb-3">{formatMoney(netWorthByType.reduce((s, [, v]) => s + v, 0) || netWorthFromHook)}</div>
             {netWorthByType.length === 0 ? (
               <p className="text-xs text-muted-foreground">{t('dashboard.noAccounts')}</p>
             ) : (
@@ -323,8 +331,8 @@ export default function DashboardPage() {
                   )}
                   label={account.name}
                   value={
-                    <span className={`text-sm font-medium tabular-nums ${account.balance < 0 ? 'text-rose-600' : ''}`}>
-                      {formatMoney(account.balance)}
+                    <span className={`text-sm font-medium tabular-nums ${effectiveBalance(account) < 0 ? 'text-rose-600' : ''}`}>
+                      {formatMoney(effectiveBalance(account))}
                     </span>
                   }
                 />

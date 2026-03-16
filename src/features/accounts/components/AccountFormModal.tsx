@@ -43,6 +43,7 @@ interface FormValues {
   cashbackPct: string
   roundupMultiplier: string
   investedBase: string
+  entryFee: string
 }
 
 interface Props {
@@ -65,6 +66,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       cashbackPct: '',
       roundupMultiplier: '',
       investedBase: '',
+      entryFee: '',
     },
   })
 
@@ -85,6 +87,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         cashbackPct:       account.cashbackPct != null ? String(account.cashbackPct) : '',
         roundupMultiplier: account.roundupMultiplier != null ? String(account.roundupMultiplier) : 'off',
         investedBase:      account.investedBase != null ? fromCents(account.investedBase).toFixed(2) : '',
+        entryFee:          account.entryFee != null ? fromCents(account.entryFee).toFixed(2) : '',
       })
     } else if (open) {
       reset({
@@ -97,6 +100,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         cashbackPct: '',
         roundupMultiplier: 'off',
         investedBase: '',
+        entryFee: '',
       })
     }
   }, [open, account, reset])
@@ -112,6 +116,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       cashbackPct:       values.cashbackPct ? parseFloat(values.cashbackPct) : undefined,
       roundupMultiplier: values.roundupMultiplier && values.roundupMultiplier !== 'off' ? parseInt(values.roundupMultiplier) : undefined,
       investedBase:      values.type === 'investment' && values.investedBase ? toCents(parseFloat(values.investedBase)) : undefined,
+      entryFee:          values.type === 'investment' && values.entryFee ? toCents(parseFloat(values.entryFee)) : undefined,
     }
     if (isEdit && account?.id != null) {
       await updateAccount(account.id, payload)
@@ -171,21 +176,23 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
             </Select>
           </div>
 
-          {/* Balance + Currency */}
+          {/* Balance + Currency — hidden for investment (balance is computed automatically) */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="acc-balance">
-                {isEdit ? 'Balance' : 'Initial Balance'}
-              </Label>
-              <Input
-                id="acc-balance"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                {...register('balance', { required: true })}
-              />
-            </div>
-            <div className="space-y-1">
+            {selectedType !== 'investment' && (
+              <div className="space-y-1">
+                <Label htmlFor="acc-balance">
+                  {isEdit ? 'Balance' : 'Initial Balance'}
+                </Label>
+                <Input
+                  id="acc-balance"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...register('balance', { required: selectedType !== 'investment' })}
+                />
+              </div>
+            )}
+            <div className={`space-y-1 ${selectedType === 'investment' ? 'col-span-2' : ''}`}>
               <Label htmlFor="acc-currency">Currency</Label>
               <Input
                 id="acc-currency"
@@ -217,19 +224,33 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
             </div>
           </div>
 
-          {/* Invested Base — investment accounts only */}
+          {/* Investment-only fields */}
           {selectedType === 'investment' && (
-            <div className="space-y-1">
-              <Label htmlFor="acc-invested">Invested Base</Label>
-              <Input
-                id="acc-invested"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Total capital invested (optional)"
-                {...register('investedBase')}
-              />
-              <p className="text-xs text-muted-foreground">Total amount invested (cost basis) — used for P&L tracking</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="acc-invested">Capital Investido</Label>
+                <Input
+                  id="acc-invested"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  {...register('investedBase')}
+                />
+                <p className="text-xs text-muted-foreground">Total depositado na corretora</p>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="acc-fee">Fee por entrada</Label>
+                <Input
+                  id="acc-fee"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  {...register('entryFee')}
+                />
+                <p className="text-xs text-muted-foreground">Comissão fixa por compra</p>
+              </div>
             </div>
           )}
 

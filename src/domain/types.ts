@@ -22,7 +22,8 @@ export interface Account {
   bankCode?: string        // e.g. 'revolut' — matches BANK_OPTIONS code
   cashbackPct?: number     // e.g. 1 = 1% cashback on expenses (null = disabled)
   roundupMultiplier?: number // e.g. 5 = ×5 roundup on expenses (null = disabled)
-  investedBase?: number    // total capital invested (cost basis), in cents — investment accounts only
+  investedBase?: number    // total capital invested (deposits), in cents — investment accounts only
+  entryFee?: number        // fixed fee per holding entry (purchase), in cents — investment accounts only
 }
 
 // ---- Assets & Holdings (investment portfolio tracking) -----------------
