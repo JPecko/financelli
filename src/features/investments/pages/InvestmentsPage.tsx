@@ -116,7 +116,12 @@ export default function InvestmentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {assets.map(asset => (
+                {assets.map(asset => {
+                  const currentEditingPrice = editingPrice?.assetId === asset.id ? editingPrice : null
+                  const isEditingPrice = currentEditingPrice != null
+                  const editingPriceValue = currentEditingPrice?.value ?? ''
+
+                  return (
                   <tr key={asset.id} className="border-b last:border-0 hover:bg-accent/20 transition-colors">
                     <td className="px-5 py-3 font-medium">{asset.name}</td>
                     <td className="px-4 py-3 text-muted-foreground uppercase text-xs">{asset.ticker ?? '—'}</td>
@@ -125,14 +130,14 @@ export default function InvestmentsPage() {
                       onClick={() => startEditPrice(asset)}
                       title="Click to update price"
                     >
-                      {editingPrice?.assetId === asset.id ? (
+                      {isEditingPrice ? (
                         <input
                           ref={priceInputRef}
                           type="number"
                           step="0.0001"
                           min="0"
                           className="w-28 text-right tabular-nums bg-background border border-primary rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                          value={editingPrice.value}
+                          value={editingPriceValue}
                           onChange={e => setEditingPrice(prev => prev ? { ...prev, value: e.target.value } : null)}
                           onBlur={() => { void commitEditPrice(asset) }}
                           onKeyDown={e => {
@@ -166,7 +171,8 @@ export default function InvestmentsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
