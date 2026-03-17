@@ -46,12 +46,20 @@ function AccountSelect({
   accounts:     Account[]
   withExternal: boolean
 }) {
+  const selectedAccount = accounts.find(a => String(a.id) === value)
+
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
-          <SelectValue placeholder="Select" />
+          {selectedAccount ? (
+            <AccountOption account={selectedAccount} />
+          ) : value === EXTERNAL ? (
+            <span className="italic text-muted-foreground">External</span>
+          ) : (
+            <SelectValue placeholder="Select" />
+          )}
         </SelectTrigger>
         <SelectContent>
           {withExternal && (

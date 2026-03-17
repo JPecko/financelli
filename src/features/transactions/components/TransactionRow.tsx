@@ -224,7 +224,7 @@ export default function TransactionRow({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onEdit(tx)}>
+          <DropdownMenuItem onClick={() => setTimeout(() => onEdit(tx), 0)}>
             <Pencil className="h-4 w-4 mr-2" /> Edit
           </DropdownMenuItem>
           {linkedSE && onReopenSE && linkedSE.status === 'settled' && (

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/categories'
@@ -18,64 +18,56 @@ export interface TransactionFormValues {
   category:       string
   description:    string
   date:           string
-  isShared:       boolean  // true = split enabled (default), false = full expense mine
-  splitN:         number   // how many people to split between (only used when isShared = true)
-  isReimbursable: boolean  // true = exclude entirely from personal stats
-  personalUserId: string   // if non-empty and !isShared, only this user owns the expense
-  holdingId:      string   // '' = no link, '123' = holding ID — investment accounts only
-  units:          string   // units bought/sold — investment accounts only
+  isShared:       boolean  // true = split enabled; false = full expense mine
+  splitN:         number   // only when isShared = true
+  isReimbursable: boolean  // exclude from personal stats
+  personalUserId: string   // non-empty & !isShared → only this user owns the expense
+  holdingId:      string   // '' = no link, '123' = holding ID (investment accounts)
+  units:          string   // units bought/sold (investment accounts)
 }
 
-function buildPayload(values: TransactionFormValues): Omit<Transaction, 'id' | 'createdAt'> {
-  const absAmount  = toCents(parseFloat(values.amount.replace(',', '.')) || 0)
-  const fromIsReal = values.fromId !== EXTERNAL
-  const toIsReal   = values.toId   !== EXTERNAL
+// ── Payload builder ────────────────────────────────────────────────────────────
+
+function buildPayload(v: TransactionFormValues): Omit<Transaction, 'id' | 'createdAt'> {
+  const abs        = toCents(parseFloat(v.amount.replace(',', '.')) || 0)
+  const fromIsReal = v.fromId !== EXTERNAL
+  const toIsReal   = v.toId   !== EXTERNAL
   const base = {
-    type:        values.type,
-    category:    values.category,
-    description: values.description.trim(),
-    date:        values.date,
-    isPersonal:     !values.isShared,
-    splitN:         values.isShared ? Math.max(2, Math.round(values.splitN ?? 2)) : null,
-    isReimbursable: values.isReimbursable,
-    personalUserId: !values.isShared && values.personalUserId ? values.personalUserId : undefined,
-    holdingId:      values.holdingId ? parseInt(values.holdingId) : undefined,
-    units:          values.holdingId && values.units ? parseFloat(values.units) : undefined,
+    type:           v.type,
+    category:       v.category,
+    description:    v.description.trim(),
+    date:           v.date,
+    isPersonal:     !v.isShared,
+    splitN:         v.isShared ? Math.max(2, Math.round(v.splitN ?? 2)) : null,
+    isReimbursable: v.isReimbursable,
+    personalUserId: !v.isShared && v.personalUserId ? v.personalUserId : undefined,
+    holdingId:      v.holdingId ? parseInt(v.holdingId) : undefined,
+    units:          v.holdingId && v.units ? parseFloat(v.units) : undefined,
   }
-
-  if (values.type === 'transfer') {
-    if (fromIsReal && toIsReal) {
-      return { ...base, accountId: parseInt(values.fromId), toAccountId: parseInt(values.toId), amount: -absAmount }
-    }
-    if (fromIsReal) {
-      return { ...base, accountId: parseInt(values.fromId), amount: -absAmount }
-    }
-    return { ...base, accountId: parseInt(values.toId), amount: +absAmount }
+  if (v.type === 'transfer') {
+    if (fromIsReal && toIsReal) return { ...base, accountId: parseInt(v.fromId), toAccountId: parseInt(v.toId), amount: -abs }
+    return fromIsReal
+      ? { ...base, accountId: parseInt(v.fromId), amount: -abs }
+      : { ...base, accountId: parseInt(v.toId),   amount: +abs }
   }
-
-  const sign = values.type === 'income' ? 1 : -1
-  return { ...base, accountId: parseInt(fromIsReal ? values.fromId : values.toId), amount: sign * absAmount }
+  return { ...base, accountId: parseInt(fromIsReal ? v.fromId : v.toId), amount: (v.type === 'income' ? 1 : -1) * abs }
 }
 
-function buildDefaultValues(
-  defaultType: TransactionType,
-  firstId: string,
-  secondId: string,
-  defaultSplitN: number,
-  isSharedAccount: boolean,
+// ── Form value builders ────────────────────────────────────────────────────────
+
+function makeDefaults(
+  type: TransactionType, firstId: string, secondId: string, splitN: number, isShared: boolean,
 ): TransactionFormValues {
   return {
-    type:        defaultType,
-    fromId:      defaultType === 'income'   ? EXTERNAL : firstId,
-    toId:        defaultType === 'income'   ? firstId
-               : defaultType === 'transfer' ? secondId
-               : EXTERNAL,
-    amount:      '',
-    category:    defaultType === 'transfer' ? 'transfer' : 'other',
-    description: '',
-    date:        isoToday(),
-    isShared:       defaultType === 'income' ? false : isSharedAccount,
-    splitN:         defaultSplitN,
+    type,
+    fromId:         type === 'income'   ? EXTERNAL : firstId,
+    toId:           type === 'income'   ? firstId  : type === 'transfer' ? secondId : EXTERNAL,
+    amount:         '',
+    category:       type === 'transfer' ? 'transfer' : 'other',
+    description:    '',
+    date:           isoToday(),
+    isShared:       type !== 'income' && isShared,
+    splitN,
     isReimbursable: false,
     personalUserId: '',
     holdingId:      '',
@@ -83,36 +75,37 @@ function buildDefaultValues(
   }
 }
 
-function buildEditValues(transaction: Transaction, account: { participants?: number } | undefined): TransactionFormValues {
-  const isInternalTransfer  = transaction.type === 'transfer' && transaction.toAccountId != null
-  const accountParticipants = account?.participants ?? 1
-  const isSharedAccount     = accountParticipants > 1
+function makeEditValues(tx: Transaction, account: { participants?: number } | undefined): TransactionFormValues {
+  const n        = account?.participants ?? 1
+  const isShared = tx.isPersonal ? false : tx.splitN != null ? true : n > 1
 
-  // Priority: explicit isPersonal → explicit splitN → account default
-  const isShared = transaction.isPersonal
-    ? false
-    : transaction.splitN != null
-    ? true
-    : isSharedAccount
+  let fromId: string, toId: string
+  if (tx.type === 'income')           { fromId = EXTERNAL;             toId = String(tx.accountId) }
+  else if (tx.type === 'expense')     { fromId = String(tx.accountId); toId = EXTERNAL }
+  else if (tx.toAccountId != null)    { fromId = String(tx.accountId); toId = String(tx.toAccountId) }
+  else {
+    // External transfer: direction from amount sign
+    fromId = tx.amount < 0 ? String(tx.accountId) : EXTERNAL
+    toId   = tx.amount < 0 ? EXTERNAL : String(tx.accountId)
+  }
 
   return {
-    type:        transaction.type,
-    fromId:      transaction.type === 'income' ? EXTERNAL : String(transaction.accountId),
-    toId:        isInternalTransfer
-      ? String(transaction.toAccountId)
-      : transaction.type === 'expense' ? EXTERNAL : String(transaction.accountId),
-    amount:      Math.abs(fromCents(transaction.amount)).toFixed(2),
-    category:    transaction.category,
-    description: transaction.description,
-    date:        transaction.date,
+    type:           tx.type,
+    fromId, toId,
+    amount:         Math.abs(fromCents(tx.amount)).toFixed(2),
+    category:       tx.category,
+    description:    tx.description,
+    date:           tx.date,
     isShared,
-    splitN:         transaction.splitN ?? (isShared ? accountParticipants : 2),
-    isReimbursable: transaction.isReimbursable ?? false,
-    personalUserId: transaction.personalUserId ?? '',
-    holdingId:      transaction.holdingId != null ? String(transaction.holdingId) : '',
-    units:          transaction.units != null ? String(transaction.units) : '',
+    splitN:         tx.splitN ?? (isShared ? n : 2),
+    isReimbursable: tx.isReimbursable ?? false,
+    personalUserId: tx.personalUserId ?? '',
+    holdingId:      tx.holdingId != null ? String(tx.holdingId) : '',
+    units:          tx.units     != null ? String(tx.units)     : '',
   }
 }
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
 interface UseTransactionFormProps {
   open:              boolean
@@ -126,35 +119,31 @@ interface UseTransactionFormProps {
 export function useTransactionForm({
   open, onClose, transaction, defaultType = 'expense', defaultAccountId, onAfterSubmit,
 }: UseTransactionFormProps) {
-  const isEdit   = !!transaction
   const { user } = useAuth()
   const { data: accounts = [] } = useSortedAccounts()
-  const firstId  = defaultAccountId ?? (accounts[0]?.id != null ? String(accounts[0].id) : '')
-  const secondId = accounts.find(a => String(a.id) !== firstId)?.id != null
-    ? String(accounts.find(a => String(a.id) !== firstId)!.id)
-    : EXTERNAL
 
-  const primaryAccount  = accounts.find(a => String(a.id) === firstId)
-  const isSharedAccount = (primaryAccount?.participants ?? 1) > 1
-  const defaultSplitN   = isSharedAccount ? primaryAccount!.participants! : 2
-  const editAccount     = transaction ? accounts.find(a => a.id === transaction.accountId) : undefined
+  const firstId     = defaultAccountId ?? (accounts[0]?.id != null ? String(accounts[0].id) : '')
+  const secondId    = accounts.find(a => String(a.id) !== firstId)?.id != null
+    ? String(accounts.find(a => String(a.id) !== firstId)!.id) : EXTERNAL
+  const primary     = accounts.find(a => String(a.id) === firstId)
+  const isSharedDef = (primary?.participants ?? 1) > 1
+  const splitNDef   = isSharedDef ? primary!.participants! : 2
+  const editAccount = transaction ? accounts.find(a => a.id === transaction.accountId) : undefined
 
   const form = useForm<TransactionFormValues>({
-    defaultValues: buildDefaultValues(defaultType, firstId, secondId, defaultSplitN, isSharedAccount),
+    defaultValues: makeDefaults(defaultType, firstId, secondId, splitNDef, isSharedDef),
   })
-
   const { setValue, watch, reset, handleSubmit } = form
-  const selectedType = watch('type')
-  const selectedFrom = watch('fromId')
-  const selectedTo   = watch('toId')
-  const splitN           = watch('splitN')
-  const isReimbursable   = watch('isReimbursable')
-  const personalUserId   = watch('personalUserId')
-  const holdingId        = watch('holdingId')
-  const units            = watch('units')
 
-  // Shared account participants list (for "personal for" selector when split is off)
-  const selectedAccount = accounts.find(a => String(a.id) === selectedFrom)
+  const selectedType   = watch('type')
+  const selectedFrom   = watch('fromId')
+  const selectedTo     = watch('toId')
+  const splitN         = watch('splitN')
+  const isReimbursable = watch('isReimbursable')
+  const personalUserId = watch('personalUserId')
+  const holdingId      = watch('holdingId')
+
+  const selectedAccount         = accounts.find(a => String(a.id) === selectedFrom)
   const isSharedAccountSelected = (selectedAccount?.participants ?? 1) > 1
   const sharedAccountParticipants = isSharedAccountSelected && selectedAccount
     ? [
@@ -171,80 +160,52 @@ export function useTransactionForm({
     selectedType === 'transfer' ? CATEGORIES.filter(c => ['invest-move', 'transfer', 'capital', 'other'].includes(c.id)) :
     EXPENSE_CATEGORIES
 
-  const accountOptions = (exclude?: string) =>
-    accounts.filter(a => String(a.id) !== exclude)
+  const accountOptions = (exclude?: string) => accounts.filter(a => String(a.id) !== exclude)
 
-  const applySharedDefaults = (accountId: string, type: TransactionType = selectedType) => {
-    if (type === 'income') {
-      setValue('isShared', false)
-      setValue('splitN', 2)
-      return
-    }
+  const applyShared = (accountId: string, type = selectedType) => {
+    if (type === 'income') { setValue('isShared', false); setValue('splitN', 2); return }
     const acct   = accounts.find(a => String(a.id) === accountId)
     const shared = (acct?.participants ?? 1) > 1
     setValue('isShared', shared)
     setValue('splitN', shared ? (acct!.participants ?? 2) : 2)
   }
 
-  const handleFromChange = (v: string) => {
-    setValue('fromId', v)
-    if (!isTransfer) applySharedDefaults(v)
-  }
+  const handleFromChange = (v: string) => { setValue('fromId', v); if (!isTransfer) applyShared(v) }
 
   const handleTypeChange = (t: TransactionType) => {
+    const prev = form.getValues('type')
     setValue('type', t)
     setValue('category', t === 'transfer' ? 'transfer' : 'other')
-    if (t === 'income') {
-      setValue('fromId', EXTERNAL)
-      setValue('toId',   firstId)
-    } else if (t === 'expense') {
-      setValue('fromId', firstId)
-      setValue('toId',   EXTERNAL)
-    } else {
-      setValue('fromId', firstId)
-      setValue('toId',   secondId)
+    if (t !== prev) {
+      if      (t === 'income')  { setValue('fromId', EXTERNAL); setValue('toId', firstId)  }
+      else if (t === 'expense') { setValue('fromId', firstId);  setValue('toId', EXTERNAL) }
+      else                      { setValue('fromId', firstId);  setValue('toId', secondId) }
     }
-    if (t !== 'transfer') applySharedDefaults(firstId, t)
+    if (t !== 'transfer') applyShared(firstId, t)
   }
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
     if (!open) return
-    reset(transaction ? buildEditValues(transaction, editAccount) : buildDefaultValues(defaultType, firstId, secondId, defaultSplitN, isSharedAccount))
-  }, [open, transaction, firstId, secondId, defaultType, defaultSplitN, isSharedAccount, editAccount, reset])
+    reset(transaction ? makeEditValues(transaction, editAccount) : makeDefaults(defaultType, firstId, secondId, splitNDef, isSharedDef))
+  }, [open, transaction, firstId, secondId, splitNDef, isSharedDef, editAccount, reset])
 
   const onSubmit = handleSubmit(async (values) => {
     const payload = buildPayload(values)
-    if (isEdit && transaction?.id != null) {
+    if (transaction?.id != null) {
       await updateTransaction(transaction.id, payload)
-      if (onAfterSubmit) await onAfterSubmit(undefined)
+      await onAfterSubmit?.()
     } else {
       const id = await addTransaction(payload)
-      if (onAfterSubmit) await onAfterSubmit(id)
+      await onAfterSubmit?.(id)
     }
     onClose()
   })
 
   return {
-    form,
-    isEdit,
-    isTransfer,
-    isValid,
-    categories,
-    accounts,
-    accountOptions,
-    selectedType,
-    selectedFrom,
-    selectedTo,
-    splitN,
-    isReimbursable,
-    personalUserId,
-    holdingId,
-    units,
-    isSharedAccount: isSharedAccountSelected,
-    sharedAccountParticipants,
-    selectedAccount,
-    handleTypeChange,
-    handleFromChange,
-    onSubmit,
+    form, isTransfer, isValid, categories, accounts, accountOptions,
+    selectedType, selectedFrom, selectedTo, splitN, isReimbursable, personalUserId, holdingId,
+    isSharedAccount: isSharedAccountSelected, sharedAccountParticipants, selectedAccount,
+    handleTypeChange, handleFromChange, onSubmit,
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog'
@@ -207,6 +207,14 @@ export default function TransactionFormModal({
     // splits + payerType will be resolved once members load (members effect reads linkedGrp*)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedGrpEntry, open])
+
+  // ── Sync viewType before paint so the correct tab is visible on first render
+  useLayoutEffect(() => {
+    if (!open) return
+    if (transaction)       setViewType(transaction.type)
+    else if (sharedExpense) setViewType('groups')
+    else                    setViewType((defaultType ?? 'expense') as TransactionType)
+  }, [open, transaction, sharedExpense, defaultType])
 
   // ── Reset on modal open ───────────────────────────────────────────────────
   useEffect(() => {
@@ -431,7 +439,10 @@ export default function TransactionFormModal({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+      <DialogContent
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle>{isEditTx ? t('transactions.editTitle') : t('transactions.newTitle')}</DialogTitle>
         </DialogHeader>
@@ -728,7 +739,7 @@ export default function TransactionFormModal({
         ) : (
           /* ── Standard form ─────────────────────────────────────────────── */
           <form onSubmit={onSubmit} className="space-y-4 py-2">
-            <TransactionTypeTabs value={viewType} onChange={handleViewTypeChange} activeTabs={linkedGrpEntry ? ['groups'] : []} />
+            <TransactionTypeTabs value={selectedType} onChange={handleViewTypeChange} activeTabs={linkedGrpEntry ? ['groups'] : []} />
 
             <AccountSelector
               isTransfer={isTransfer}
