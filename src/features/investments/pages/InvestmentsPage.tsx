@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { TrendingUp, TrendingDown, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Settings2 } from 'lucide-react'
+import { TrendingUp, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Settings2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
@@ -12,6 +12,7 @@ import { useT } from '@/shared/i18n'
 import GeneralAssetsSection from '../components/GeneralAssetsSection'
 import HoldingFormModal from '../components/HoldingFormModal'
 import AssetFormModal from '../components/AssetFormModal'
+import PortfolioSummary from '../components/PortfolioSummary'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
 import { computeInvestmentBalance, computeMarketValue } from '../utils/investmentMetrics'
 import type { Asset, Holding, Account } from '@/domain/types'
@@ -404,42 +405,28 @@ export default function InvestmentsPage() {
 
       {/* ── Portfolio summary ───────────────────────────────────────────── */}
       {investmentAccounts.length > 0 && holdings.length > 0 && (() => {
-        const totalPortfolio = holdings.reduce((s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0)
-        const totalCost      = holdings.reduce((s, h) => s + h.quantity * h.avgCost, 0)
-        const totalFees      = investmentAccounts.reduce((s, a) => s + (a.entryFee ?? 0) * holdings.filter(h => h.accountId === a.id).length, 0)
-        const totalAdjCost   = totalCost + totalFees
-        const totalPnL       = totalPortfolio - totalAdjCost
-        const totalPnLPct    = totalAdjCost > 0 ? (totalPnL / totalAdjCost) * 100 : 0
-        const totalInvBase   = investmentAccounts.reduce((s, a) => s + (a.investedBase ?? 0), 0)
+        const totalMarketValue = holdings.reduce((sum, holding) => (
+          sum + holding.quantity * (assetMap[holding.assetId]?.currentPrice ?? 0)
+        ), 0)
+        const totalCost = holdings.reduce((sum, holding) => sum + holding.quantity * holding.avgCost, 0)
+        const totalFees = investmentAccounts.reduce((sum, account) => (
+          sum + (account.entryFee ?? 0) * holdings.filter(holding => holding.accountId === account.id).length
+        ), 0)
+        const totalAdjustedCost = totalCost + totalFees
+        const totalPnL = totalMarketValue - totalAdjustedCost
+        const totalPnLPct = totalAdjustedCost > 0 ? (totalPnL / totalAdjustedCost) * 100 : 0
+        const totalInvestedBase = investmentAccounts.reduce((sum, account) => sum + (account.investedBase ?? 0), 0)
+
         return (
-          <div className="rounded-xl border bg-card shadow-sm p-5">
-            <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Portfolio Total</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {totalInvBase > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('investments.investedBase')}</p>
-                  <p className="text-lg font-bold tabular-nums">{formatMoney(totalInvBase)}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-xs text-muted-foreground">{t('investments.costBasis')}</p>
-                <p className="text-lg font-bold tabular-nums">{formatMoney(totalAdjCost)}</p>
-                {totalFees > 0 && <p className="text-xs text-muted-foreground">incl. {formatMoney(totalFees)} fees</p>}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t('investments.marketValue')}</p>
-                <p className="text-lg font-bold tabular-nums">{formatMoney(totalPortfolio)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t('investments.pnl')}</p>
-                <p className={`text-lg font-bold tabular-nums flex items-center gap-1 ${totalPnL >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {totalPnL >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                  {totalPnL >= 0 ? '+' : ''}{formatMoney(totalPnL)}
-                  <span className="text-sm">({totalPnLPct >= 0 ? '+' : ''}{totalPnLPct.toFixed(1)}%)</span>
-                </p>
-              </div>
-            </div>
-          </div>
+          <PortfolioSummary
+            title="Portfolio Total"
+            totalInvestedBase={totalInvestedBase}
+            totalAdjustedCost={totalAdjustedCost}
+            totalFees={totalFees}
+            totalMarketValue={totalMarketValue}
+            totalPnL={totalPnL}
+            totalPnLPct={totalPnLPct}
+          />
         )
       })()}
 

@@ -80,6 +80,7 @@ When implementing a task, respond with:
 3. Files changed
 4. Testing/verification summary
 5. Any assumptions or risks
+6. Update and use translations using i18n files for all texts
 
 ## Delivery style
 
