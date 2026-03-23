@@ -43,7 +43,7 @@ export default function MobileHeader() {
         title="Check app updates"
       >
         <BrandLogo variant="mark" className="h-8 w-8" />
-        <span className="text-sm font-semibold text-white tracking-tight">Financelli</span>
+        <span className="text-xl font-semibold text-white tracking-tight">Financelli</span>
         <span className="text-[10px] text-muted-foreground/60">{APP_VERSION}</span>
       </button>
 
