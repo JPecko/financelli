@@ -1,17 +1,8 @@
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { useVersionCheck } from '@/shared/hooks/useVersionCheck'
+import { hardRefreshApp } from '@/shared/utils/hardRefreshApp'
 import { useT } from '@/shared/i18n'
-
-async function applyUpdate() {
-  if ('serviceWorker' in navigator) {
-    const reg = await navigator.serviceWorker.getRegistration()
-    if (reg?.waiting) {
-      reg.waiting.postMessage({ type: 'SKIP_WAITING' })
-    }
-  }
-  window.location.reload()
-}
 
 export default function UpdateAvailableModal() {
   const t = useT()
@@ -31,7 +22,7 @@ export default function UpdateAvailableModal() {
             <p className="text-sm text-muted-foreground">{t('update.message')}</p>
           </div>
         </div>
-        <Button className="w-full" onClick={applyUpdate}>
+        <Button className="w-full" onClick={() => void hardRefreshApp()}>
           {t('update.updateBtn')}
         </Button>
       </div>
