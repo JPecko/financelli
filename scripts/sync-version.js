@@ -12,12 +12,25 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
+
+// Load .env locally — on Vercel/CI env vars are already injected
+const envFile = resolve(root, '.env')
+if (existsSync(envFile)) {
+  for (const line of readFileSync(envFile, 'utf-8').split('\n')) {
+    const match = line.match(/^([^#=\s][^=]*)=(.*)$/)
+    if (match) {
+      const key = match[1].trim()
+      const val = match[2].trim().replace(/^["']|["']$/g, '')
+      process.env[key] ??= val
+    }
+  }
+}
 
 const { version } = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8'))
 
