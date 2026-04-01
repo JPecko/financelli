@@ -327,6 +327,7 @@ export default function TransactionsPage() {
                 <GroupExpenseRow
                   key={`ge-${item.data.entryId}`}
                   item={item.data}
+                  accountsById={accountsById}
                 />
               )
             )}

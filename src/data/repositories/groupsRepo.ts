@@ -384,7 +384,7 @@ export const groupsRepo = {
         amount,
         member_id,
         group_entries!inner(
-          id, group_id, description, date, category, total_amount, paid_by_member_id, created_at,
+          id, group_id, description, date, category, total_amount, paid_by_member_id, created_at, transaction_id,
           groups!inner(name),
           payer:group_members!paid_by_member_id(name)
         )
@@ -400,11 +400,13 @@ export const groupsRepo = {
       group_entries: {
         id: number; group_id: number; description: string; date: string
         category: string; total_amount: number; paid_by_member_id: number; created_at: string
+        transaction_id: number | null
         groups: { name: string }
         payer: { name: string } | null
       }
     }
-    return (data as unknown as Row[]).map(row => ({
+
+    const items = (data as unknown as Row[]).map(row => ({
       entryId:     row.group_entries.id,
       groupId:     row.group_entries.group_id,
       groupName:   row.group_entries.groups.name,
@@ -414,7 +416,31 @@ export const groupsRepo = {
       myShare:     row.amount,
       paidByName:  row.group_entries.payer?.name ?? '—',
       paidByMe:    memberIds.includes(row.group_entries.paid_by_member_id),
+      _transactionId: row.group_entries.transaction_id,
       createdAt:   row.group_entries.created_at,
+    }))
+
+    // Enrich paidByMe items with the payment account id
+    const txIds = items
+      .filter(i => i.paidByMe && i._transactionId != null)
+      .map(i => i._transactionId!)
+
+    let txToAccountId: Record<number, number> = {}
+    if (txIds.length > 0) {
+      const { data: txData } = await supabase
+        .from('transactions')
+        .select('id, account_id')
+        .in('id', txIds)
+      for (const row of (txData ?? []) as { id: number; account_id: number }[]) {
+        txToAccountId[row.id] = row.account_id
+      }
+    }
+
+    return items.map(({ _transactionId, ...item }) => ({
+      ...item,
+      paymentAccountId: item.paidByMe && _transactionId != null
+        ? txToAccountId[_transactionId]
+        : undefined,
     }))
   },
 

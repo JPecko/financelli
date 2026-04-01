@@ -2,18 +2,20 @@ import { useNavigate } from 'react-router-dom'
 import { ExternalLink, Users } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
+import AccountPill from '@/shared/components/AccountPill'
 import { formatMoney } from '@/domain/money'
 import { formatDate } from '@/shared/utils/format'
 import { getCategoryById, tCategory } from '@/domain/categories'
 import { useT } from '@/shared/i18n'
-import type { GroupExpenseItem } from '@/domain/types'
+import type { Account, GroupExpenseItem } from '@/domain/types'
 import { TRANSACTIONS_GRID_COLS } from './TransactionRow'
 
 const ROW_BASE_CLASS =
   `relative px-4 py-3 transition-colors group flex items-center gap-3 md:grid ${TRANSACTIONS_GRID_COLS} md:gap-x-3 md:items-center`
 
 interface Props {
-  item: GroupExpenseItem
+  item:         GroupExpenseItem
+  accountsById: Record<number, Account>
 }
 
 function GroupExpenseDescription({ item }: Props) {
@@ -33,7 +35,7 @@ function GroupExpenseDescription({ item }: Props) {
   )
 }
 
-export default function GroupExpenseRow({ item }: Props) {
+export default function GroupExpenseRow({ item, accountsById }: Props) {
   const t        = useT()
   const navigate = useNavigate()
   const cat      = getCategoryById(item.category)
@@ -50,9 +52,11 @@ export default function GroupExpenseRow({ item }: Props) {
         <GroupExpenseDescription item={item} />
       </div>
 
-      {/* Account column — payer name (no bank account involved) */}
+      {/* Account column */}
       <div className="hidden md:block min-w-0 text-sm text-muted-foreground truncate">
-        {item.paidByMe ? t('groups.iPaid') : item.paidByName}
+        {item.paidByMe && item.paymentAccountId != null
+          ? <AccountPill accountId={item.paymentAccountId} accountsById={accountsById} />
+          : item.paidByMe ? t('groups.iPaid') : item.paidByName}
       </div>
 
       {/* Category — desktop */}
@@ -80,7 +84,9 @@ export default function GroupExpenseRow({ item }: Props) {
         </div>
         <div className="text-sm text-muted-foreground mt-1">{formatDate(item.date)}</div>
         <div className="text-sm text-muted-foreground mt-0.5 truncate">
-          {item.paidByMe ? t('groups.iPaid') : item.paidByName}
+          {item.paidByMe && item.paymentAccountId != null
+            ? <AccountPill accountId={item.paymentAccountId} accountsById={accountsById} />
+            : item.paidByMe ? t('groups.iPaid') : item.paidByName}
         </div>
       </div>
 

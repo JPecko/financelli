@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Pencil, Trash2, UserPlus, UserMinus,
@@ -183,6 +184,28 @@ export default function GroupDetailPage() {
   const { data: splits  = [] } = useGroupSplits(groupId)
   const { balances, debts } = useGroupBalances(groupId)
   const { data: accounts = [] } = useSortedAccounts()
+
+  // Batch-fetch account_id for entries that have a linked transaction
+  const linkedTxIds = useMemo(
+    () => entries.map(e => e.transactionId).filter((id): id is number => id != null),
+    [entries],
+  )
+  const linkedTxIdsKey = linkedTxIds.slice().sort((a, b) => a - b).join(',')
+  const { data: txAccountMap = {} } = useQuery<Record<number, number>>({
+    queryKey: ['group-linked-tx-accounts', linkedTxIdsKey],
+    enabled: linkedTxIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('transactions')
+        .select('id, account_id')
+        .in('id', linkedTxIds)
+      const map: Record<number, number> = {}
+      for (const row of (data ?? []) as { id: number; account_id: number }[]) {
+        map[row.id] = row.account_id
+      }
+      return map
+    },
+  })
 
   const [editGroupOpen,    setEditGroupOpen]    = useState(false)
   const [memberDialogOpen, setMemberDialogOpen] = useState(false)
@@ -529,6 +552,9 @@ export default function GroupDetailPage() {
               const entrySplits = splitsByEntry[entry.id!] ?? []
               const myEntryShare = myMember ? entrySplits.find(s => s.memberId === myMember.id) : undefined
               const iPaid = myMember != null && entry.paidByMemberId === myMember.id
+              const linkedAccount = iPaid && entry.transactionId != null
+                ? accounts.find(a => a.id === txAccountMap[entry.transactionId!])
+                : undefined
 
               return (
                 <Card key={entry.id} className={`overflow-hidden ${iPaid ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-rose-500/40 bg-rose-500/5'}`}>
@@ -545,7 +571,7 @@ export default function GroupDetailPage() {
                           <div className="min-w-0">
                             <p className="text-sm font-medium truncate">{entry.description}</p>
                             <p className="text-xs text-muted-foreground">
-                              {formatDate(entry.date)} · {t('groups.paidBy')} {paidBy?.name ?? '?'}
+                              {formatDate(entry.date)} · {t('groups.paidBy')} {linkedAccount ? linkedAccount.name : paidBy?.name ?? '?'}
                             </p>
                           </div>
                           <div className="text-right shrink-0">

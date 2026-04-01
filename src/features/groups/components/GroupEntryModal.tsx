@@ -7,12 +7,13 @@ import { Label } from '@/shared/components/ui/label'
 import { cn } from '@/lib/utils'
 import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
-import FormToggle from '@/shared/components/FormToggle'
 import { toCents, fromCents } from '@/domain/money'
 import { CATEGORIES, tCategory } from '@/domain/categories'
 import { addGroupEntry, updateGroupEntry } from '@/shared/hooks/useGroups'
-import { addTransaction } from '@/shared/hooks/useTransactions'
+import { addTransaction, updateTransaction, removeTransaction } from '@/shared/hooks/useTransactions'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
+import { buildAccountSelectOption } from '@/features/transactions/components/accountSelectOptions'
+import { supabase } from '@/data/supabase'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useT } from '@/shared/i18n'
 import type { GroupEntry, GroupEntrySplit, GroupMember } from '@/domain/types'
@@ -62,9 +63,9 @@ interface Props {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function GroupEntryModal({ open, onClose, groupId, members, entry, existingSplits }: Props) {
-  const t      = useT()
+  const t        = useT()
   const { user } = useAuth()
-  const isEdit = !!entry
+  const isEdit   = !!entry
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     defaultValues: {
@@ -78,15 +79,21 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
   })
 
   const { data: accounts = [] } = useSortedAccounts()
-  const [splits,      setSplits]      = useState<SplitRow[]>([])
-  const [splitMode,   setSplitMode]   = useState<'even' | 'custom'>('even')
-  const [splitError,  setSplitError]  = useState('')
-  const [createTx,    setCreateTx]    = useState(false)
+  const [splits,     setSplits]     = useState<SplitRow[]>([])
+  const [splitMode,  setSplitMode]  = useState<'even' | 'custom'>('even')
+  const [splitError, setSplitError] = useState('')
   const [txAccountId, setTxAccountId] = useState('')
 
-  const categoryOptions  = CATEGORIES.map(c => ({ value: c.id, label: tCategory(c.id, t) }))
-  const memberOptions    = members.map(m => ({ value: String(m.id), label: m.name }))
-  const accountOptions   = accounts.map(acc => ({ value: String(acc.id), label: acc.name }))
+  const myMember        = members.find(m => m.userId === user?.id)
+  const watchedPaidById = watch('paidByMemberId')
+  const iAmPayer        = myMember != null && watchedPaidById === String(myMember.id)
+
+  const categoryOptions = CATEGORIES.map(c => ({ value: c.id, label: tCategory(c.id, t) }))
+  const memberOptions   = members.map(m => ({ value: String(m.id), label: m.name }))
+  const accountOptions  = [
+    { value: '', label: t('groups.noLinkedAccount') },
+    ...accounts.map(buildAccountSelectOption),
+  ]
 
   // ── Initialise when modal opens ───────────────────────────────────────────
 
@@ -114,6 +121,19 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
         setSplits(members.map(m => ({ memberId: m.id!, amount: '' })))
         setSplitMode('even')
       }
+      // Pre-fill account from linked transaction if it exists
+      if (entry.transactionId) {
+        supabase
+          .from('transactions')
+          .select('account_id')
+          .eq('id', entry.transactionId)
+          .single()
+          .then(({ data }) => {
+            setTxAccountId(data ? String((data as { account_id: number }).account_id) : '')
+          })
+      } else {
+        setTxAccountId('')
+      }
     } else {
       reset({
         description:    '',
@@ -125,10 +145,9 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       })
       setSplits(members.map(m => ({ memberId: m.id!, amount: '' })))
       setSplitMode('even')
+      setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
     }
     setSplitError('')
-    setCreateTx(false)
-    setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
   }, [open, entry, existingSplits, members, isEdit, reset, accounts])
 
   // ── Recompute even splits when total changes ──────────────────────────────
@@ -136,8 +155,8 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
   const totalAmountStr = watch('totalAmount')
   useEffect(() => {
     if (splitMode !== 'even') return
-    const totalCents   = toCents(parseMoney(totalAmountStr))
-    const distributed  = distributeEvenly(totalCents, members.map(m => m.id!))
+    const totalCents  = toCents(parseMoney(totalAmountStr))
+    const distributed = distributeEvenly(totalCents, members.map(m => m.id!))
     setSplits(members.map(m => ({
       memberId: m.id!,
       amount:   fromCents(distributed[m.id!] ?? 0).toFixed(2),
@@ -175,15 +194,18 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       memberId: s.memberId,
       amount:   toCents(parseMoney(s.amount)),
     }))
-
     const splitSum = splitCents.reduce((sum, s) => sum + s.amount, 0)
     if (Math.abs(splitSum - totalCents) > members.length) {
       setSplitError(t('groups.splitSumMismatch'))
       return
     }
 
-    const entryData = {
-      groupId:        groupId,
+    const iPayer       = myMember != null && parseInt(values.paidByMemberId) === myMember.id
+    const shouldLinkTx = iPayer && txAccountId !== ''
+    const accountIdNum = txAccountId ? parseInt(txAccountId) : null
+
+    const baseEntry = {
+      groupId,
       description:    values.description.trim(),
       date:           values.date,
       category:       values.category,
@@ -199,22 +221,40 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       amount:   s.amount,
     }))
 
+    const txPayload = shouldLinkTx && accountIdNum != null ? {
+      accountId:      accountIdNum,
+      amount:         -totalCents,
+      type:           'expense' as const,
+      category:       values.category,
+      description:    values.description.trim(),
+      date:           values.date,
+      isReimbursable: true,
+    } : null
+
     if (isEdit && entry?.id != null) {
-      await updateGroupEntry(entry.id, groupId, entryData, splitsData)
-    } else {
-      await addGroupEntry(entryData, splitsData)
-      if (createTx && txAccountId) {
-        await addTransaction({
-          accountId:      parseInt(txAccountId),
-          amount:         -totalCents,
-          type:           'expense',
-          category:       values.category,
-          description:    values.description.trim(),
-          date:           values.date,
-          isReimbursable: true,
-        })
+      const prevTxId = entry.transactionId
+      let newTxId: number | undefined
+
+      if (txPayload) {
+        if (prevTxId != null) {
+          await updateTransaction(prevTxId, txPayload)
+          newTxId = prevTxId
+        } else {
+          newTxId = await addTransaction(txPayload) ?? undefined
+        }
+      } else if (prevTxId != null) {
+        await removeTransaction(prevTxId)
       }
+
+      await updateGroupEntry(entry.id, groupId, { ...baseEntry, transactionId: newTxId }, splitsData)
+    } else {
+      let txId: number | undefined
+      if (txPayload) {
+        txId = await addTransaction(txPayload) ?? undefined
+      }
+      await addGroupEntry({ ...baseEntry, transactionId: txId }, splitsData)
     }
+
     onClose()
   }
 
@@ -281,6 +321,19 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
             </div>
           </div>
 
+          {/* Payment account — shown when the current user is the payer */}
+          {iAmPayer && (
+            <div className="space-y-1.5">
+              <Label>{t('groups.debitAccount')}</Label>
+              <PlainSelect
+                value={txAccountId}
+                onChange={setTxAccountId}
+                options={accountOptions}
+                placeholder={t('groups.noLinkedAccount')}
+              />
+            </div>
+          )}
+
           {/* Split mode toggle */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -324,33 +377,6 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
             <Label htmlFor="ge-notes">Notes (optional)</Label>
             <Input id="ge-notes" placeholder="Optional note..." {...register('notes')} />
           </div>
-
-          {/* Create bank transaction — create mode only */}
-          {!isEdit && (
-            <>
-              <label
-                className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border cursor-pointer hover:bg-accent/60 transition-colors"
-                onClick={e => { e.preventDefault(); setCreateTx(v => !v) }}
-              >
-                <div>
-                  <p className="text-sm font-medium leading-none">{t('transactions.reimbursable')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t('groups.debitAccount')}</p>
-                </div>
-                <FormToggle on={createTx} />
-              </label>
-              {createTx && (
-                <div className="space-y-1.5">
-                  <Label>{t('groups.debitAccount')}</Label>
-                  <PlainSelect
-                    value={txAccountId}
-                    onChange={setTxAccountId}
-                    options={accountOptions}
-                    placeholder="Select account..."
-                  />
-                </div>
-              )}
-            </>
-          )}
 
           <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel')}</Button>

@@ -351,6 +351,7 @@ export const en = {
     goToGroups:       'Go to Groups',
     noGroupsTabMsg:   'No groups yet. Create one first.',
     debitAccount:     'Account to debit',
+    noLinkedAccount:  'No bank transaction',
     reimbursableNote: 'Full amount debited · others owe you {{amount}}',
     inGroup:          'Group: {{name}}',
     settleUp:         'Settle Up',

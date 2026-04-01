@@ -1,39 +1,15 @@
-import { Pencil, Trash2, ArrowRight, Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard, RotateCcw, Users } from 'lucide-react'
+import { Pencil, Trash2, ArrowRight, RotateCcw, Users } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
-import BankLogo from '@/shared/components/BankLogo'
-import { BANK_OPTIONS } from '@/shared/config/banks'
+import AccountPill from '@/shared/components/AccountPill'
 import { formatMoney } from '@/domain/money'
 import { formatDate } from '@/shared/utils/format'
 import { getCategoryById, tCategory } from '@/domain/categories'
 import { useT } from '@/shared/i18n'
 import type { Transaction, Account, SharedExpense } from '@/domain/types'
-
-const TYPE_ICONS: Record<string, React.ElementType> = {
-  checking:   Banknote,
-  savings:    PiggyBank,
-  investment: BarChart2,
-  cash:       HandCoins,
-  credit:     CreditCard,
-}
-
-function AccountPill({ accountId, accountsById }: { accountId: number; accountsById: Record<number, Account> }) {
-  const account = accountsById[accountId]
-  const bank = account?.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
-  const Icon = account ? (TYPE_ICONS[account.type] ?? Wallet) : null
-  return (
-    <span className="flex items-center gap-1.5 min-w-0">
-      {bank
-        ? <BankLogo domain={bank.logoDomain} name={bank.name} accountType={account!.type} imgClassName="h-3.5 w-3.5 rounded-sm object-contain shrink-0" iconClassName="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-        : Icon && <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-      }
-      <span className="truncate">{account?.name ?? '—'}</span>
-    </span>
-  )
-}
 
 export const TRANSACTIONS_GRID_COLS = 'lg:grid-cols-[54px_1fr_220px_120px_80px_28px]'
 
