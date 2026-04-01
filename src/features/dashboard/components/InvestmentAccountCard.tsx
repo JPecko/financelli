@@ -52,10 +52,21 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
   // History from transactions (deposits + balance snapshots)
   const { data: historyData = [] } = useInvestmentAccountHistory(account)
 
+  const investedBaseEuros = effectiveInvestedBase > 0
+    ? Math.round(fromCents(effectiveInvestedBase) * 100) / 100
+    : null
+
   // Build chart data:
   // - patrimonio: balance from transaction history; last point = current computed balance
-  // - investido:  cumulative deposits (positive inflows) per month
-  let cumulativeInvested = 0
+  // - investido:  cumulative deposits, starting from what was invested before the window
+  const investedInWindow = historyData.reduce(
+    (s, d) => s + Math.round(fromCents(d.invested) * 100) / 100, 0,
+  )
+  const priorInvested = investedBaseEuros != null
+    ? Math.max(0, investedBaseEuros - investedInWindow)
+    : 0
+
+  let cumulativeInvested = priorInvested
   const chartData = historyData.map((d, i) => {
     cumulativeInvested += Math.round(fromCents(d.invested) * 100) / 100
     const isLast = i === historyData.length - 1
@@ -67,10 +78,6 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
       investido:  cumulativeInvested,
     }
   })
-
-  const investedBaseEuros = effectiveInvestedBase > 0
-    ? Math.round(fromCents(effectiveInvestedBase) * 100) / 100
-    : null
 
   return (
     <Card>

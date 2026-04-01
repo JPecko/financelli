@@ -32,7 +32,7 @@ export function useInvestmentCapitalAdjustments(accountIds: number[]) {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('category', 'capital')
+        .in('category', ['capital', 'invest-move'])
         .or(clauses.join(','))
 
       if (error) throw error
@@ -440,9 +440,9 @@ export function useInvestmentAccountHistory(account: Account, months = 12) {
         const monthKey = format(d, 'yyyy-MM')
         const nextStr  = format(new Date(d.getFullYear(), d.getMonth() + 1, 1), 'yyyy-MM-dd')
 
-        // Capital invested this month comes only from explicit capital-movement transactions.
+        // Capital invested this month: explicit capital adjustments + invest-move transfers in.
         const invested = txs
-          .filter(tx => tx.date.startsWith(monthKey) && tx.category === 'capital')
+          .filter(tx => tx.date.startsWith(monthKey) && (tx.category === 'capital' || tx.category === 'invest-move'))
           .reduce((s, tx) => s + effectOn(tx), 0)
 
         // Balance at month-end = current balance minus all effects that came AFTER this month
