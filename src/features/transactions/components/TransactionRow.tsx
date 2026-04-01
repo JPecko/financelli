@@ -11,7 +11,7 @@ import { getCategoryById, tCategory } from '@/domain/categories'
 import { useT } from '@/shared/i18n'
 import type { Transaction, Account, SharedExpense } from '@/domain/types'
 
-export const TRANSACTIONS_GRID_COLS = 'lg:grid-cols-[54px_1fr_220px_120px_80px_28px]'
+export const TRANSACTIONS_GRID_COLS = 'lg:grid-cols-[54px_1fr_220px_150px_80px_28px]'
 
 const ROW_BASE_CLASS =
   `relative px-4 py-3 transition-colors group flex items-center gap-3 lg:grid ${TRANSACTIONS_GRID_COLS} lg:gap-x-3 lg:items-center`

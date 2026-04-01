@@ -148,9 +148,14 @@ export default function DashboardPage() {
     for (const se of sharedExpenses.filter(e => e.payer === 'other' && e.status !== 'ignored')) {
       map[se.category] = (map[se.category] ?? 0) + se.myShare
     }
-    // Add group entries where someone else paid — user's share counts as personal expense
-    for (const g of summary.groupExpenses.filter(g => !g.paidByMe)) {
-      map[g.category] = (map[g.category] ?? 0) + g.myShare
+    // Add group entries where someone else paid — user's share counts as personal expense.
+    // For investing categories, also include entries paid by the user (paidByMe=true),
+    // since the linked bank tx is isReimbursable and excluded from personal metrics.
+    const INVESTING_CATS = new Set(['investing', 'invest-move', 'capital'])
+    for (const g of summary.groupExpenses) {
+      if (!g.paidByMe || INVESTING_CATS.has(g.category)) {
+        map[g.category] = (map[g.category] ?? 0) + g.myShare
+      }
     }
     // invest-move transfers are excluded from isCashFlow but count as investing
     for (const tx of transactions.filter(t => t.type === 'transfer' && t.category === 'invest-move' && t.amount < 0)) {

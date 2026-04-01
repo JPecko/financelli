@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getYear, getMonth, format } from 'date-fns'
 import { supabase } from '@/data/supabase'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
+import { groupsRepo } from '@/data/repositories/groupsRepo'
 import { queryClient } from '@/app/queryClient'
 import { queryKeys } from '@/data/queryKeys'
 import { useAccounts } from '@/shared/hooks/useAccounts'
@@ -98,15 +99,18 @@ export function useMonthlyNetFlow(year: number, month: number) {
       for (let i = 5; i >= 0; i--) {
         const d    = new Date(year, month - 1 - i, 1)
         const all  = await transactionsRepo.getByMonth(getYear(d), getMonth(d) + 1)
+        const groupExp = await groupsRepo.getMyGroupExpensesForMonth(getYear(d), getMonth(d) + 1)
+        const INVESTING_CATS = new Set(['investing', 'invest-move', 'capital'])
         const cash = all.filter(isCashFlow)
         const income    = cash.filter(t => t.amount > 0).reduce((s, t) => s + t.amount / divisorFor(t), 0)
         const investMoves = all.filter(t => t.type === 'transfer' && t.category === 'invest-move' && t.amount < 0)
+        const groupInvestingAmt = groupExp.filter(g => INVESTING_CATS.has(g.category)).reduce((s, g) => s + g.myShare, 0)
         const investing = [
-          ...cash.filter(t => t.amount < 0 && t.category === 'investing'),
+          ...cash.filter(t => t.amount < 0 && (t.category === 'investing' || t.category === 'invest-move')),
           ...investMoves,
-        ].reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
+        ].reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0) + groupInvestingAmt
         const roundup   = cash.filter(t => t.amount < 0 && t.category === 'roundup').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
-        const expenses  = cash.filter(t => t.amount < 0 && t.category !== 'investing' && t.category !== 'roundup').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
+        const expenses  = cash.filter(t => t.amount < 0 && t.category !== 'investing' && t.category !== 'roundup' && t.category !== 'invest-move').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
         result.push({ month: format(d, 'MMM yy'), income, expenses, investing, roundup, net: income - expenses - investing - roundup })
       }
       return result
@@ -180,8 +184,14 @@ export function useMonthSummary(year: number, month: number) {
   // Group entries where someone else paid — user's share counts as personal expense.
   // Settlement transactions already have isReimbursable=true and are excluded from cashflow,
   // so there is no double-counting when the debt is later settled.
+  // Investment-category entries (investing / invest-move / capital) are excluded here
+  // and counted in personalInvesting instead.
+  const INVESTING_CATEGORIES = new Set(['investing', 'invest-move', 'capital'])
   const groupPersonal = groupExpenses
-    .filter(g => !g.paidByMe)
+    .filter(g => !g.paidByMe && !INVESTING_CATEGORIES.has(g.category))
+    .reduce((s, g) => s + g.myShare, 0)
+  const groupInvesting = groupExpenses
+    .filter(g => INVESTING_CATEGORIES.has(g.category))
     .reduce((s, g) => s + g.myShare, 0)
 
   const investMoveOutflows = txs.filter(t => t.type === 'transfer' && t.category === 'invest-move' && t.amount < 0)
@@ -189,16 +199,16 @@ export function useMonthSummary(year: number, month: number) {
   const personalExpenses = [
     ...real.filter(t => t.amount < 0),
     ...investMoveOutflows,
-  ].reduce((s, t) => s + personalAmountOf(t), 0) - sharedPersonal - groupPersonal
+  ].reduce((s, t) => s + personalAmountOf(t), 0) - sharedPersonal - groupPersonal - groupInvesting
 
   const personalIncome = real
     .filter(t => t.amount > 0)
     .reduce((s, t) => s + t.amount / divisorFor(t), 0)
 
   const personalInvesting = [
-    ...real.filter(t => t.amount < 0 && t.category === 'investing'),
+    ...real.filter(t => t.amount < 0 && (t.category === 'investing' || t.category === 'invest-move')),
     ...txs.filter(t => t.type === 'transfer' && t.category === 'invest-move' && t.amount < 0),
-  ].reduce((s, t) => s + personalAmountOf(t), 0)
+  ].reduce((s, t) => s + personalAmountOf(t), 0) - groupInvesting
 
   const personalRoundup = real
     .filter(t => t.amount < 0 && t.category === 'roundup')

@@ -19,7 +19,7 @@ export const pt: typeof en = {
     salary:        'Salário',
     freelance:     'Freelance',
     investment:    'Lucro',
-    'invest-move': 'Investimento',
+    'invest-move': 'Mov. de Investimento',
     capital:       'Mov. de Capital',
     transfer:      'Transferência',
     revaluation:   'Atualização Mercado',
