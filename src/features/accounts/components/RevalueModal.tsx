@@ -41,7 +41,7 @@ export default function RevalueModal({ open, onClose, account }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Update Market Value</DialogTitle>
         </DialogHeader>

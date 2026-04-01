@@ -61,7 +61,7 @@ export default function HoldingFormModal({ open, onClose, accountId, holding, as
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? t('investments.editHolding') : t('investments.addHolding')}

@@ -53,7 +53,7 @@ if (isEdit && group?.id != null) {
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? t('groups.editGroup') : t('groups.addGroup')}</DialogTitle>
         </DialogHeader>

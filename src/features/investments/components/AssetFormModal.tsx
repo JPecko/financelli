@@ -58,7 +58,7 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? t('investments.editAsset') : t('investments.addAsset')}

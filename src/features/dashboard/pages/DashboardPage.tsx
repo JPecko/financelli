@@ -63,8 +63,8 @@ function ListRow({ icon, label, sublabel, value }: ListRowProps) {
       <div className="flex items-center gap-3 min-w-0 overflow-hidden">
         {icon}
         <div className="min-w-0 overflow-hidden">
-          <p className="text-sm font-medium truncate">{label}</p>
-          {sublabel && <p className="text-xs text-muted-foreground truncate">{sublabel}</p>}
+          <p className="text-base font-medium truncate sm:text-sm">{label}</p>
+          {sublabel && <p className="text-sm text-muted-foreground truncate sm:text-xs">{sublabel}</p>}
         </div>
       </div>
       <div className="shrink-0">{value}</div>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
     <div className="p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{format(now, 'MMMM yyyy')}</p>
+        <p className="mt-0.5 text-base text-muted-foreground sm:text-sm">{format(now, 'MMMM yyyy')}</p>
       </div>
 
       {isLoading && <PageLoader message={t('dashboard.loading')} />}
@@ -199,7 +199,7 @@ export default function DashboardPage() {
         {/* Net Worth */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.netWorth')}</CardTitle>
+            <CardTitle className="text-base font-medium text-muted-foreground sm:text-sm">{t('dashboard.netWorth')}</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold mb-3">{formatMoney(netWorthByType.reduce((s, [, v]) => s + v, 0) || netWorthFromHook)}</div>
             {netWorthByType.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t('dashboard.noAccounts')}</p>
+              <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.noAccounts')}</p>
             ) : (
               <div className="space-y-2">
                 {netWorthByType.map(([type, balance]) => {
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                     ? Math.round((balance / positiveTotal) * 100) : null
                   return (
                     <div key={type}>
-                      <div className="flex items-center justify-between text-xs mb-0.5">
+                      <div className="mb-0.5 flex items-center justify-between text-sm sm:text-xs">
                         <div className="flex items-center gap-1.5">
                           <Icon className="h-3 w-3 shrink-0" style={{ color: meta.color }} />
                           <span className="text-muted-foreground">{t(('accounts.types.' + type) as Parameters<typeof t>[0])}</span>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
         {/* Month Summary */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.monthSummary')}</CardTitle>
+            <CardTitle className="text-base font-medium text-muted-foreground sm:text-sm">{t('dashboard.monthSummary')}</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -255,14 +255,14 @@ export default function DashboardPage() {
               {summary.personalBalance >= 0 ? '+' : ''}{formatMoney(summary.personalBalance)}
             </div>
             {savingsRate != null && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="mt-0.5 text-sm text-muted-foreground sm:text-xs">
                 {savingsRate >= 0
                   ? t('dashboard.savedPct', { rate: String(savingsRate) })
                   : t('dashboard.overspentPct', { rate: String(Math.abs(savingsRate)) })}
               </p>
             )}
             {summary.sharedPending > 0 && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+              <p className="mt-0.5 text-sm text-amber-600 dark:text-amber-400 sm:text-xs">
                 {t('sharedExpenses.pending', { amount: formatMoney(summary.sharedPending) })}
               </p>
             )}
@@ -270,7 +270,7 @@ export default function DashboardPage() {
               const coreExpenses = summary.personalExpenses - summary.personalInvesting - summary.personalRoundup
               return (
                 <div className="mt-4 space-y-2.5">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-base sm:text-sm">
                     <div className="flex items-center gap-1.5">
                       <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                       <span className="text-muted-foreground">{t('dashboard.income')}</span>
@@ -278,11 +278,11 @@ export default function DashboardPage() {
                     <div className="text-right">
                       <span className="font-medium text-emerald-600">+{formatMoney(summary.personalIncome)}</span>
                       {summary.personalIncome !== summary.income && (
-                        <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(summary.income)}</p>
+                        <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.total')} {formatMoney(summary.income)}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-base sm:text-sm">
                     <div className="flex items-center gap-1.5">
                       <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
                       <span className="text-muted-foreground">{t('dashboard.expenses')}</span>
@@ -290,12 +290,12 @@ export default function DashboardPage() {
                     <div className="text-right">
                       <span className="font-medium text-rose-600">-{formatMoney(Math.abs(coreExpenses))}</span>
                       {coreExpenses !== summary.coreExpenses && (
-                        <p className="text-xs text-muted-foreground">{t('dashboard.total')} {formatMoney(Math.abs(summary.coreExpenses))}</p>
+                        <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.total')} {formatMoney(Math.abs(summary.coreExpenses))}</p>
                       )}
                     </div>
                   </div>
                   {summary.personalInvesting < 0 && (
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-base sm:text-sm">
                       <div className="flex items-center gap-1.5">
                         <Landmark className="h-3.5 w-3.5 text-violet-500" />
                         <span className="text-muted-foreground">{t('dashboard.investing')}</span>
@@ -304,7 +304,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                   {summary.personalRoundup < 0 && (
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-base sm:text-sm">
                       <div className="flex items-center gap-1.5">
                         <Coins className="h-3.5 w-3.5 text-stone-400" />
                         <span className="text-muted-foreground">{t('dashboard.roundup')}</span>
@@ -321,11 +321,11 @@ export default function DashboardPage() {
         {/* Account Balances */}
         <Card className="sm:col-span-2 xl:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.accountBalances')}</CardTitle>
+            <CardTitle className="text-base font-medium text-muted-foreground sm:text-sm">{t('dashboard.accountBalances')}</CardTitle>
           </CardHeader>
           <CardContent className="divide-y divide-border">
             {accounts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">{t('dashboard.noAccounts')}</p>
+              <p className="py-2 text-base text-muted-foreground sm:text-sm">{t('dashboard.noAccounts')}</p>
             ) : accounts.map(account => {
               const meta = ACCOUNT_TYPE_META[account.type]
               const Icon = meta.icon
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                   )}
                   label={account.name}
                   value={
-                    <span className={`text-sm font-medium tabular-nums ${effectiveBalance(account) < 0 ? 'text-rose-600' : ''}`}>
+                    <span className={`text-base font-medium tabular-nums sm:text-sm ${effectiveBalance(account) < 0 ? 'text-rose-600' : ''}`}>
                       {formatMoney(effectiveBalance(account))}
                     </span>
                   }
@@ -359,7 +359,7 @@ export default function DashboardPage() {
         {hasBenefits && (
           <Card className="lg:hidden sm:col-span-2 xl:col-span-1">
             <CardHeader>
-              <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
+              <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.perks')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -368,9 +368,9 @@ export default function DashboardPage() {
                     <BadgePercent className="h-4 w-4 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.cashback')}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.cashback')}</p>
                     <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -378,9 +378,9 @@ export default function DashboardPage() {
                     <Coins className="h-4 w-4 text-stone-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.roundup')}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.roundup')}</p>
                     <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
                   </div>
                 </div>
               </div>
@@ -408,7 +408,7 @@ export default function DashboardPage() {
         {/* Income vs Outcome — income single bar, outcome stacked (expenses + investing + roundup) */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('dashboard.incomeVsOutcome')}</CardTitle>
+            <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.incomeVsOutcome')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -430,11 +430,11 @@ export default function DashboardPage() {
         {/* Spending by Category — horizontal ranked bars */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('dashboard.spendingByCategory')}</CardTitle>
+            <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.spendingByCategory')}</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.noExpenses')}</p>
+              <p className="py-8 text-base text-muted-foreground text-center sm:text-sm">{t('dashboard.noExpenses')}</p>
             ) : (
               <div className="space-y-1">
                 {categoryData.slice(0, 7).map(d => {
@@ -445,7 +445,7 @@ export default function DashboardPage() {
                       onClick={() => handleCategoryClick(d.id)}
                       className="group w-full rounded-lg px-2 py-1.5 -mx-2 text-left transition-colors hover:bg-muted/60"
                     >
-                      <div className="flex items-center justify-between text-xs mb-1.5">
+                      <div className="mb-1.5 flex items-center justify-between text-sm sm:text-xs">
                         <div className="flex items-center gap-1.5">
                           <span
                             className="h-2 w-2 rounded-full shrink-0 transition-transform group-hover:scale-125"
@@ -475,11 +475,11 @@ export default function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className={!hasBenefits ? 'lg:col-span-2' : ''}>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('dashboard.topExpenses')}</CardTitle>
+            <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.topExpenses')}</CardTitle>
           </CardHeader>
           <CardContent>
             {topExpenses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('dashboard.noExpenses')}</p>
+              <p className="text-base text-muted-foreground sm:text-sm">{t('dashboard.noExpenses')}</p>
             ) : (
               <div className="divide-y divide-border">
                 {topExpenses.map(tx => {
@@ -491,7 +491,7 @@ export default function DashboardPage() {
                       label={tx.description || tCategory(cat.id, t)}
                       sublabel={`${tCategory(cat.id, t)} · ${formatDate(tx.date)}`}
                       value={
-                        <span className="text-sm font-semibold text-rose-600 tabular-nums">
+                        <span className="text-base font-semibold text-rose-600 tabular-nums sm:text-sm">
                           {formatMoney(tx.amount)}
                         </span>
                       }
@@ -506,7 +506,7 @@ export default function DashboardPage() {
         {hasBenefits && (
           <Card className="hidden lg:block">
             <CardHeader>
-              <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
+              <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.perks')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -515,9 +515,9 @@ export default function DashboardPage() {
                     <BadgePercent className="h-4 w-4 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.cashback')}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.cashback')}</p>
                     <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -525,9 +525,9 @@ export default function DashboardPage() {
                     <Coins className="h-4 w-4 text-stone-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.roundup')}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.roundup')}</p>
                     <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
                   </div>
                 </div>
               </div>
@@ -549,7 +549,7 @@ export default function DashboardPage() {
       {/* Investment account evolution */}
       {investmentAccounts.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          <p className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide sm:text-xs">
             {t('dashboard.investmentHistory')}
           </p>
           <div className={`grid gap-4 ${investmentAccounts.length > 1 ? 'lg:grid-cols-2' : ''}`}>

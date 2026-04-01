@@ -131,7 +131,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? t('accounts.form.editAccount') : t('accounts.form.newAccount')}</DialogTitle>
         </DialogHeader>

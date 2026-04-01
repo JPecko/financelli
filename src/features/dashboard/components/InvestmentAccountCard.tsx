@@ -100,7 +100,7 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
                 />
               </div>
             )}
-            <CardTitle className="truncate text-sm font-medium">{account.name}</CardTitle>
+            <CardTitle className="truncate text-base font-medium sm:text-sm">{account.name}</CardTitle>
             <span className="shrink-0 text-muted-foreground transition-colors">
               <ArrowUpRight className="h-3.5 w-3.5" />
             </span>
@@ -108,7 +108,7 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
 
           <div className="text-right shrink-0">
             <p className="text-lg font-bold tabular-nums">{formatMoney(computedBalance)}</p>
-            <p className="text-[10px] text-muted-foreground">{t('dashboard.portfolioValue')}</p>
+            <p className="text-xs text-muted-foreground sm:text-[10px]">{t('dashboard.portfolioValue')}</p>
           </div>
         </div>
       </CardHeader>
@@ -117,37 +117,39 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
 
         {/* Stats grid */}
         {hasHoldings ? (
-          <div className={`grid gap-2 rounded-lg bg-muted/30 px-3 py-2.5 ${account.investedBase != null ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <div className="grid auto-cols-fr grid-flow-col grid-rows-[minmax(2.75rem,auto)_minmax(1.75rem,auto)_minmax(1rem,auto)] gap-x-2 gap-y-1 rounded-lg bg-muted/30 px-3 py-2.5 text-center sm:grid-rows-[minmax(2.5rem,auto)_minmax(1.5rem,auto)_minmax(0.875rem,auto)]">
             {effectiveInvestedBase > 0 && (
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-tight">
+              <div className="contents">
+                <p className="flex items-center justify-center text-xs text-muted-foreground uppercase tracking-wide leading-tight sm:text-[10px]">
                   {t('investments.investedBase')}
                 </p>
-                <p className="text-sm font-semibold tabular-nums">{formatMoney(effectiveInvestedBase)}</p>
-                <p className="text-[10px] text-muted-foreground">depositado</p>
+                <p className="flex items-center justify-center text-base font-semibold tabular-nums sm:text-sm">{formatMoney(effectiveInvestedBase)}</p>
+                <p className="flex items-start justify-center text-xs text-muted-foreground sm:text-[10px]">depositado</p>
               </div>
             )}
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-tight">
+            <div className="contents">
+              <p className="flex items-center justify-center text-xs text-muted-foreground uppercase tracking-wide leading-tight sm:text-[10px]">
                 {t('investments.costBasis')}
               </p>
-              <p className="text-sm font-semibold tabular-nums">{formatMoney(adjCostBasis)}</p>
+              <p className="flex items-center justify-center text-base font-semibold tabular-nums sm:text-sm">{formatMoney(adjCostBasis)}</p>
               {totalFees > 0 && (
-                <p className="text-[10px] text-muted-foreground">incl. {formatMoney(totalFees)} fees</p>
+                <p className="flex items-start justify-center text-xs text-muted-foreground sm:text-[10px]">incl. {formatMoney(totalFees)} fees</p>
+              ) || (
+                <p aria-hidden="true" className="flex items-start justify-center invisible text-xs sm:text-[10px]">.</p>
               )}
             </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-tight">
+            <div className="contents">
+              <p className="flex items-center justify-center text-xs text-muted-foreground uppercase tracking-wide leading-tight sm:text-[10px]">
                 {t('investments.marketValue')}
               </p>
-              <p className="text-sm font-semibold tabular-nums">{formatMoney(marketValueCents)}</p>
-              <p className={`text-[10px] font-medium ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+              <p className="flex items-center justify-center text-base font-semibold tabular-nums sm:text-sm">{formatMoney(marketValueCents)}</p>
+              <p className={`flex items-start justify-center text-xs font-medium sm:text-[10px] ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {isPositive ? '+' : ''}{formatMoney(pnl)} ({isPositive ? '+' : ''}{pnlPct.toFixed(1)}%)
               </p>
             </div>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground px-1">
+          <p className="px-1 text-sm text-muted-foreground sm:text-xs">
             {t('investments.noHoldings')} — {t('investments.addHolding').toLowerCase()} na página de investimentos.
           </p>
         )}
@@ -161,7 +163,7 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
                 const asset = assetMap[id]
                 if (!asset) return null
                 return (
-                  <div key={id} className="flex items-center justify-between text-sm">
+                  <div key={id} className="flex items-center justify-between text-base sm:text-sm">
                     <span className="text-muted-foreground truncate">
                       {asset.name}{asset.ticker ? ` (${asset.ticker.toUpperCase()})` : ''}
                     </span>

@@ -73,7 +73,7 @@ export default function TransactionFormModal({
   return (
     <Dialog open={open} onOpenChange={isOpen => !isOpen && onClose()}>
       <DialogContent
-        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        className="sm:max-w-lg max-h-[90vh] overflow-y-auto"
         aria-describedby={undefined}
       >
         <DialogHeader>

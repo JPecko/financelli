@@ -92,7 +92,7 @@ export default function ShareAccountModal({ open, onClose, account }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose() }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Share "{account.name}"</DialogTitle>
         </DialogHeader>

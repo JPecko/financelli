@@ -123,7 +123,7 @@ function MemberDialog({ open, onClose, groupId, member }: AddMemberDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{member ? t('common.edit') : t('groups.addMember')}</DialogTitle>
         </DialogHeader>
@@ -611,7 +611,7 @@ export default function GroupDetailPage() {
 
       {/* Settle Up dialog */}
       <Dialog open={settleUpOpen} onOpenChange={v => !settlingUp && setSettleUpOpen(v)}>
-        <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('groups.settleUp')}</DialogTitle>
           </DialogHeader>
@@ -675,7 +675,7 @@ export default function GroupDetailPage() {
 
       {/* Delete group confirmation */}
       <Dialog open={deleteGroupOpen} onOpenChange={setDeleteGroupOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('groups.deleteGroup')}</DialogTitle>
           </DialogHeader>
