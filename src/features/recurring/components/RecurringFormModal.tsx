@@ -8,6 +8,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
+import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
@@ -337,7 +338,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="rec-start">Start Date</Label>
-              <Input id="rec-start" type="date" {...register('startDate', { required: true })} />
+              <DateInput id="rec-start" value={watch('startDate') ?? ''} onChange={v => setValue('startDate', v)} />
             </div>
           </div>
 

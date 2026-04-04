@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import CategorySelect from './CategorySelect'
 import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
+import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
 import { buildAccountSelectOption } from './accountSelectOptions'
 import { GROUP_EXPENSE_CATS, type GrpSplitRow, type GrpFormValues } from './useGroupTransactionForm'
@@ -180,7 +181,7 @@ export default function GroupTransactionForm({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="grp-date">{t('transactions.colDate')}</Label>
-              <Input id="grp-date" type="date" {...register('date', { required: true })} />
+              <DateInput id="grp-date" value={watch('date') ?? ''} onChange={v => setValue('date', v)} />
             </div>
           </div>
 

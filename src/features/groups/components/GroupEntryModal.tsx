@@ -7,6 +7,7 @@ import { Label } from '@/shared/components/ui/label'
 import { cn } from '@/lib/utils'
 import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
+import DateInput from '@/shared/components/DateInput'
 import { toCents, fromCents } from '@/domain/money'
 import { CATEGORIES, tCategory } from '@/domain/categories'
 import { addGroupEntry, updateGroupEntry } from '@/shared/hooks/useGroups'
@@ -284,7 +285,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="ge-date">{t('transactions.colDate')}</Label>
-              <Input id="ge-date" type="date" {...register('date', { required: true })} />
+              <DateInput id="ge-date" value={watch('date') ?? ''} onChange={v => setValue('date', v)} />
             </div>
             <div className="space-y-1.5">
               <Label>{t('transactions.category')}</Label>

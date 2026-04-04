@@ -6,6 +6,7 @@ import AccountSelector from './AccountSelector'
 import CategorySelect from './CategorySelect'
 import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
+import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
 import { useT } from '@/shared/i18n'
 import type { useTransactionForm } from './useTransactionForm'
@@ -83,7 +84,7 @@ export default function StandardTransactionForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="tx-date">Date</Label>
-          <Input id="tx-date" type="date" {...register('date', { required: true })} />
+          <DateInput id="tx-date" value={watch('date') ?? ''} onChange={v => setValue('date', v)} />
         </div>
       </div>
 
