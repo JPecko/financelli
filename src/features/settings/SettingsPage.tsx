@@ -211,7 +211,11 @@ export default function SettingsPage() {
 
           <Separator />
 
-          <div className="space-y-3">
+          <form
+            className="space-y-3"
+            onSubmit={e => { e.preventDefault(); void handleChangePassword() }}
+          >
+            <input type="text" autoComplete="username" className="hidden" readOnly />
             <div className="flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-muted-foreground" />
               <p className="text-sm font-medium">{t('settings.changePassword')}</p>
@@ -236,20 +240,19 @@ export default function SettingsPage() {
                 autoComplete="new-password"
                 value={confirmPw}
                 onChange={e => { setConfirmPw(e.target.value); setPwError(null) }}
-                onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
               />
             </div>
             {pwError && <p className="text-xs text-destructive">{pwError}</p>}
             <Button
+              type="submit"
               variant="outline"
               size="sm"
               loading={changingPw}
               disabled={!newPw || !confirmPw}
-              onClick={handleChangePassword}
             >
               {t('settings.changePasswordBtn')}
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
