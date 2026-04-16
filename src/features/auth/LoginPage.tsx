@@ -10,7 +10,6 @@ import { supabase } from '@/data/supabase'
 import { useT } from '@/shared/i18n'
 import { useLanguageStore } from '@/shared/store/languageStore'
 import { APP_VERSION } from '@/version'
-import BrandLogo from '@/shared/components/BrandLogo'
 import { hasAppUpdate } from '@/shared/utils/checkForAppUpdate'
 import { hardRefreshApp } from '@/shared/utils/hardRefreshApp'
 
@@ -91,7 +90,8 @@ export default function LoginPage() {
             aria-label="Check app updates"
             title="Check app updates"
           >
-            <BrandLogo variant="wordmark" className="h-10 text-foreground" />
+            <img src="/financelli-logo-light.svg" alt="Financelli" className="h-20 dark:hidden" />
+            <img src="/financelli-logo-dark.svg" alt="Financelli" className="h-20 hidden dark:block" />
           </button>
           <h1 className="sr-only">Financelli</h1>
           <p className="text-sm text-muted-foreground">{t('auth.appDescription')}</p>

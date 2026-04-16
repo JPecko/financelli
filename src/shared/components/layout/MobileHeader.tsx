@@ -6,7 +6,6 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
 import { APP_VERSION } from '@/version'
 import { useT } from '@/shared/i18n'
-import BrandLogo from '@/shared/components/BrandLogo'
 import { hardRefreshApp } from '@/shared/utils/hardRefreshApp'
 import { hasAppUpdate } from '@/shared/utils/checkForAppUpdate'
 import {
@@ -41,8 +40,8 @@ export default function MobileHeader() {
         aria-label="Check app updates"
         title="Check app updates"
       >
-        <BrandLogo variant="mark" className="h-8 w-8" />
-        <span className="text-xl font-semibold text-white tracking-tight">Financelli</span>
+        <img src="/financelli-logo-light.svg" alt="Financelli" className="h-8 dark:hidden" />
+        <img src="/financelli-logo-dark.svg" alt="Financelli" className="h-8 hidden dark:block" />
         <span className="text-[10px] text-muted-foreground/60">{APP_VERSION}</span>
       </button>
 
