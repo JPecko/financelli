@@ -19,7 +19,7 @@ interface Props {
 }
 
 const triggerClasses =
-  'flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-input bg-background px-3.5 text-left text-sm shadow-xs transition-[border-color,box-shadow,background-color] outline-none hover:bg-accent/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+  'flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-input bg-background px-3.5 text-left text-base shadow-xs transition-[border-color,box-shadow,background-color] outline-none hover:bg-accent/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
 
 const panelClasses =
   'absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-lg'

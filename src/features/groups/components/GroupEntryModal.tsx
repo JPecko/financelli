@@ -4,12 +4,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { cn } from '@/lib/utils'
 import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
 import DateInput from '@/shared/components/DateInput'
+import FormToggle from '@/shared/components/FormToggle'
+import CategorySelect from '@/features/transactions/components/CategorySelect'
+import SplitSection from './SplitSection'
+import type { SplitRow } from './SplitSection'
 import { toCents, fromCents } from '@/domain/money'
-import { CATEGORIES, tCategory } from '@/domain/categories'
+import { GROUP_EXPENSE_CATS } from '@/features/transactions/components/useGroupTransactionForm'
 import { addGroupEntry, updateGroupEntry } from '@/shared/hooks/useGroups'
 import { addTransaction, updateTransaction, removeTransaction } from '@/shared/hooks/useTransactions'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
@@ -17,39 +20,30 @@ import { buildAccountSelectOption } from '@/features/transactions/components/acc
 import { supabase } from '@/data/supabase'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useT } from '@/shared/i18n'
+import { isoToday } from '@/shared/utils/format'
 import type { GroupEntry, GroupEntrySplit, GroupMember } from '@/domain/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const parseMoney = (v: string) => parseFloat(String(v).replace(',', '.')) || 0
 
-function today() {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function distributeEvenly(totalCents: number, memberIds: number[]): Record<number, number> {
   if (memberIds.length === 0) return {}
   const base      = Math.floor(totalCents / memberIds.length)
   const remainder = totalCents - base * memberIds.length
-  return Object.fromEntries(
-    memberIds.map((id, i) => [id, i < remainder ? base + 1 : base])
-  )
+  return Object.fromEntries(memberIds.map((id, i) => [id, i < remainder ? base + 1 : base]))
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface FormValues {
-  description:    string
-  date:           string
-  category:       string
-  totalAmount:    string
-  paidByMemberId: string
-  notes:          string
-}
-
-interface SplitRow {
-  memberId: number
-  amount:   string
+  description:   string
+  date:          string
+  category:      string
+  totalAmount:   string
+  payerType:     'me' | 'member'
+  payerMemberId: string
+  notes:         string
 }
 
 interface Props {
@@ -70,148 +64,162 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     defaultValues: {
-      description:    '',
-      date:           today(),
-      category:       'other',
-      totalAmount:    '',
-      paidByMemberId: '',
-      notes:          '',
+      description: '', date: isoToday(), category: 'food',
+      totalAmount: '', payerType: 'me', payerMemberId: '', notes: '',
     },
   })
 
   const { data: accounts = [] } = useSortedAccounts()
   const [splits,     setSplits]     = useState<SplitRow[]>([])
-  const [splitMode,  setSplitMode]  = useState<'even' | 'custom'>('even')
+  const [splitMode,  setSplitMode]  = useState<'even' | 'percent' | 'custom'>('even')
+  const [percents,   setPercents]   = useState<Record<number, string>>({})
   const [splitError, setSplitError] = useState('')
+  const [createTx,   setCreateTx]   = useState(true)
   const [txAccountId, setTxAccountId] = useState('')
 
-  const myMember        = members.find(m => m.userId === user?.id)
-  const watchedPaidById = watch('paidByMemberId')
-  const iAmPayer        = myMember != null && watchedPaidById === String(myMember.id)
+  const myMember    = members.find(m => m.userId === user?.id)
+  const payerType   = watch('payerType')
+  const payerMemberId = watch('payerMemberId')
+  const totalStr    = watch('totalAmount')
+  const iAmPayer    = payerType === 'me'
 
-  const categoryOptions = CATEGORIES.map(c => ({ value: c.id, label: tCategory(c.id, t) }))
-  const memberOptions   = members.map(m => ({ value: String(m.id), label: m.name }))
-  const accountOptions  = [
-    { value: '', label: t('groups.noLinkedAccount') },
-    ...accounts.map(buildAccountSelectOption),
-  ]
+  const memberOptions = members
+    .filter(m => m.userId !== user?.id)
+    .map(m => ({ value: String(m.id), label: m.name }))
+  const accountOptions = accounts.map(buildAccountSelectOption)
 
-  // ── Initialise when modal opens ───────────────────────────────────────────
+  // ── Derived summary ───────────────────────────────────────────────────────
+
+  const totalCents    = toCents(parseMoney(totalStr))
+  const myShareCents  = splits.find(s => s.memberId === myMember?.id)
+    ? toCents(parseMoney(splits.find(s => s.memberId === myMember?.id)!.amount))
+    : 0
+  const othersOweCents = totalCents - myShareCents
+
+  // ── Init when modal opens ─────────────────────────────────────────────────
 
   useEffect(() => {
     if (!open) return
 
-    const defaultPayer = myMember?.id?.toString() ?? members[0]?.id?.toString() ?? ''
+    const defaultPayerMemberId = memberOptions[0]?.value ?? ''
 
     if (isEdit && entry) {
+      const entryPaidByMe = myMember != null && entry.paidByMemberId === myMember.id
       reset({
-        description:    entry.description,
-        date:           entry.date,
-        category:       entry.category,
-        totalAmount:    fromCents(entry.totalAmount).toFixed(2),
-        paidByMemberId: String(entry.paidByMemberId),
-        notes:          entry.notes ?? '',
+        description:   entry.description,
+        date:          entry.date,
+        category:      entry.category,
+        totalAmount:   fromCents(entry.totalAmount).toFixed(2),
+        payerType:     entryPaidByMe ? 'me' : 'member',
+        payerMemberId: entryPaidByMe ? '' : String(entry.paidByMemberId),
+        notes:         entry.notes ?? '',
       })
       if (existingSplits && existingSplits.length > 0) {
-        setSplits(existingSplits.map(s => ({
-          memberId: s.memberId,
-          amount:   fromCents(s.amount).toFixed(2),
-        })))
+        setSplits(existingSplits.map(s => ({ memberId: s.memberId, amount: fromCents(s.amount).toFixed(2) })))
         setSplitMode('custom')
       } else {
         setSplits(members.map(m => ({ memberId: m.id!, amount: '' })))
         setSplitMode('even')
       }
-      // Pre-fill account from linked transaction if it exists
       if (entry.transactionId) {
-        supabase
-          .from('transactions')
-          .select('account_id')
-          .eq('id', entry.transactionId)
-          .single()
+        supabase.from('transactions').select('account_id').eq('id', entry.transactionId).single()
           .then(({ data }) => {
-            setTxAccountId(data ? String((data as { account_id: number }).account_id) : '')
+            if (data) {
+              setTxAccountId(String((data as { account_id: number }).account_id))
+              setCreateTx(true)
+            } else {
+              setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
+              setCreateTx(false)
+            }
           })
       } else {
-        setTxAccountId('')
+        setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
+        setCreateTx(false)
       }
     } else {
       reset({
-        description:    '',
-        date:           today(),
-        category:       'other',
-        totalAmount:    '',
-        paidByMemberId: defaultPayer,
-        notes:          '',
+        description: '', date: isoToday(), category: 'food',
+        totalAmount: '', payerType: 'me', payerMemberId: defaultPayerMemberId, notes: '',
       })
       setSplits(members.map(m => ({ memberId: m.id!, amount: '' })))
       setSplitMode('even')
+      setPercents({})
+      setCreateTx(true)
       setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
     }
     setSplitError('')
-  }, [open, entry, existingSplits, members, isEdit, reset, accounts])
+  }, [open, entry, existingSplits, members, isEdit, reset, accounts, myMember])
 
-  // ── Recompute even splits when total changes ──────────────────────────────
+  // ── Recompute even splits ─────────────────────────────────────────────────
 
-  const totalAmountStr = watch('totalAmount')
   useEffect(() => {
-    if (splitMode !== 'even') return
-    const totalCents  = toCents(parseMoney(totalAmountStr))
-    const distributed = distributeEvenly(totalCents, members.map(m => m.id!))
-    setSplits(members.map(m => ({
-      memberId: m.id!,
-      amount:   fromCents(distributed[m.id!] ?? 0).toFixed(2),
-    })))
-  }, [totalAmountStr, splitMode, members])
+    if (splitMode !== 'even' || members.length === 0) return
+    const distributed = distributeEvenly(toCents(parseMoney(totalStr)), members.map(m => m.id!))
+    setSplits(members.map(m => ({ memberId: m.id!, amount: fromCents(distributed[m.id!] ?? 0).toFixed(2) })))
+  }, [totalStr, splitMode, members])
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Recompute percent splits ──────────────────────────────────────────────
 
-  function handleSplitModeChange(mode: 'even' | 'custom') {
-    setSplitMode(mode)
-    setSplitError('')
-    if (mode === 'even') {
-      const totalCents  = toCents(parseMoney(totalAmountStr))
-      const distributed = distributeEvenly(totalCents, members.map(m => m.id!))
-      setSplits(members.map(m => ({
-        memberId: m.id!,
-        amount:   fromCents(distributed[m.id!] ?? 0).toFixed(2),
-      })))
+  useEffect(() => {
+    if (splitMode !== 'percent' || members.length === 0) return
+    const cents = toCents(parseMoney(totalStr))
+    setSplits(members.map(m => {
+      const pct = parseFloat(percents[m.id!] || '0') / 100
+      return { memberId: m.id!, amount: fromCents(Math.round(cents * pct)).toFixed(2) }
+    }))
+  }, [totalStr, splitMode, percents, members])
+
+  // ── Switch to percent mode ────────────────────────────────────────────────
+
+  function handleSwitchToPercent() {
+    const cents = toCents(parseMoney(totalStr))
+    const newPcts: Record<number, string> = {}
+    if (splitMode === 'custom' && cents > 0) {
+      members.forEach(m => {
+        const split = splits.find(s => s.memberId === m.id)
+        newPcts[m.id!] = ((toCents(parseMoney(split?.amount || '0')) / cents) * 100).toFixed(2)
+      })
+    } else {
+      const even = members.length > 0 ? 100 / members.length : 0
+      members.forEach((m, i) => {
+        newPcts[m.id!] = i < members.length - 1 ? even.toFixed(2) : (100 - even * (members.length - 1)).toFixed(2)
+      })
     }
-  }
-
-  function handleSplitAmountChange(memberId: number, value: string) {
-    setSplits(prev => prev.map(s => s.memberId === memberId ? { ...s, amount: value } : s))
+    setPercents(newPcts)
+    setSplitMode('percent')
     setSplitError('')
   }
+
+  // ── Submit ────────────────────────────────────────────────────────────────
 
   async function onSubmit(values: FormValues) {
     if (!user) return
     setSplitError('')
 
-    const totalCents = toCents(parseMoney(values.totalAmount))
-    if (totalCents <= 0) return
+    const total = toCents(parseMoney(values.totalAmount))
+    if (total <= 0) return
 
-    const splitCents = splits.map(s => ({
-      memberId: s.memberId,
-      amount:   toCents(parseMoney(s.amount)),
-    }))
-    const splitSum = splitCents.reduce((sum, s) => sum + s.amount, 0)
-    if (Math.abs(splitSum - totalCents) > members.length) {
+    const splitCents = splits.map(s => ({ memberId: s.memberId, amount: toCents(parseMoney(s.amount)) }))
+    const splitSum   = splitCents.reduce((sum, s) => sum + s.amount, 0)
+    if (Math.abs(splitSum - total) > members.length) {
       setSplitError(t('groups.splitSumMismatch'))
       return
     }
 
-    const iPayer       = myMember != null && parseInt(values.paidByMemberId) === myMember.id
-    const shouldLinkTx = iPayer && txAccountId !== ''
-    const accountIdNum = txAccountId ? parseInt(txAccountId) : null
+    const paidByMemberId = values.payerType === 'me'
+      ? (myMember?.id ?? parseInt(values.payerMemberId))
+      : parseInt(values.payerMemberId)
+
+    const iPayer       = values.payerType === 'me' && myMember != null
+    const shouldLinkTx = iPayer && createTx && txAccountId !== ''
 
     const baseEntry = {
       groupId,
       description:    values.description.trim(),
       date:           values.date,
       category:       values.category,
-      totalAmount:    totalCents,
-      paidByMemberId: parseInt(values.paidByMemberId),
+      totalAmount:    total,
+      paidByMemberId,
       notes:          values.notes.trim() || undefined,
       createdBy:      user.id,
     }
@@ -222,9 +230,9 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       amount:   s.amount,
     }))
 
-    const txPayload = shouldLinkTx && accountIdNum != null ? {
-      accountId:      accountIdNum,
-      amount:         -totalCents,
+    const txPayload = shouldLinkTx ? {
+      accountId:      parseInt(txAccountId),
+      amount:         -total,
       type:           'expense' as const,
       category:       values.category,
       description:    values.description.trim(),
@@ -235,31 +243,23 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
     if (isEdit && entry?.id != null) {
       const prevTxId = entry.transactionId
       let newTxId: number | undefined
-
       if (txPayload) {
-        if (prevTxId != null) {
-          await updateTransaction(prevTxId, txPayload)
-          newTxId = prevTxId
-        } else {
-          newTxId = await addTransaction(txPayload) ?? undefined
-        }
+        if (prevTxId != null) { await updateTransaction(prevTxId, txPayload); newTxId = prevTxId }
+        else { newTxId = await addTransaction(txPayload) ?? undefined }
       } else if (prevTxId != null) {
         await removeTransaction(prevTxId)
       }
-
       await updateGroupEntry(entry.id, groupId, { ...baseEntry, transactionId: newTxId }, splitsData)
     } else {
       let txId: number | undefined
-      if (txPayload) {
-        txId = await addTransaction(txPayload) ?? undefined
-      }
+      if (txPayload) txId = await addTransaction(txPayload) ?? undefined
       await addGroupEntry({ ...baseEntry, transactionId: txId }, splitsData)
     }
 
     onClose()
   }
 
-  const memberById = Object.fromEntries(members.map(m => [m.id!, m]))
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -270,35 +270,91 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
 
-          {/* Description */}
+          {/* Who paid — tabs */}
           <div className="space-y-1.5">
-            <Label htmlFor="ge-description">{t('transactions.colDescription')}</Label>
-            <Input
-              id="ge-description"
-              placeholder="Dinner, taxi, groceries..."
-              {...register('description', { required: true })}
-              className={errors.description ? 'border-destructive' : ''}
-            />
+            <Label>{t('groups.paidBy')}</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${iAmPayer ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-accent'}`}
+                onClick={() => setValue('payerType', 'me')}
+              >
+                {t('groups.iPaid')}
+              </button>
+              <button
+                type="button"
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${!iAmPayer ? 'bg-amber-500 text-white border-amber-500' : 'hover:bg-accent'}`}
+                onClick={() => setValue('payerType', 'member')}
+              >
+                {t('groups.memberPaid')}
+              </button>
+            </div>
           </div>
 
-          {/* Date + Category */}
+          {/* I paid — reimbursable toggle + account */}
+          {iAmPayer && (
+            <div className="rounded-lg border">
+              <label
+                className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-accent/60 transition-colors"
+                onClick={e => { e.preventDefault(); setCreateTx(!createTx) }}
+              >
+                <div>
+                  <p className="text-sm font-medium leading-none">{t('transactions.reimbursable')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('transactions.reimbursableDesc')}</p>
+                </div>
+                <FormToggle on={createTx} />
+              </label>
+              {createTx && (
+                <div className="px-4 pb-3 border-t bg-muted/20 pt-3">
+                  <Label className="text-xs mb-1.5 block">{t('groups.debitAccount')}</Label>
+                  <PlainSelect
+                    value={txAccountId}
+                    onChange={setTxAccountId}
+                    options={accountOptions}
+                    placeholder="Select account..."
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Member paid — who? */}
+          {!iAmPayer && (
+            <div className="space-y-1.5">
+              <Label>{t('groups.paidBy')}</Label>
+              <PlainSelect
+                value={payerMemberId}
+                onChange={v => setValue('payerMemberId', v)}
+                options={memberOptions}
+                placeholder="Select member..."
+              />
+            </div>
+          )}
+
+          {/* Description + Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ge-desc">{t('transactions.colDescription')}</Label>
+              <Input
+                id="ge-desc"
+                placeholder="Dinner, taxi, groceries..."
+                {...register('description', { required: true })}
+                className={errors.description ? 'border-destructive' : ''}
+              />
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="ge-date">{t('transactions.colDate')}</Label>
               <DateInput id="ge-date" value={watch('date') ?? ''} onChange={v => setValue('date', v)} />
             </div>
-            <div className="space-y-1.5">
-              <Label>{t('transactions.category')}</Label>
-              <PlainSelect
-                value={watch('category')}
-                onChange={v => setValue('category', v)}
-                options={categoryOptions}
-              />
-            </div>
           </div>
 
-          {/* Total amount + Paid by */}
+          {/* Category + Total */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <CategorySelect
+              categories={GROUP_EXPENSE_CATS}
+              value={watch('category')}
+              onChange={v => setValue('category', v)}
+            />
             <div className="space-y-1.5">
               <Label htmlFor="ge-total">{t('groups.totalAmount')}</Label>
               <AmountInput
@@ -311,71 +367,47 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
                 className={errors.totalAmount ? 'border-destructive' : ''}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>{t('groups.paidBy')}</Label>
-              <PlainSelect
-                value={watch('paidByMemberId')}
-                onChange={v => setValue('paidByMemberId', v)}
-                options={memberOptions}
-                placeholder="Who paid?"
-              />
-            </div>
           </div>
 
-          {/* Payment account — shown when the current user is the payer */}
-          {iAmPayer && (
-            <div className="space-y-1.5">
-              <Label>{t('groups.debitAccount')}</Label>
-              <PlainSelect
-                value={txAccountId}
-                onChange={setTxAccountId}
-                options={accountOptions}
-                placeholder={t('groups.noLinkedAccount')}
-              />
+          {/* Split */}
+          <SplitSection
+            members={members}
+            splits={splits}
+            setSplits={setSplits}
+            splitMode={splitMode}
+            setSplitMode={setSplitMode}
+            setSplitError={setSplitError}
+            percents={percents}
+            setPercents={setPercents}
+            splitError={splitError}
+            currentUserId={user?.id}
+            handleSwitchToPercent={handleSwitchToPercent}
+          />
+
+          {/* Summary */}
+          {totalCents > 0 && myMember && (
+            <div className="rounded-lg bg-muted/40 px-4 py-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('groups.yourShare')}</span>
+                <span className="font-medium">{fromCents(myShareCents).toFixed(2)} €</span>
+              </div>
+              {iAmPayer && othersOweCents > 0 && (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{t('groups.othersOweYou')}</span>
+                  <span className="text-emerald-600 font-medium">{fromCents(othersOweCents).toFixed(2)} €</span>
+                </div>
+              )}
+              {iAmPayer && createTx && othersOweCents > 0 && (
+                <p className="text-xs text-muted-foreground pt-1 border-t">
+                  {t('groups.reimbursableNote', { amount: `${fromCents(othersOweCents).toFixed(2)} €` })}
+                </p>
+              )}
             </div>
           )}
 
-          {/* Split mode toggle */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Label>{t('groups.splitAmong')}</Label>
-              <div className="flex rounded-md border overflow-hidden ml-auto text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleSplitModeChange('even')}
-                  className={`px-3 py-1 transition-colors ${splitMode === 'even' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                >
-                  {t('groups.splitEvenly')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSplitModeChange('custom')}
-                  className={`px-3 py-1 transition-colors border-l ${splitMode === 'custom' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                >
-                  {t('groups.splitCustom')}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2 rounded-lg border p-3">
-              {splits.map(split => (
-                <div key={split.memberId} className="flex items-center gap-3">
-                  <span className="flex-1 text-sm truncate">{memberById[split.memberId]?.name ?? '?'}</span>
-                  <AmountInput
-                    value={split.amount}
-                    onChange={e => handleSplitAmountChange(split.memberId, e.target.value)}
-                    readOnly={splitMode === 'even'}
-                    className={cn('w-28 text-right', splitMode === 'even' && 'bg-muted text-muted-foreground')}
-                  />
-                </div>
-              ))}
-            </div>
-            {splitError && <p className="text-sm text-destructive">{splitError}</p>}
-          </div>
-
           {/* Notes */}
           <div className="space-y-1.5">
-            <Label htmlFor="ge-notes">Notes (optional)</Label>
+            <Label htmlFor="ge-notes">{t('common.notes') ?? 'Notes (optional)'}</Label>
             <Input id="ge-notes" placeholder="Optional note..." {...register('notes')} />
           </div>
 

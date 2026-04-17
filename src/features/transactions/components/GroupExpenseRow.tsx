@@ -11,27 +11,22 @@ import type { Account, GroupExpenseItem } from '@/domain/types'
 import { TRANSACTIONS_GRID_COLS } from './TransactionRow'
 
 const ROW_BASE_CLASS =
-  `relative px-4 py-3 transition-colors group flex items-center gap-3 md:grid ${TRANSACTIONS_GRID_COLS} md:gap-x-3 md:items-center`
+  `relative px-4 py-3 transition-colors group flex items-center gap-3 lg:grid ${TRANSACTIONS_GRID_COLS} lg:gap-x-3 lg:items-center`
 
 interface Props {
   item:         GroupExpenseItem
   accountsById: Record<number, Account>
 }
 
-function GroupExpenseDescription({ item }: { item: GroupExpenseItem }) {
+function GroupBadge({ groupName }: { groupName: string }) {
   return (
-    <div className="min-w-0">
-      <p className="truncate text-sm font-semibold leading-snug">{item.description || '—'}</p>
-      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-        <Badge
-          variant="secondary"
-          className="h-5 shrink-0 border-violet-500/50 px-1.5 py-0 text-xs text-violet-600 dark:text-violet-400"
-        >
-          <Users className="mr-1 h-3 w-3" />
-          {item.groupName}
-        </Badge>
-      </div>
-    </div>
+    <Badge
+      variant="secondary"
+      className="h-5 shrink-0 border-violet-500/50 px-1.5 py-0 text-xs text-violet-600 dark:text-violet-400"
+    >
+      <Users className="mr-1 h-3 w-3" />
+      {groupName}
+    </Badge>
   )
 }
 
@@ -45,22 +40,25 @@ export default function GroupExpenseRow({ item, accountsById }: Props) {
       <div className="absolute inset-0 bg-foreground/[0.04] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
       {/* Date */}
-      <span className="hidden md:block text-sm text-muted-foreground">{formatDate(item.date)}</span>
+      <span className="hidden lg:block text-sm text-muted-foreground">{formatDate(item.date)}</span>
 
       {/* Description + group badge — desktop */}
-      <div className="hidden min-w-0 md:block">
-        <GroupExpenseDescription item={item} />
+      <div className="hidden lg:block min-w-0">
+        <p className="truncate text-sm font-semibold leading-snug">{item.description || '—'}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <GroupBadge groupName={item.groupName} />
+        </div>
       </div>
 
-      {/* Account column */}
-      <div className="hidden md:block min-w-0 text-sm text-muted-foreground truncate">
+      {/* Account column — desktop */}
+      <div className="hidden lg:block min-w-0 text-sm text-muted-foreground truncate">
         {item.paidByMe && item.paymentAccountId != null
           ? <AccountPill accountId={item.paymentAccountId} accountsById={accountsById} />
           : item.paidByMe ? t('groups.iPaid') : item.paidByName}
       </div>
 
       {/* Category — desktop */}
-      <div className="hidden md:flex items-center">
+      <div className="hidden lg:flex items-center">
         <Badge
           variant="secondary"
           className="text-xs px-1.5 py-0 h-5 max-w-full truncate"
@@ -71,9 +69,10 @@ export default function GroupExpenseRow({ item, accountsById }: Props) {
       </div>
 
       {/* Mobile layout */}
-      <div className="md:hidden flex-1 min-w-0">
-        <GroupExpenseDescription item={item} />
+      <div className="lg:hidden flex-1 min-w-0">
+        <p className="truncate text-sm font-semibold leading-snug">{item.description || '—'}</p>
         <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+          <GroupBadge groupName={item.groupName} />
           <Badge
             variant="secondary"
             className="text-xs px-1.5 py-0 h-5 shrink-0"
@@ -91,7 +90,7 @@ export default function GroupExpenseRow({ item, accountsById }: Props) {
       </div>
 
       {/* Amount — user's share, shown as expense */}
-      <div className="shrink-0 md:text-right">
+      <div className="shrink-0 lg:text-right">
         <span className="block text-sm font-semibold tabular-nums text-rose-600">
           -{formatMoney(item.myShare)}
         </span>

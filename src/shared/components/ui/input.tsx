@@ -8,7 +8,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       data-slot="input"
       className={cn(
         // Layout & shape
-        "h-9 w-full min-w-0 rounded-md px-3 py-1 text-base md:text-sm",
+        "h-9 w-full min-w-0 rounded-md px-3 py-1 text-base",
         // Background — uses --input token (#242424 dark / #f8f8f8 light)
         "bg-input text-foreground",
         // Border — subtle, matches Spotify input style

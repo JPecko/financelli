@@ -97,6 +97,7 @@ export function useTransactionsPageModel() {
         if (se.payer === 'me') return false                    // shown as badge on TransactionRow
         if (se.id != null && seGroupMap[se.id] != null) return false  // superseded by group-expense row
         if (filterSource === 'bank') return false
+        if (filterAccountId !== null) return false             // payer='other': no account link
         if (filterCategory !== null && se.category !== filterCategory) return false
         return true
       })
@@ -105,6 +106,10 @@ export function useTransactionsPageModel() {
     const groupExpenseItems: ListItem[] = myGroupExpenses
       .filter(ge => {
         if (filterSource === 'bank') return false
+        if (filterAccountId !== null) {
+          if (!ge.paidByMe) return false
+          if (ge.paymentAccountId !== filterAccountId) return false
+        }
         if (filterCategory !== null && ge.category !== filterCategory) return false
         return true
       })
