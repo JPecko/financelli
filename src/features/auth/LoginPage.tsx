@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { Languages } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { supabase } from '@/data/supabase'
 import { useT } from '@/shared/i18n'
-import { useLanguageStore } from '@/shared/store/languageStore'
 import { APP_VERSION } from '@/version'
+import LanguageSelect from '@/shared/components/LanguageSelect'
 import AppLogoButton from '@/shared/components/AppLogoButton'
 
 interface FormValues {
@@ -21,7 +20,6 @@ interface FormValues {
 
 export default function LoginPage() {
   const t = useT()
-  const { lang, setLang } = useLanguageStore()
   const navigate = useNavigate()
   const [mode, setMode]           = useState<'login' | 'signup'>('login')
   const [error, setError]         = useState<string | null>(null)
@@ -63,15 +61,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-start justify-center bg-background p-4 pt-8 sm:pt-12">
       <div className="w-full max-w-sm space-y-6">
         <div className="mt-2 flex items-center justify-end">
-          <button
-            type="button"
-            onClick={() => setLang(lang === 'en' ? 'pt' : 'en')}
-            className="flex h-7 items-center gap-1 px-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Toggle language"
-          >
-            <Languages className="h-3.5 w-3.5" />
-            {lang.toUpperCase()}
-          </button>
+          <LanguageSelect size="sm" align="right" />
         </div>
 
         {/* Logo */}

@@ -17,12 +17,14 @@ interface Props {
   size?:    'sm' | 'default'
   /** open dropdown upward (use when near the bottom of the screen) */
   dropUp?:  boolean
+  /** align dropdown to right edge of trigger (use when trigger is right-aligned) */
+  align?:   'left' | 'right'
   className?: string
 }
 
 // ── LanguageSelect ────────────────────────────────────────────────────────────
 
-export default function LanguageSelect({ size = 'sm', dropUp = false, className }: Props) {
+export default function LanguageSelect({ size = 'sm', dropUp = false, align = 'left', className }: Props) {
   const { lang, setLang } = useLanguageStore()
   const [open, setOpen]   = useState(false)
   const rootRef           = useRef<HTMLDivElement>(null)
@@ -67,7 +69,8 @@ export default function LanguageSelect({ size = 'sm', dropUp = false, className 
       {open && (
         <div
           className={cn(
-            'absolute left-0 z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-lg min-w-[10rem]',
+            'absolute z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-lg min-w-[10rem]',
+          align === 'right' ? 'right-0' : 'left-0',
             dropUp ? 'bottom-[calc(100%+0.35rem)]' : 'top-[calc(100%+0.35rem)]',
           )}
         >
