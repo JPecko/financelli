@@ -1,49 +1,26 @@
-import { useNavigate, NavLink } from 'react-router-dom' // useNavigate kept for handleLogoClick
+import { NavLink } from 'react-router-dom'
 import { Sun, Moon, LogOut, Settings } from 'lucide-react'
 import { useThemeStore } from '@/shared/store/themeStore'
 import LanguageSelect from '@/shared/components/LanguageSelect'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
-import { APP_VERSION } from '@/version'
 import { useT } from '@/shared/i18n'
-import { hardRefreshApp } from '@/shared/utils/hardRefreshApp'
-import { hasAppUpdate } from '@/shared/utils/checkForAppUpdate'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
+import AppLogoButton from '@/shared/components/AppLogoButton'
+import { getUserInitials } from '@/shared/utils/userInitials'
 
 export default function MobileHeader() {
   const { theme, toggle } = useThemeStore()
   const { user } = useAuth()
-  const navigate = useNavigate()
   const t = useT()
-  const handleLogoClick = async () => {
-    if (await hasAppUpdate()) {
-      await hardRefreshApp()
-      return
-    }
-    navigate('/dashboard')
-  }
-
-  const displayName = user?.user_metadata?.full_name as string | undefined
-  const initials = displayName
-    ? displayName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
-    : (user?.email?.[0] ?? '?').toUpperCase()
+  const initials = getUserInitials(user)
 
   return (
     <header className="lg:hidden flex items-center justify-between gap-3 border-b border-border px-4 py-2 safe-area-top-pad-3 bg-sidebar">
-      <button
-        type="button"
-        onClick={() => { void handleLogoClick() }}
-        className="flex items-end gap-1 cursor-pointer"
-        aria-label="Check app updates"
-        title="Check app updates"
-      >
-        <img src="/financelli-logo-light.svg" alt="Financelli" className="h-8 dark:hidden" />
-        <img src="/financelli-logo-dark.svg" alt="Financelli" className="h-8 hidden dark:block" />
-        <span className="text-[10px] text-muted-foreground/60">{APP_VERSION}</span>
-      </button>
+      <AppLogoButton height="h-8" showVersion />
 
       <div className="flex items-center gap-2">
         <LanguageSelect />

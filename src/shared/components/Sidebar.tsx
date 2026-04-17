@@ -6,14 +6,13 @@ import LanguageSelect from '@/shared/components/LanguageSelect'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
 import { navItems } from '@/shared/config/nav'
-import { APP_VERSION } from '@/version'
 import { useT } from '@/shared/i18n'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
-import { hardRefreshApp } from '@/shared/utils/hardRefreshApp'
-import { hasAppUpdate } from '@/shared/utils/checkForAppUpdate'
+import AppLogoButton from '@/shared/components/AppLogoButton'
+import { getUserInitials } from '@/shared/utils/userInitials'
 
 export default function Sidebar() {
   const { theme, toggle } = useThemeStore()
@@ -21,33 +20,17 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const t = useT()
   const handleLogout = () => supabase.auth.signOut()
-  const handleLogoClick = async () => {
-    if (await hasAppUpdate()) {
-      await hardRefreshApp()
-      return
-    }
-    navigate('/dashboard')
-  }
-
   const displayName = user?.user_metadata?.full_name as string | undefined
-  const initials = displayName
-    ? displayName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
-    : (user?.email?.[0] ?? '?').toUpperCase()
+  const initials = getUserInitials(user)
 
   return (
     <aside className="hidden lg:flex h-screen w-60 flex-col border-r border-border bg-sidebar">
       {/* Logo */}
-      <button
-        type="button"
-        onClick={() => { void handleLogoClick() }}
-        className="flex w-full items-end gap-2 px-6 py-2 border-b border-sidebar-border text-left cursor-pointer"
-        aria-label="Check app updates"
-        title="Check app updates"
-      >
-        <img src="/financelli-logo-light.svg" alt="Financelli" className="h-12 dark:hidden" />
-        <img src="/financelli-logo-dark.svg" alt="Financelli" className="h-12 hidden dark:block" />
-        <span className="text-[10px] text-muted-foreground/60 ml-auto pb-1">{APP_VERSION}</span>
-      </button>
+      <AppLogoButton
+        height="h-12"
+        showVersion
+        className="w-full gap-2 px-6 py-2 border-b border-sidebar-border"
+      />
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">

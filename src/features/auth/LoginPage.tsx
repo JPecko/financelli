@@ -10,8 +10,7 @@ import { supabase } from '@/data/supabase'
 import { useT } from '@/shared/i18n'
 import { useLanguageStore } from '@/shared/store/languageStore'
 import { APP_VERSION } from '@/version'
-import { hasAppUpdate } from '@/shared/utils/checkForAppUpdate'
-import { hardRefreshApp } from '@/shared/utils/hardRefreshApp'
+import AppLogoButton from '@/shared/components/AppLogoButton'
 
 interface FormValues {
   email:           string
@@ -23,16 +22,10 @@ interface FormValues {
 export default function LoginPage() {
   const t = useT()
   const { lang, setLang } = useLanguageStore()
+  const navigate = useNavigate()
   const [mode, setMode]           = useState<'login' | 'signup'>('login')
   const [error, setError]         = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const navigate = useNavigate()
-  const handleLogoClick = async () => {
-    if (await hasAppUpdate()) {
-      await hardRefreshApp()
-    }
-  }
-
   const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     shouldUnregister: true,
   })
@@ -83,16 +76,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="flex flex-col items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => { void handleLogoClick() }}
-            className="cursor-pointer"
-            aria-label="Check app updates"
-            title="Check app updates"
-          >
-            <img src="/financelli-logo-light.svg" alt="Financelli" className="h-20 dark:hidden" />
-            <img src="/financelli-logo-dark.svg" alt="Financelli" className="h-20 hidden dark:block" />
-          </button>
+          <AppLogoButton height="h-20" navigateTo={false} />
           <h1 className="sr-only">Financelli</h1>
           <p className="text-sm text-muted-foreground">{t('auth.appDescription')}</p>
         </div>
