@@ -101,7 +101,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
   useEffect(() => {
     if (!open) return
 
-    const defaultPayer = members[0]?.id?.toString() ?? ''
+    const defaultPayer = myMember?.id?.toString() ?? members[0]?.id?.toString() ?? ''
 
     if (isEdit && entry) {
       reset({

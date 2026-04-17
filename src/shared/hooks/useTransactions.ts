@@ -182,13 +182,13 @@ export function useMonthSummary(year: number, month: number) {
     .reduce((s, se) => s + se.myShare, 0)
 
   // Group entries where someone else paid — user's share counts as personal expense.
-  // Settlement transactions already have isReimbursable=true and are excluded from cashflow,
-  // so there is no double-counting when the debt is later settled.
-  // Investment-category entries (investing / invest-move / capital) are excluded here
+  // myShare counts as a personal expense regardless of who paid.
+  // When paidByMe=true, the linked bank tx has isReimbursable=true → contributes 0 via personalAmountOf,
+  // so there is no double-counting. Investment-category entries are excluded here
   // and counted in personalInvesting instead.
   const INVESTING_CATEGORIES = new Set(['investing', 'invest-move', 'capital'])
   const groupPersonal = groupExpenses
-    .filter(g => !g.paidByMe && !INVESTING_CATEGORIES.has(g.category))
+    .filter(g => !INVESTING_CATEGORIES.has(g.category))
     .reduce((s, g) => s + g.myShare, 0)
   const groupInvesting = groupExpenses
     .filter(g => INVESTING_CATEGORIES.has(g.category))

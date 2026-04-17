@@ -148,12 +148,11 @@ export default function DashboardPage() {
     for (const se of sharedExpenses.filter(e => e.payer === 'other' && e.status !== 'ignored')) {
       map[se.category] = (map[se.category] ?? 0) + se.myShare
     }
-    // Add group entries where someone else paid — user's share counts as personal expense.
-    // For investing categories, also include entries paid by the user (paidByMe=true),
-    // since the linked bank tx is isReimbursable and excluded from personal metrics.
+    // myShare always counts as personal expense regardless of who paid.
+    // paidByMe=true: linked bank tx is isReimbursable → excluded above, no double-count.
     const INVESTING_CATS = new Set(['investing', 'invest-move', 'capital'])
     for (const g of summary.groupExpenses) {
-      if (!g.paidByMe || INVESTING_CATS.has(g.category)) {
+      if (!INVESTING_CATS.has(g.category)) {
         map[g.category] = (map[g.category] ?? 0) + g.myShare
       }
     }
@@ -180,9 +179,30 @@ export default function DashboardPage() {
     ? Math.round((summary.personalBalance / summary.personalIncome) * 100)
     : null
 
-  // Top 5 expenses
-  const topExpenses = transactions
-    .filter(t => isCashFlow(t) && t.amount < 0)
+  // Top 5 expenses — personal transactions + group entries (myShare), excluding investing
+  const TOP_INVESTING = new Set(['investing', 'invest-move', 'capital'])
+  type TopExpenseItem = { key: string; description: string; category: string; date: string; amount: number; sublabel?: string }
+  const topExpenses: TopExpenseItem[] = [
+    ...transactions
+      .filter(t => isCashFlow(t) && t.amount < 0 && personalDivisorFor(t, user?.id, accounts) !== Infinity)
+      .map(t => ({
+        key: `tx-${t.id}`,
+        description: t.description,
+        category: t.category,
+        date: t.date,
+        amount: Math.round(t.amount / personalDivisorFor(t, user?.id, accounts)),
+      })),
+    ...summary.groupExpenses
+      .filter(g => !TOP_INVESTING.has(g.category))
+      .map(g => ({
+        key: `grp-${g.entryId}`,
+        description: g.description,
+        category: g.category,
+        date: g.date,
+        amount: -g.myShare,
+        sublabel: g.groupName,
+      })),
+  ]
     .sort((a, b) => a.amount - b.amount)
     .slice(0, 5)
 
@@ -487,17 +507,17 @@ export default function DashboardPage() {
               <p className="text-base text-muted-foreground sm:text-sm">{t('dashboard.noExpenses')}</p>
             ) : (
               <div className="divide-y divide-border">
-                {topExpenses.map(tx => {
-                  const cat = getCategoryById(tx.category)
+                {topExpenses.map(item => {
+                  const cat = getCategoryById(item.category)
                   return (
                     <ListRow
-                      key={tx.id}
+                      key={item.key}
                       icon={<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />}
-                      label={tx.description || tCategory(cat.id, t)}
-                      sublabel={`${tCategory(cat.id, t)} · ${formatDate(tx.date)}`}
+                      label={item.description || tCategory(cat.id, t)}
+                      sublabel={item.sublabel ? `${item.sublabel} · ${formatDate(item.date)}` : `${tCategory(cat.id, t)} · ${formatDate(item.date)}`}
                       value={
                         <span className="text-base font-semibold text-rose-600 tabular-nums sm:text-sm">
-                          {formatMoney(tx.amount)}
+                          {formatMoney(Math.abs(item.amount))}
                         </span>
                       }
                     />
