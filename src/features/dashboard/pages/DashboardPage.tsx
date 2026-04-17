@@ -1,596 +1,95 @@
-import { getYear, getMonth, format } from 'date-fns'
-import {
-  Wallet, TrendingUp, TrendingDown, DollarSign,
-  Banknote, PiggyBank, BarChart2, HandCoins, CreditCard,
-  BadgePercent, Coins, ArrowRight, Landmark,
-} from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import type { AccountType } from '@/domain/types'
-import type { LucideIcon } from 'lucide-react'
-import {
-  BarChart, Bar, ResponsiveContainer, Tooltip as ReTooltip,
-  XAxis, YAxis, CartesianGrid, Legend,
-  LineChart, Line,
-} from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { useSortedAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
-import { useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow, useMonthlyBenefits, useYearBenefits, isCashFlow, personalDivisorFor } from '@/shared/hooks/useTransactions'
-import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
-import { useAuth } from '@/features/auth/AuthContext'
-import { useSharedExpensesByMonth } from '@/shared/hooks/useSharedExpenses'
-import { formatMoney } from '@/domain/money'
-import { getCategoryById, tCategory } from '@/domain/categories'
-import { formatDate } from '@/shared/utils/format'
+import { format } from 'date-fns'
 import PageLoader from '@/shared/components/PageLoader'
-import BankLogo from '@/shared/components/BankLogo'
-import { BANK_OPTIONS } from '@/shared/config/banks'
-import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
 import InvestmentAccountCard from '../components/InvestmentAccountCard'
-import { useHoldings } from '@/shared/hooks/useHoldings'
-import { useAssets } from '@/shared/hooks/useAssets'
 import GroupsWidget from '../components/GroupsWidget'
+import NetWorthCard from '../components/NetWorthCard'
+import MonthSummaryCard from '../components/MonthSummaryCard'
+import AccountBalancesCard from '../components/AccountBalancesCard'
+import PerksCard from '../components/PerksCard'
+import CashFlowChart from '../components/CashFlowChart'
+import SpendingByCategoryCard from '../components/SpendingByCategoryCard'
+import TopExpensesCard from '../components/TopExpensesCard'
+import { useDashboardModel } from '../hooks/useDashboardModel'
 import { useT } from '@/shared/i18n'
-import { computeInvestmentBalance } from '@/features/investments/utils/investmentMetrics'
 
-const now   = new Date()
-const YEAR  = getYear(now)
-const MONTH = getMonth(now) + 1
-
-const ACCOUNT_TYPE_META: Record<AccountType, { icon: LucideIcon; color: string }> = {
-  checking:   { icon: Banknote,   color: '#3b82f6' },
-  savings:    { icon: PiggyBank,  color: '#22c55e' },
-  investment: { icon: BarChart2,  color: '#a78bfa' },
-  cash:       { icon: HandCoins,  color: '#f59e0b' },
-  credit:     { icon: CreditCard, color: '#ef4444' },
-}
-
-interface ListRowProps {
-  icon: React.ReactNode
-  label: string
-  sublabel?: string
-  value: React.ReactNode
-}
-
-function formatTooltipValue(value: unknown) {
-  if (typeof value === 'number') return formatMoney(value)
-  if (typeof value === 'string') return value
-  return ''
-}
-
-function ListRow({ icon, label, sublabel, value }: ListRowProps) {
-  return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-w-0 py-2.5">
-      <div className="flex items-center gap-3 min-w-0 overflow-hidden">
-        {icon}
-        <div className="min-w-0 overflow-hidden">
-          <p className="text-base font-medium truncate sm:text-sm">{label}</p>
-          {sublabel && <p className="text-sm text-muted-foreground truncate sm:text-xs">{sublabel}</p>}
-        </div>
-      </div>
-      <div className="shrink-0">{value}</div>
-    </div>
-  )
-}
+const now = new Date()
 
 export default function DashboardPage() {
-  const t        = useT()
-  const navigate = useNavigate()
-  const { user } = useAuth()
-  const { setFilterCategory, setFilterAccountId } = useTransactionsFilterStore()
-  const netWorthFromHook           = useNetWorth()
-  const summary                    = useMonthSummary(YEAR, MONTH)
-  const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(YEAR, MONTH)
-  const { data: accounts     = [], isLoading: accLoading } = useSortedAccounts()
-  const { data: barData         = [] } = useMonthlyNetFlow(YEAR, MONTH)
-  const { data: benefitsData    = [] } = useMonthlyBenefits(YEAR, MONTH)
-  const { data: yearBenefits        } = useYearBenefits(YEAR)
-  const { data: sharedExpenses  = [] } = useSharedExpensesByMonth(YEAR, MONTH)
+  const t     = useT()
+  const model = useDashboardModel()
 
-  // Cashback (virtual — computed from expenses × cashbackPct)
-  const cashbackMonth = transactions
-    .filter(t => t.type === 'expense' && t.amount < 0 && t.category !== 'roundup' && t.category !== 'cashback')
-    .reduce((s, t) => {
-      const acc = accounts.find(a => a.id === t.accountId)
-      if (!acc?.cashbackPct) return s
-      return s + Math.floor(Math.abs(t.amount) * acc.cashbackPct / 100)
-    }, 0)
-  const roundupMonth = transactions.filter(t => t.category === 'roundup').reduce((s, t) => s + Math.abs(t.amount), 0)
-  const hasBenefits  = accounts.some(a => a.cashbackPct || a.roundupMultiplier)
+  if (model.isLoading) return <PageLoader message={t('dashboard.loading')} />
 
-  // Investment accounts + holdings + assets (must be before netWorthByType)
-  const { data: allHoldings = [] } = useHoldings()
-  const { data: allAssets   = [] } = useAssets()
-  const investmentAccounts = accounts.filter(a => a.type === 'investment')
-  const investmentAccountIds = investmentAccounts.map(account => account.id!).filter(Boolean)
-  const { data: capitalAdjustments = {} } = useInvestmentCapitalAdjustments(investmentAccountIds)
-
-  // Compute effective balance per account: investment accounts use calculated value
-  const allAssetMap = Object.fromEntries(allAssets.map(a => [a.id!, a]))
-  function effectiveBalance(account: typeof accounts[0]): number {
-    if (account.type !== 'investment') return account.balance
-    const accountHoldings = allHoldings.filter(h => h.accountId === account.id)
-    const capitalTransactions = [{ accountId: account.id!, amount: capitalAdjustments[account.id!] ?? 0, category: 'capital' } as unknown as import('@/domain/types').Transaction]
-    return computeInvestmentBalance(account, accountHoldings, allAssetMap, capitalTransactions)
+  const perksProps = {
+    cashbackMonth: model.cashbackMonth,
+    roundupMonth:  model.roundupMonth,
+    yearBenefits:  model.yearBenefits,
+    benefitsData:  model.benefitsData,
   }
-
-  // Net worth breakdown by account type (investment accounts use computed balance)
-  const netWorthByType = (() => {
-    const map: Partial<Record<AccountType, number>> = {}
-    for (const a of accounts) map[a.type] = (map[a.type] ?? 0) + effectiveBalance(a)
-    return (Object.entries(map) as [AccountType, number][])
-      .filter(([, v]) => v !== 0)
-      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
-  })()
-  const positiveTotal = netWorthByType.filter(([, v]) => v > 0).reduce((s, [, v]) => s + v, 0)
-
-  // Spending by category — personal share (÷ participants, same logic as useMonthSummary)
-  const categoryData = (() => {
-    // payer='me' SEs: transactionId → SE (myShare overrides tx personal amount)
-    const txSeMap: Record<number, typeof sharedExpenses[0]> = {}
-    for (const se of sharedExpenses) {
-      if (se.payer === 'me' && se.transactionId != null) txSeMap[se.transactionId] = se
-    }
-
-    const map: Record<string, number> = {}
-    for (const tx of transactions) {
-      if (!isCashFlow(tx) || tx.amount >= 0) continue
-      let amount: number
-      if (tx.id != null && txSeMap[tx.id] != null) {
-        amount = txSeMap[tx.id].myShare
-      } else {
-        const divisor = personalDivisorFor(tx, user?.id, accounts)
-        if (divisor === Infinity) continue
-        amount = Math.abs(tx.amount) / divisor
-      }
-      map[tx.category] = (map[tx.category] ?? 0) + amount
-    }
-    // Add shared expenses where someone else paid (consumption without cashflow)
-    for (const se of sharedExpenses.filter(e => e.payer === 'other' && e.status !== 'ignored')) {
-      map[se.category] = (map[se.category] ?? 0) + se.myShare
-    }
-    // myShare always counts as personal expense regardless of who paid.
-    // paidByMe=true: linked bank tx is isReimbursable → excluded above, no double-count.
-    const INVESTING_CATS = new Set(['investing', 'invest-move', 'capital'])
-    for (const g of summary.groupExpenses) {
-      if (!INVESTING_CATS.has(g.category)) {
-        map[g.category] = (map[g.category] ?? 0) + g.myShare
-      }
-    }
-    // invest-move transfers are excluded from isCashFlow but count as investing
-    for (const tx of transactions.filter(t => t.type === 'transfer' && t.category === 'invest-move' && t.amount < 0)) {
-      const divisor = personalDivisorFor(tx, user?.id, accounts)
-      if (divisor === Infinity) continue
-      map['invest-move'] = (map['invest-move'] ?? 0) + Math.abs(tx.amount) / divisor
-    }
-    return Object.entries(map)
-      .map(([id, value]) => { const cat = getCategoryById(id); return { id, name: tCategory(id, t), value, color: cat.color } })
-      .sort((a, b) => b.value - a.value)
-  })()
-  const categoryTotal = categoryData.reduce((s, d) => s + d.value, 0)
-
-  function handleCategoryClick(catId: string) {
-    setFilterAccountId(null)
-    setFilterCategory(catId)
-    navigate('/transactions')
-  }
-
-  // Savings rate
-  const savingsRate = summary.personalIncome > 0
-    ? Math.round((summary.personalBalance / summary.personalIncome) * 100)
-    : null
-
-  // Top 5 expenses — personal transactions + group entries (myShare), excluding investing
-  const TOP_INVESTING = new Set(['investing', 'invest-move', 'capital'])
-  type TopExpenseItem = { key: string; description: string; category: string; date: string; amount: number; sublabel?: string }
-  const topExpenses: TopExpenseItem[] = [
-    ...transactions
-      .filter(t => isCashFlow(t) && t.amount < 0 && personalDivisorFor(t, user?.id, accounts) !== Infinity)
-      .map(t => ({
-        key: `tx-${t.id}`,
-        description: t.description,
-        category: t.category,
-        date: t.date,
-        amount: Math.round(t.amount / personalDivisorFor(t, user?.id, accounts)),
-      })),
-    ...summary.groupExpenses
-      .filter(g => !TOP_INVESTING.has(g.category))
-      .map(g => ({
-        key: `grp-${g.entryId}`,
-        description: g.description,
-        category: g.category,
-        date: g.date,
-        amount: -g.myShare,
-        sublabel: g.groupName,
-      })),
-  ]
-    .sort((a, b) => a.amount - b.amount)
-    .slice(0, 5)
-
-  const isLoading = accLoading || txLoading
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="mt-0.5 text-base text-muted-foreground sm:text-sm">{format(now, 'MMMM yyyy')}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{format(now, 'MMMM yyyy')}</p>
       </div>
 
-      {isLoading && <PageLoader message={t('dashboard.loading')} />}
-      {isLoading ? null : (<>
-
-      {/* Row 1: Net Worth | Month Summary | Account Balances (+ Perks on mobile only) */}
+      {/* Row 1: Net Worth | Month Summary | Account Balances (+ Perks on mobile) */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-
-        {/* Net Worth */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-medium text-muted-foreground sm:text-sm">{t('dashboard.netWorth')}</CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-3">{formatMoney(netWorthByType.reduce((s, [, v]) => s + v, 0) || netWorthFromHook)}</div>
-            {netWorthByType.length === 0 ? (
-              <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.noAccounts')}</p>
-            ) : (
-              <div className="space-y-2">
-                {netWorthByType.map(([type, balance]) => {
-                  const meta = ACCOUNT_TYPE_META[type]
-                  const Icon = meta.icon
-                  const pct  = positiveTotal > 0 && balance > 0
-                    ? Math.round((balance / positiveTotal) * 100) : null
-                  return (
-                    <div key={type}>
-                      <div className="mb-0.5 flex items-center justify-between text-sm sm:text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <Icon className="h-3 w-3 shrink-0" style={{ color: meta.color }} />
-                          <span className="text-muted-foreground">{t(('accounts.types.' + type) as Parameters<typeof t>[0])}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`font-medium ${balance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}>
-                            {formatMoney(balance)}
-                          </span>
-                          {pct != null && <span className="text-muted-foreground w-7 text-right">{pct}%</span>}
-                        </div>
-                      </div>
-                      {pct != null && (
-                        <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: meta.color }} />
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Month Summary */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-medium text-muted-foreground sm:text-sm">{t('dashboard.monthSummary')}</CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${summary.personalBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {summary.personalBalance >= 0 ? '+' : ''}{formatMoney(summary.personalBalance)}
-            </div>
-            {savingsRate != null && (
-              <p className="mt-0.5 text-sm text-muted-foreground sm:text-xs">
-                {savingsRate >= 0
-                  ? t('dashboard.savedPct', { rate: String(savingsRate) })
-                  : t('dashboard.overspentPct', { rate: String(Math.abs(savingsRate)) })}
-              </p>
-            )}
-            {summary.sharedPending > 0 && (
-              <p className="mt-0.5 text-sm text-amber-600 dark:text-amber-400 sm:text-xs">
-                {t('sharedExpenses.pending', { amount: formatMoney(summary.sharedPending) })}
-              </p>
-            )}
-            {(() => {
-              const coreExpenses = summary.personalExpenses - summary.personalInvesting - summary.personalRoundup
-              return (
-                <div className="mt-4 space-y-2.5">
-                  <div className="flex items-center justify-between text-base sm:text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                      <span className="text-muted-foreground">{t('dashboard.income')}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-medium text-emerald-600">+{formatMoney(summary.personalIncome)}</span>
-                      {summary.personalIncome !== summary.income && (
-                        <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.total')} {formatMoney(summary.income)}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-base sm:text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
-                      <span className="text-muted-foreground">{t('dashboard.expenses')}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-medium text-rose-600">-{formatMoney(Math.abs(coreExpenses))}</span>
-                      {coreExpenses !== summary.coreExpenses && (
-                        <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.total')} {formatMoney(Math.abs(summary.coreExpenses))}</p>
-                      )}
-                    </div>
-                  </div>
-                  {summary.personalInvesting < 0 && (
-                    <div className="flex items-center justify-between text-base sm:text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <Landmark className="h-3.5 w-3.5 text-violet-500" />
-                        <span className="text-muted-foreground">{t('dashboard.investing')}</span>
-                      </div>
-                      <span className="font-medium text-violet-600">{formatMoney(summary.personalInvesting)}</span>
-                    </div>
-                  )}
-                  {summary.personalRoundup < 0 && (
-                    <div className="flex items-center justify-between text-base sm:text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <Coins className="h-3.5 w-3.5 text-stone-400" />
-                        <span className="text-muted-foreground">{t('dashboard.roundup')}</span>
-                      </div>
-                      <span className="font-medium text-stone-500">{formatMoney(summary.personalRoundup)}</span>
-                    </div>
-                  )}
-                </div>
-              )
-            })()}
-          </CardContent>
-        </Card>
-
-        {/* Account Balances */}
-        <Card className="sm:col-span-2 xl:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium text-muted-foreground sm:text-sm">{t('dashboard.accountBalances')}</CardTitle>
-          </CardHeader>
-          <CardContent className="divide-y divide-border">
-            {accounts.length === 0 ? (
-              <p className="py-2 text-base text-muted-foreground sm:text-sm">{t('dashboard.noAccounts')}</p>
-            ) : accounts.map(account => {
-              const meta = ACCOUNT_TYPE_META[account.type]
-              const Icon = meta.icon
-              const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
-              return (
-                <ListRow
-                  key={account.id}
-                  icon={bank ? (
-                    <BankLogo
-                      domain={bank.logoDomain}
-                      name={bank.name}
-                      accountType={account.type}
-                      imgClassName="h-6 w-6 rounded-sm object-contain shrink-0"
-                      iconClassName="h-5 w-5 shrink-0 text-muted-foreground"
-                    />
-                  ) : (
-                    <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: meta.color }} />
-                  )}
-                  label={account.name}
-                  value={
-                    <span className={`text-base font-medium tabular-nums sm:text-sm ${effectiveBalance(account) < 0 ? 'text-rose-600' : ''}`}>
-                      {formatMoney(effectiveBalance(account))}
-                    </span>
-                  }
-                />
-              )
-            })}
-          </CardContent>
-        </Card>
-
-        {hasBenefits && (
-          <Card className="lg:hidden sm:col-span-2 xl:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.perks')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                    <BadgePercent className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.cashback')}</p>
-                    <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-500/10">
-                    <Coins className="h-4 w-4 text-stone-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.roundup')}</p>
-                    <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
-                  </div>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={benefitsData} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                  <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
-                  <ReTooltip formatter={(value, name) => [formatTooltipValue(value), String(name ?? '')]} />
-                  <Line type="monotone" dataKey="cashback" name={t('dashboard.cashback')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="roundup"  name={t('dashboard.roundup')}  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+        <NetWorthCard
+          netWorthTotal={model.netWorthTotal}
+          netWorthByType={model.netWorthByType}
+          positiveTotal={model.positiveTotal}
+        />
+        <MonthSummaryCard
+          summary={model.summary}
+          savingsRate={model.savingsRate}
+        />
+        <AccountBalancesCard
+          accounts={model.accounts}
+          effectiveBalances={model.effectiveBalances}
+        />
+        {model.hasBenefits && (
+          <PerksCard {...perksProps} className="lg:hidden sm:col-span-2 xl:col-span-1" />
         )}
       </div>
 
-      {/* Groups widget — right after account balances */}
       <GroupsWidget />
 
-      {/* Row 2: Income vs Expenses bar chart | Spending by Category ranked bars */}
+      {/* Row 2: Cash flow chart | Spending by category */}
       <div className="grid gap-4 lg:grid-cols-2">
-
-        {/* Income vs Outcome — income single bar, outcome stacked (expenses + investing + roundup) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.incomeVsOutcome')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={barData} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
-                <ReTooltip formatter={(value, name) => [formatTooltipValue(value), String(name ?? '')]} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="income"    name={t('dashboard.income')}    fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="expenses"  name={t('dashboard.expenses')}  fill="#f43f5e" stackId="outcome"    maxBarSize={28} />
-                <Bar dataKey="investing" name={t('dashboard.investing')} fill="#8b5cf6" stackId="outcome"    maxBarSize={28} />
-                <Bar dataKey="roundup"   name={t('dashboard.roundup')}   fill="#78716c" stackId="outcome" radius={[3, 3, 0, 0]} maxBarSize={28} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Spending by Category — horizontal ranked bars */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.spendingByCategory')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {categoryData.length === 0 ? (
-              <p className="py-8 text-base text-muted-foreground text-center sm:text-sm">{t('dashboard.noExpenses')}</p>
-            ) : (
-              <div className="space-y-1">
-                {categoryData.slice(0, 7).map(d => {
-                  const pct = categoryTotal > 0 ? Math.round((d.value / categoryTotal) * 100) : 0
-                  return (
-                    <button
-                      key={d.id}
-                      onClick={() => handleCategoryClick(d.id)}
-                      className="group w-full rounded-lg px-2 py-1.5 -mx-2 text-left transition-colors hover:bg-muted/60"
-                    >
-                      <div className="mb-1.5 flex items-center justify-between text-sm sm:text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="h-2 w-2 rounded-full shrink-0 transition-transform group-hover:scale-125"
-                            style={{ backgroundColor: d.color }}
-                          />
-                          <span className="text-muted-foreground group-hover:text-foreground transition-colors">{d.name}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium">{formatMoney(d.value)}</span>
-                          <span className="text-muted-foreground w-7 text-right">{pct}%</span>
-                          <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                        </div>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: d.color }} />
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <CashFlowChart barData={model.barData} />
+        <SpendingByCategoryCard
+          categoryData={model.categoryData}
+          categoryTotal={model.categoryTotal}
+          onCategoryClick={model.handleCategoryClick}
+        />
       </div>
 
-      {/* Row 3: Top Expenses (+ Perks on desktop only) */}
+      {/* Row 3: Top expenses | Perks (desktop only) */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className={!hasBenefits ? 'lg:col-span-2' : ''}>
-          <CardHeader>
-            <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.topExpenses')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topExpenses.length === 0 ? (
-              <p className="text-base text-muted-foreground sm:text-sm">{t('dashboard.noExpenses')}</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {topExpenses.map(item => {
-                  const cat = getCategoryById(item.category)
-                  return (
-                    <ListRow
-                      key={item.key}
-                      icon={<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />}
-                      label={item.description || tCategory(cat.id, t)}
-                      sublabel={item.sublabel ? `${item.sublabel} · ${formatDate(item.date)}` : `${tCategory(cat.id, t)} · ${formatDate(item.date)}`}
-                      value={
-                        <span className="text-base font-semibold text-rose-600 tabular-nums sm:text-sm">
-                          {formatMoney(Math.abs(item.amount))}
-                        </span>
-                      }
-                    />
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {hasBenefits && (
-          <Card className="hidden lg:block">
-            <CardHeader>
-              <CardTitle className="text-base font-medium sm:text-sm">{t('dashboard.perks')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                    <BadgePercent className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.cashback')}</p>
-                    <p className="text-base font-bold">{formatMoney(cashbackMonth)}</p>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.cashback ?? 0)}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-500/10">
-                    <Coins className="h-4 w-4 text-stone-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.roundup')}</p>
-                    <p className="text-base font-bold">{formatMoney(roundupMonth)}</p>
-                    <p className="text-sm text-muted-foreground sm:text-xs">{t('dashboard.ytd')}: {formatMoney(yearBenefits?.roundup ?? 0)}</p>
-                  </div>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={benefitsData} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                  <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
-                  <ReTooltip formatter={(value, name) => [formatTooltipValue(value), String(name ?? '')]} />
-                  <Line type="monotone" dataKey="cashback" name={t('dashboard.cashback')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="roundup"  name={t('dashboard.roundup')}  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+        <TopExpensesCard topExpenses={model.topExpenses} hasBenefits={model.hasBenefits} />
+        {model.hasBenefits && <PerksCard {...perksProps} className="hidden lg:block" />}
       </div>
 
       {/* Investment account evolution */}
-      {investmentAccounts.length > 0 && (
+      {model.investmentAccounts.length > 0 && (
         <div>
-          <p className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide sm:text-xs">
+          <p className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
             {t('dashboard.investmentHistory')}
           </p>
-          <div className={`grid gap-4 ${investmentAccounts.length > 1 ? 'lg:grid-cols-2' : ''}`}>
-            {investmentAccounts.map(acc => (
+          <div className={`grid gap-4 ${model.investmentAccounts.length > 1 ? 'lg:grid-cols-2' : ''}`}>
+            {model.investmentAccounts.map(acc => (
               <InvestmentAccountCard
                 key={acc.id}
                 account={acc}
-                holdings={allHoldings.filter(h => h.accountId === acc.id)}
-                assets={allAssets}
+                holdings={model.allHoldings.filter(h => h.accountId === acc.id)}
+                assets={model.allAssets}
               />
             ))}
           </div>
         </div>
       )}
-
-      </>)}
     </div>
   )
 }
