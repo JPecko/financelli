@@ -1,11 +1,12 @@
-<svg width="1020" height="320" viewBox="80 40 1020 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="780" height="320" viewBox="80 40 780 320" fill="none" xmlns="http://www.w3.org/2000/svg">
   <g transform="translate(90,80)">
-    <rect x="0" y="0" width="86" height="250" rx="43" fill="#1DB954"/>
-    <rect x="110" y="0" width="160" height="66" rx="33" fill="#1DB954"/>
-    <rect x="110" y="92" width="92" height="66" rx="33" fill="#1DB954"/>
+    <rect x="0" y="0" width="72" height="250" rx="42" fill="#1DB954"/>
+    <rect x="85" y="0" width="160" height="46" rx="22" fill="#1DB954"/>
+    <rect x="85" y="72" width="84" height="46" rx="22" fill="#1DB954"/>
   </g>
 
-  <text x="300" y="320" font-family="Inter, Poppins, Arial, Helvetica, sans-serif" font-size="180" font-weight="800" letter-spacing="-4" fill="#E5E7EB">Financ</text>
+  <rect x="185" y="226.7" width="24" height="93.3" rx="0" fill="#E5E7EB"/>
+  <text x="215" y="320" font-family="Inter, Poppins, Arial, Helvetica, sans-serif" font-size="180" font-weight="800" letter-spacing="-4" fill="#E5E7EB">nanc</text>
   
-  <text x="835" y="320" font-family="Inter, Poppins, Arial, Helvetica, sans-serif" font-size="180" font-weight="800" font-style="italic" letter-spacing="-4" fill="#1DB954">elli</text>
+  <text x="595" y="320" font-family="Inter, Poppins, Arial, Helvetica, sans-serif" font-size="180" font-weight="800" font-style="italic" letter-spacing="-4" fill="#1DB954">elli</text>
 </svg>
