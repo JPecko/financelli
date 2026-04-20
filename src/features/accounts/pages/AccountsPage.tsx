@@ -31,6 +31,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '../components/AccountFormModal'
 import RevalueModal from '../components/RevalueModal'
 import ShareAccountModal from '../components/ShareAccountModal'
@@ -215,10 +216,11 @@ export default function AccountsPage() {
     setSort, setManualOrder, setColorOrder,
   } = useAccountPrefsStore()
 
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing]     = useState<Account | undefined>()
-  const [revaluing, setRevaluing] = useState<Account | undefined>()
-  const [sharing, setSharing]     = useState<Account | undefined>()
+  const [modalOpen, setModalOpen]           = useState(false)
+  const [editing, setEditing]               = useState<Account | undefined>()
+  const [revaluing, setRevaluing]           = useState<Account | undefined>()
+  const [sharing, setSharing]               = useState<Account | undefined>()
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   const [isManualEditing, setIsManualEditing] = useState(false)
   // Raw drag order — only populated while editing; accounts added/removed are merged in effectiveDraftOrder
@@ -348,11 +350,15 @@ export default function AccountsPage() {
     setEditing(undefined)
   }
 
-  const handleDelete = async (id: number | undefined) => {
+  const handleDelete = (id: number | undefined) => {
     if (id == null) return
-    if (confirm(t('accounts.deleteConfirm'))) {
-      await removeAccount(id)
-    }
+    setConfirmDeleteId(id)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (confirmDeleteId == null) return
+    await removeAccount(confirmDeleteId)
+    setConfirmDeleteId(null)
   }
 
   const handleOpenInvestments = (account: Account) => {
@@ -625,6 +631,16 @@ export default function AccountsPage() {
       )}
 
       <AccountFormModal open={modalOpen} onClose={handleCloseForm} account={editing} />
+
+      <ConfirmDialog
+        open={confirmDeleteId != null}
+        title={t('common.delete')}
+        description={t('accounts.deleteConfirm')}
+        confirmLabel={t('common.delete')}
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
 
       {sharing && (
         <ShareAccountModal

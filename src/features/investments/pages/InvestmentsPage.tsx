@@ -11,6 +11,7 @@ import HoldingFormModal from '../components/HoldingFormModal'
 import AssetFormModal from '../components/AssetFormModal'
 import PortfolioSummary from '../components/PortfolioSummary'
 import InvestmentAccountCard from '../components/InvestmentAccountCard'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
 import type { Asset, Holding, Account } from '@/domain/types'
 
@@ -28,7 +29,9 @@ export default function InvestmentsPage() {
   const [editAsset,        setEditAsset]        = useState<Asset | undefined>()
   const [accountModalOpen, setAccountModalOpen] = useState(false)
   const [editAccount,      setEditAccount]      = useState<Account | undefined>()
-  const [editingPrice,     setEditingPrice]     = useState<{ assetId: number; value: string } | null>(null)
+  const [editingPrice,         setEditingPrice]         = useState<{ assetId: number; value: string } | null>(null)
+  const [confirmDeleteHolding, setConfirmDeleteHolding] = useState<Holding | null>(null)
+  const [confirmDeleteAsset,   setConfirmDeleteAsset]   = useState<Asset | null>(null)
   const priceInputRef = useRef<HTMLInputElement>(null)
 
   const investmentAccounts    = accounts.filter(a => a.type === 'investment')
@@ -38,16 +41,20 @@ export default function InvestmentsPage() {
 
   const openAddHolding  = (accountId: number) => { setEditHolding(undefined); setModalAccount(accountId); setHoldingModalOpen(true) }
   const openEditHolding = (h: Holding)        => { setEditHolding(h); setModalAccount(h.accountId); setHoldingModalOpen(true) }
-  const handleDeleteHolding = async (h: Holding) => {
-    if (!confirm(t('investments.deleteConfirm'))) return
-    await removeHolding(h.id!)
+  const handleDeleteHolding = (h: Holding) => setConfirmDeleteHolding(h)
+  const handleConfirmDeleteHolding = async () => {
+    if (!confirmDeleteHolding) return
+    await removeHolding(confirmDeleteHolding.id!)
+    setConfirmDeleteHolding(null)
   }
 
-  const openAddAsset    = () => { setEditAsset(undefined); setAssetModalOpen(true) }
-  const openEditAsset   = (a: Asset) => { setEditAsset(a); setAssetModalOpen(true) }
-  const handleDeleteAsset = async (a: Asset) => {
-    if (!confirm(t('investments.deleteAssetConfirm'))) return
-    await removeAsset(a.id!)
+  const openAddAsset  = () => { setEditAsset(undefined); setAssetModalOpen(true) }
+  const openEditAsset = (a: Asset) => { setEditAsset(a); setAssetModalOpen(true) }
+  const handleDeleteAsset = (a: Asset) => setConfirmDeleteAsset(a)
+  const handleConfirmDeleteAsset = async () => {
+    if (!confirmDeleteAsset) return
+    await removeAsset(confirmDeleteAsset.id!)
+    setConfirmDeleteAsset(null)
   }
 
   const startEditPrice = (a: Asset) => {
@@ -139,6 +146,25 @@ export default function InvestmentsPage() {
       <AssetFormModal open={assetModalOpen} onClose={() => setAssetModalOpen(false)} asset={editAsset} />
       <AccountFormModal open={accountModalOpen} onClose={() => { setAccountModalOpen(false); setEditAccount(undefined) }}
         account={editAccount} />
+
+      <ConfirmDialog
+        open={confirmDeleteHolding != null}
+        title={t('common.delete')}
+        description={t('investments.deleteConfirm')}
+        confirmLabel={t('common.delete')}
+        variant="destructive"
+        onConfirm={handleConfirmDeleteHolding}
+        onCancel={() => setConfirmDeleteHolding(null)}
+      />
+      <ConfirmDialog
+        open={confirmDeleteAsset != null}
+        title={t('common.delete')}
+        description={t('investments.deleteAssetConfirm')}
+        confirmLabel={t('common.delete')}
+        variant="destructive"
+        onConfirm={handleConfirmDeleteAsset}
+        onCancel={() => setConfirmDeleteAsset(null)}
+      />
     </div>
   )
 }

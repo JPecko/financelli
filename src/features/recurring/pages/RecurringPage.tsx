@@ -13,6 +13,7 @@ import { getCategoryById, tCategory } from '@/domain/categories'
 import { formatDate } from '@/shared/utils/format'
 import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import RecurringFormModal from '../components/RecurringFormModal'
 import type { RecurringRule } from '@/domain/types'
 import { useT } from '@/shared/i18n'
@@ -27,9 +28,10 @@ export default function RecurringPage() {
   const t = useT()
   const { data: rules    = [], isLoading } = useRecurringRules()
   const { data: accounts = [] } = useAccounts()
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing]     = useState<RecurringRule | undefined>()
-  const [applying, setApplying]   = useState<number | null>(null)
+  const [modalOpen, setModalOpen]               = useState(false)
+  const [editing, setEditing]                   = useState<RecurringRule | undefined>()
+  const [applying, setApplying]                 = useState<number | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId]   = useState<number | null>(null)
 
   const accountName = (id: number) => accounts.find(a => a.id === id)?.name ?? '?'
 
@@ -43,11 +45,15 @@ export default function RecurringPage() {
     setEditing(undefined)
   }
 
-  const handleDelete = async (id: number | undefined) => {
+  const handleDelete = (id: number | undefined) => {
     if (id == null) return
-    if (confirm(t('recurring.deleteConfirm'))) {
-      await removeRule(id)
-    }
+    setConfirmDeleteId(id)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (confirmDeleteId == null) return
+    await removeRule(confirmDeleteId)
+    setConfirmDeleteId(null)
   }
 
   const handleApply = async (rule: RecurringRule) => {
@@ -224,6 +230,16 @@ export default function RecurringPage() {
       )}
 
       <RecurringFormModal open={modalOpen} onClose={handleClose} rule={editing} />
+
+      <ConfirmDialog
+        open={confirmDeleteId != null}
+        title={t('common.delete')}
+        description={t('recurring.deleteConfirm')}
+        confirmLabel={t('common.delete')}
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }
