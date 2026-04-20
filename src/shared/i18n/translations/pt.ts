@@ -63,6 +63,7 @@ export const pt: typeof en = {
   common: {
     save:       'Guardar',
     cancel:     'Cancelar',
+    confirm:    'Confirmar',
     delete:     'Eliminar',
     edit:       'Editar',
     add:        'Adicionar',
@@ -263,6 +264,14 @@ export const pt: typeof en = {
     accountDesc: 'Sair da tua conta.',
     signOut:     'Sair',
     signOutDesc: 'Serás redirecionado para a página de login',
+
+    maintenance:              'Manutenção',
+    maintenanceDesc:          'Ferramentas de correção de dados (uso único).',
+    recalcRoundups:           'Recalcular Roundups',
+    recalcRoundupsDesc:       'Remove todos os roundups existentes e recria-os com base nos valores atuais das despesas. Executa uma vez para corrigir roundups que não foram atualizados após edição de despesas.',
+    recalcRoundupsBtn:        'Recalcular',
+    recalcRoundupsConfirm:    'Isto irá eliminar e recriar todos os roundups com base nos valores atuais das despesas.',
+    recalcRoundupsDone:       'Concluído. Removidos {{removed}} roundups, recriados {{created}}.',
 
     dangerZone:     'Zona de Perigo',
     dangerZoneDesc: 'Estas ações são permanentes e não podem ser desfeitas.',

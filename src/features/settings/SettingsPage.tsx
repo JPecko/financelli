@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import {
   Download, Upload, Trash2, FileText, Database, LogOut, User, KeyRound,
-  Sun, Moon, Monitor,
+  Sun, Moon, Monitor, Wrench,
 } from 'lucide-react'
 import { useThemeStore } from '@/shared/store/themeStore'
 import { useT } from '@/shared/i18n'
@@ -11,8 +11,10 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Separator } from '@/shared/components/ui/separator'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import { supabase } from '@/data/supabase'
 import { useAuth } from '@/features/auth/AuthContext'
+import { useAccounts } from '@/shared/hooks/useAccounts'
 import { accountsRepo } from '@/data/repositories/accountsRepo'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { recurringRepo } from '@/data/repositories/recurringRepo'
@@ -22,9 +24,13 @@ import { transactionsToCSV, downloadFile, exportFilename } from '@/shared/utils/
 export default function SettingsPage() {
   const { user } = useAuth()
   const { theme, setTheme } = useThemeStore()
+  const { data: accounts } = useAccounts()
+  const hasRoundupAccounts = accounts?.some(a => !!a.roundupMultiplier) ?? false
   const t = useT()
   const importRef  = useRef<HTMLInputElement>(null)
-  const [status, setStatus] = useState<string | null>(null)
+  const [status, setStatus]               = useState<string | null>(null)
+  const [recalcingRoundups, setRecalcingRoundups]     = useState(false)
+  const [confirmRecalcOpen, setConfirmRecalcOpen]     = useState(false)
   const [displayName, setDisplayName] = useState(user?.user_metadata?.full_name ?? '')
   const [savingName, setSavingName]   = useState(false)
   const [newPw, setNewPw]             = useState('')
@@ -163,6 +169,21 @@ export default function SettingsPage() {
     await supabase.from('accounts').delete().neq('id', 0)
     queryClient.invalidateQueries()
     showStatus(t('settings.dataCleared'))
+  }
+
+  /* ---- Recalculate roundups ---- */
+  const handleRecalcRoundups = async () => {
+    setRecalcingRoundups(true)
+    setConfirmRecalcOpen(false)
+    try {
+      const { removed, created } = await transactionsRepo.recalculateAllRoundups()
+      queryClient.invalidateQueries()
+      showStatus(t('settings.recalcRoundupsDone', { removed: String(removed), created: String(created) }))
+    } catch (err) {
+      showStatus(`Error: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setRecalcingRoundups(false)
+    }
   }
 
   /* ---- Logout ---- */
@@ -357,6 +378,29 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Maintenance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Wrench className="h-4 w-4" />
+            {t('settings.maintenance')}
+          </CardTitle>
+          <CardDescription>{t('settings.maintenanceDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <p className="text-sm font-medium">{t('settings.recalcRoundups')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.recalcRoundupsDesc')}</p>
+            </div>
+            <Button variant="outline" size="sm" loading={recalcingRoundups} disabled={!hasRoundupAccounts} onClick={() => setConfirmRecalcOpen(true)}>
+              <Wrench className="h-4 w-4 mr-2" />
+              {t('settings.recalcRoundupsBtn')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Account */}
       <Card>
         <CardHeader>
@@ -402,6 +446,13 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={confirmRecalcOpen}
+        title={t('settings.recalcRoundups')}
+        description={t('settings.recalcRoundupsConfirm')}
+        onConfirm={handleRecalcRoundups}
+        onCancel={() => setConfirmRecalcOpen(false)}
+      />
     </div>
   )
 }

@@ -61,6 +61,7 @@ export const en = {
   common: {
     save:       'Save',
     cancel:     'Cancel',
+    confirm:    'Confirm',
     delete:     'Delete',
     edit:       'Edit',
     add:        'Add',
@@ -122,6 +123,14 @@ export const en = {
     accountDesc: 'Sign out of your account.',
     signOut:     'Sign Out',
     signOutDesc: 'You will be redirected to the login page',
+
+    maintenance:              'Maintenance',
+    maintenanceDesc:          'One-time data correction tools.',
+    recalcRoundups:           'Recalculate Roundups',
+    recalcRoundupsDesc:       'Removes all existing roundup transactions and recreates them based on current expense amounts. Run once to fix roundups that were not updated after editing expenses.',
+    recalcRoundupsBtn:        'Recalculate',
+    recalcRoundupsConfirm:    'This will delete and recreate all roundup transactions based on current expense amounts.',
+    recalcRoundupsDone:       'Done. Removed {{removed}} roundups, recreated {{created}}.',
 
     dangerZone:     'Danger Zone',
     dangerZoneDesc: 'These actions are permanent and cannot be undone.',

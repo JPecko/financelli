@@ -99,6 +99,21 @@ async function createAutoTransactions(
   }
 }
 
+async function removeLinkedRoundup(tx: Transaction): Promise<void> {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('account_id', tx.accountId)
+    .eq('date', tx.date)
+    .eq('category', 'roundup')
+    .like('description', `${tx.description} - Roundup ×%`)
+    .limit(1)
+  if (error || !data?.length) return
+  const roundup = toTransaction(data[0] as TransactionRow)
+  await accountsRepo.adjustBalance(roundup.accountId, -roundup.amount)
+  await supabase.from('transactions').delete().eq('id', roundup.id!)
+}
+
 async function reverseBalances(tx: Transaction) {
   await accountsRepo.adjustBalance(tx.accountId, -tx.amount)
   if (tx.toAccountId != null) {
@@ -180,6 +195,18 @@ export const transactionsRepo = {
     if (error) throw error
     await applyBalances(updated)
 
+    // Sync linked roundup when editing a source expense
+    const isSourceExpense = (t: Transaction) =>
+      t.type === 'expense' && t.amount < 0 && t.category !== 'cashback' && t.category !== 'roundup'
+
+    if (isSourceExpense(existingTx)) {
+      await removeLinkedRoundup(existingTx)
+      if (isSourceExpense(updated)) {
+        const account = await accountsRepo.getById(updated.accountId)
+        await createAutoTransactions(updated, account)
+      }
+    }
+
     // Recalculate old and new holdings if holdingId changed
     const oldHoldingId = existingTx.holdingId
     const newHoldingId = updated.holdingId
@@ -189,6 +216,42 @@ export const transactionsRepo = {
     if (newHoldingId) {
       await holdingsRepo.recalculate(newHoldingId)
     }
+  },
+
+  recalculateAllRoundups: async (): Promise<{ removed: number; created: number }> => {
+    // 1. Delete all existing roundup transactions and reverse their balances
+    const { data: roundups, error: fetchErr } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('category', 'roundup')
+    if (fetchErr) throw fetchErr
+
+    for (const row of (roundups as TransactionRow[]) ?? []) {
+      const roundup = toTransaction(row)
+      await accountsRepo.adjustBalance(roundup.accountId, -roundup.amount)
+      await supabase.from('transactions').delete().eq('id', roundup.id!)
+    }
+
+    // 2. Recreate roundups from all source expenses
+    const { data: expenses, error: expErr } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('type', 'expense')
+      .lt('amount', 0)
+      .neq('category', 'cashback')
+      .neq('category', 'roundup')
+    if (expErr) throw expErr
+
+    let created = 0
+    for (const row of (expenses as TransactionRow[]) ?? []) {
+      const tx = toTransaction(row)
+      const account = await accountsRepo.getById(tx.accountId)
+      if (!account?.roundupMultiplier) continue
+      await createAutoTransactions(tx, account)
+      created++
+    }
+
+    return { removed: roundups?.length ?? 0, created }
   },
 
   remove: async (id: number): Promise<void> => {
@@ -202,6 +265,11 @@ export const transactionsRepo = {
     await reverseBalances(tx)
     const { error } = await supabase.from('transactions').delete().eq('id', id)
     if (error) throw error
+
+    // Remove orphaned roundup when source expense is deleted
+    if (tx.type === 'expense' && tx.amount < 0 && tx.category !== 'cashback' && tx.category !== 'roundup') {
+      await removeLinkedRoundup(tx)
+    }
 
     // Recalculate holding after transaction removed
     if (tx.holdingId) {
