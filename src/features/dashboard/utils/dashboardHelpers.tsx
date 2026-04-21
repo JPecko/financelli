@@ -1,14 +1,15 @@
-import { Banknote, PiggyBank, BarChart2, HandCoins, CreditCard } from 'lucide-react'
+import { Banknote, PiggyBank, BarChart2, HandCoins, CreditCard, UtensilsCrossed } from 'lucide-react'
 import { formatMoney } from '@/domain/money'
 import type { AccountType } from '@/domain/types'
 import type { LucideIcon } from 'lucide-react'
 
 export const ACCOUNT_TYPE_META: Record<AccountType, { icon: LucideIcon; color: string }> = {
-  checking:   { icon: Banknote,   color: '#3b82f6' },
-  savings:    { icon: PiggyBank,  color: '#22c55e' },
-  investment: { icon: BarChart2,  color: '#a78bfa' },
-  cash:       { icon: HandCoins,  color: '#f59e0b' },
-  credit:     { icon: CreditCard, color: '#ef4444' },
+  checking:   { icon: Banknote,          color: '#3b82f6' },
+  savings:    { icon: PiggyBank,         color: '#22c55e' },
+  investment: { icon: BarChart2,         color: '#a78bfa' },
+  cash:       { icon: HandCoins,         color: '#f59e0b' },
+  credit:     { icon: CreditCard,        color: '#ef4444' },
+  meal:       { icon: UtensilsCrossed,   color: '#f97316' },
 }
 
 export function formatTooltipValue(value: unknown): string {

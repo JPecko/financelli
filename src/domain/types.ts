@@ -1,4 +1,4 @@
-export type AccountType = 'checking' | 'savings' | 'investment' | 'cash' | 'credit'
+export type AccountType = 'checking' | 'savings' | 'investment' | 'cash' | 'credit' | 'meal'
 
 export interface AccountShare {
   userId: string

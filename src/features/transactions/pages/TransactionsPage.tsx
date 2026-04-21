@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { Plus, ArrowLeftRight, ChevronLeft, ChevronRight, SlidersHorizontal, Check, X, Building2, Shapes, RefreshCw } from "lucide-react";
+import { Plus, ArrowLeftRight, ChevronLeft, ChevronRight, SlidersHorizontal, Check, FilterX, Building2, Shapes, RefreshCw } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { Separator } from "@/shared/components/ui/separator";
@@ -57,6 +58,8 @@ export default function TransactionsPage() {
     (filterCategory  !== null ? 1 : 0) +
     (filterSource    !== 'all' ? 1 : 0)
 
+  const [filterOpen, setFilterOpen] = useState(false)
+
   const clearFilters = () => {
     setFilterAccountId(null)
     setFilterCategory(null)
@@ -100,7 +103,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Filter popover */}
-        <Popover>
+        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
           <PopoverTrigger asChild>
             <Button
               variant={activeFilterCount > 0 ? 'secondary' : 'outline'}
@@ -128,9 +131,10 @@ export default function TransactionsPage() {
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border rounded-md px-2 py-1 transition-colors cursor-pointer"
+                  title={t('transactions.clearFilters')}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <FilterX className="h-3.5 w-3.5" />
                   {t('transactions.clearFilters')}
                 </button>
               )}
@@ -266,6 +270,15 @@ export default function TransactionsPage() {
                 </div>
                 <div className="pointer-events-none absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-popover to-transparent" />
               </div>
+            </div>
+
+            <Separator />
+
+            {/* Apply button */}
+            <div className="px-4 py-3">
+              <Button className="w-full" size="sm" onClick={() => setFilterOpen(false)}>
+                {t('transactions.applyFilters')}
+              </Button>
             </div>
           </PopoverContent>
         </Popover>

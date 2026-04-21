@@ -354,6 +354,7 @@ export const pt: typeof en = {
       investment: 'Investimento',
       cash:       'Dinheiro',
       credit:     'Cartão de Crédito',
+      meal:       'Cartão Alimentação',
     },
     form: {
       newAccount:       'Nova Conta',
@@ -401,6 +402,7 @@ export const pt: typeof en = {
     allCategories:      'Todas as categorias',
     filters:                  'Filtros',
     clearFilters:             'Limpar',
+    applyFilters:             'Aplicar',
     filterAll:                'Todos',
     sharedWithParticipants:   'Partilhado com participantes',
     sharedWithParticipantsDesc: 'O valor é dividido entre todos os participantes da conta',

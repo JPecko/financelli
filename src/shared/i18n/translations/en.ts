@@ -214,6 +214,7 @@ export const en = {
       investment: 'Investment',
       cash:       'Cash',
       credit:     'Credit Card',
+      meal:       'Meal Card',
     },
     form: {
       newAccount:       'New Account',
@@ -261,6 +262,7 @@ export const en = {
     allCategories:      'All categories',
     filters:                  'Filters',
     clearFilters:             'Clear all',
+    applyFilters:             'Apply',
     filterAll:                'All',
     sharedWithParticipants:   'Shared with participants',
     sharedWithParticipantsDesc: 'Amount split between all account participants',

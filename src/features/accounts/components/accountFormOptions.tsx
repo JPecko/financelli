@@ -1,5 +1,5 @@
 import type { ElementType } from 'react'
-import { Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard, Building2 } from 'lucide-react'
+import { Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard, Building2, UtensilsCrossed } from 'lucide-react'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import type { PlainSelectOption } from '@/shared/components/PlainSelect'
@@ -11,6 +11,7 @@ const TYPE_ICONS: Record<string, ElementType> = {
   investment: BarChart2,
   cash:       HandCoins,
   credit:     CreditCard,
+  meal:       UtensilsCrossed,
 }
 
 function BankOptionContent({ logoDomain, name }: { logoDomain: string; name: string }) {

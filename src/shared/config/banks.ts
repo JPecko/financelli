@@ -28,4 +28,9 @@ export const BANK_OPTIONS: BankOption[] = [
   { code: 'n26',        name: 'N26',            logoDomain: 'n26.com',          logoPath: '/banks/n26.svg' },
   { code: 'wise',       name: 'Wise',           logoDomain: 'wise.com',         logoPath: '/banks/wise.svg' },
   { code: 'traderepublic', name: 'Trade Republic', logoDomain: 'traderepublic.com', logoPath: '/banks/traderepublic.svg' },
+  // Meal cards
+  { code: 'edenred',   name: 'Edenred',   logoDomain: 'edenred.pt',    logoPath: '/banks/edenred.svg' },
+  { code: 'pluxee',    name: 'Pluxee',    logoDomain: 'pluxee.com',    logoPath: '/banks/pluxee.svg' },
+  { code: 'coverflex', name: 'Coverflex', logoDomain: 'coverflex.com', logoPath: '/banks/coverflex.svg' },
+  { code: 'nect',      name: 'Nect',      logoDomain: 'nect.pt',       logoPath: '/banks/nect.svg' },
 ]

@@ -73,6 +73,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
     { value: 'investment', label: t('accounts.types.investment') },
     { value: 'cash',       label: t('accounts.types.cash') },
     { value: 'credit',     label: t('accounts.types.credit') },
+    { value: 'meal',       label: t('accounts.types.meal') },
   ]
 
   const bankOptions  = useMemo(() => buildBankSelectOptions(t('accounts.form.noBank')), [t])

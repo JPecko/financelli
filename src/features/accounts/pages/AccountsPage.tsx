@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Wallet, BarChart2, Users, GripVertical,
   ArrowUpDown, Check, ChevronUp, ChevronDown, Save, X,
-  Banknote, PiggyBank, HandCoins, CreditCard, ExternalLink,
+  Banknote, PiggyBank, HandCoins, CreditCard, UtensilsCrossed, ExternalLink,
 } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
@@ -25,6 +25,7 @@ import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
 import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
 import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
+import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import BankLogo from '@/shared/components/BankLogo'
 import { useAuth } from '@/features/auth/AuthContext'
@@ -46,6 +47,11 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   investment: BarChart2,
   cash:       HandCoins,
   credit:     CreditCard,
+  meal:       UtensilsCrossed,
+}
+
+function accountGradient(color: string): string {
+  return `linear-gradient(135deg, color-mix(in srgb, ${color} 18%, #000000) 0%, ${color} 100%)`
 }
 
 const SORT_KEYS: SortKey[] = ['default', 'name', 'type', 'color', 'balance', 'manual']
@@ -66,40 +72,38 @@ interface AccountCardProps {
   onDelete: (id: number | undefined) => void
   onOpenInvestments: (a: Account) => void
   onShare:   (a: Account) => void
+  onNavigate: () => void
 }
 
-function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete, onOpenInvestments, onShare }: AccountCardProps) {
+function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete, onOpenInvestments, onShare, onNavigate }: AccountCardProps) {
   const isInvestment = account.type === 'investment'
   return (
-    <Card className="overflow-hidden card-hoverable">
+    <Card className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={onNavigate}>
       <CardContent className="p-0">
-        <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
         <div className={`py-3 sm:py-5 px-3 sm:px-5 ${isManualEditing ? 'pl-9' : ''}`}>
           {/* Top row: logo + name + menu */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                {bank ? (
-                  <BankLogo
-                    domain={bank.logoDomain}
-                    name={bank.name}
-                    accountType={account.type}
-                    imgClassName="h-6 w-6 object-contain"
-                    iconClassName="h-5 w-5 text-muted-foreground"
-                  />
-                ) : (
-                  (() => { const Icon = TYPE_ICONS[account.type] ?? Wallet; return <Icon className="h-5 w-5 text-muted-foreground" /> })()
-                )}
-              </div>
+              {bank ? (
+                <BankLogo
+                  domain={bank.logoDomain}
+                  name={bank.name}
+                  accountType={account.type}
+                  imgClassName="h-10 w-10 object-contain shrink-0"
+                  iconClassName="h-8 w-8 text-white/60 shrink-0"
+                />
+              ) : (
+                (() => { const Icon = TYPE_ICONS[account.type] ?? Wallet; return <Icon className="h-8 w-8 text-white/60 shrink-0" /> })()
+              )}
               <div className="min-w-0">
-                <p className="text-base sm:text-lg font-semibold leading-tight truncate">{account.name}</p>
-                {bank && <p className="text-xs text-muted-foreground truncate">{bank.name}</p>}
+                <p className="text-base sm:text-lg font-semibold leading-tight truncate text-white">{account.name}</p>
+                {bank && <p className="text-xs text-white/70 truncate">{bank.name}</p>}
               </div>
             </div>
-            <div className="flex items-center shrink-0">
+            <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/15 hover:text-white">
                     <span className="sr-only">Actions</span>
                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                       <circle cx="12" cy="5"  r="1.5" />
@@ -137,13 +141,13 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
           {/* Bottom row: badges + balance */}
           <div className="mt-3 flex items-end justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Badge variant="secondary" className="text-xs">
+              <Badge className="text-xs bg-white/20 text-white border-transparent hover:bg-white/20">
                 {t(('accounts.types.' + account.type) as Parameters<typeof t>[0])}
               </Badge>
               {(account.participants ?? 1) > 1 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-xs gap-1 cursor-default">
+                    <Badge className="text-xs gap-1 cursor-default bg-transparent border-white/40 text-white hover:bg-white/10">
                       <Users className="h-3 w-3" />
                       {account.participants}
                     </Badge>
@@ -166,10 +170,10 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
               )}
             </div>
             <div className="text-right shrink-0">
-              <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+              <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
                 {formatMoney(account.balance, account.currency)}
               </p>
-              <p className="text-[11px] text-muted-foreground">{account.currency}</p>
+              <p className="text-[11px] text-white/60">{account.currency}</p>
             </div>
           </div>
         </div>
@@ -209,6 +213,7 @@ function SortableCard({ account, isManual, children }: SortableCardProps) {
 export default function AccountsPage() {
   const t = useT()
   const navigate = useNavigate()
+  const { setFilterAccountId } = useTransactionsFilterStore()
   const { data: accounts = [], isLoading } = useAccounts()
   const { user } = useAuth()
   const {
@@ -496,6 +501,7 @@ export default function AccountsPage() {
                           onDelete={handleDelete}
                           onOpenInvestments={handleOpenInvestments}
                           onShare={setSharing}
+                          onNavigate={() => { setFilterAccountId(account.id!); navigate('/transactions') }}
                         />
                       </SortableCard>
                     )
@@ -533,35 +539,32 @@ export default function AccountsPage() {
                   const pnl = marketValue != null && costBasis != null ? marketValue - costBasis : null
                   const balance = effectiveBalance(account)
                   return (
-                    <Card key={account.id} className="overflow-hidden card-hoverable">
+                    <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={() => { setFilterAccountId(account.id!); navigate('/transactions') }}>
                       <CardContent className="p-0">
-                        <div className="h-1.5 w-full" style={{ backgroundColor: account.color }} />
                         <div className="py-3 sm:py-5 px-3 sm:px-5">
                           {/* Top row */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                                {bank ? (
-                                  <BankLogo
-                                    domain={bank.logoDomain}
-                                    name={bank.name}
-                                    accountType={account.type}
-                                    imgClassName="h-6 w-6 object-contain"
-                                    iconClassName="h-5 w-5 text-muted-foreground"
-                                  />
-                                ) : (
-                                  <BarChart2 className="h-5 w-5 text-muted-foreground" />
-                                )}
-                              </div>
+                              {bank ? (
+                                <BankLogo
+                                  domain={bank.logoDomain}
+                                  name={bank.name}
+                                  accountType={account.type}
+                                  imgClassName="h-10 w-10 object-contain shrink-0"
+                                  iconClassName="h-8 w-8 text-white/60 shrink-0"
+                                />
+                              ) : (
+                                <BarChart2 className="h-8 w-8 text-white/60 shrink-0" />
+                              )}
                               <div className="min-w-0">
-                                <p className="text-base sm:text-lg font-semibold leading-tight truncate">{account.name}</p>
-                                {bank && <p className="text-xs text-muted-foreground truncate">{bank.name}</p>}
+                                <p className="text-base sm:text-lg font-semibold leading-tight truncate text-white">{account.name}</p>
+                                {bank && <p className="text-xs text-white/70 truncate">{bank.name}</p>}
                               </div>
                             </div>
-                            <div className="flex items-center shrink-0">
+                            <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/15 hover:text-white">
                                     <span className="sr-only">Actions</span>
                                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                                       <circle cx="12" cy="5"  r="1.5" />
@@ -596,27 +599,27 @@ export default function AccountsPage() {
                           <div className="mt-3 flex items-end justify-between gap-2">
                             <div className="space-y-0.5">
                               {effectiveInvestedBase > 0 && (
-                                <p className="text-xs text-muted-foreground">
-                                  {t('investments.investedBase')}: <span className="font-medium text-foreground">{formatMoney(effectiveInvestedBase, account.currency)}</span>
+                                <p className="text-xs text-white/70">
+                                  {t('investments.investedBase')}: <span className="font-medium text-white">{formatMoney(effectiveInvestedBase, account.currency)}</span>
                                 </p>
                               )}
                               {pnl != null && (
-                                <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                                   {t('investments.pnl')}: {pnl >= 0 ? '+' : ''}{formatMoney(pnl, account.currency)}
                                 </p>
                               )}
                               {accountHoldings.length === 0 && (
-                                <p className="text-xs text-muted-foreground">{accountHoldings.length} holdings</p>
+                                <p className="text-xs text-white/70">{accountHoldings.length} holdings</p>
                               )}
                               {accountHoldings.length > 0 && (
-                                <p className="text-xs text-muted-foreground">{accountHoldings.length} {accountHoldings.length === 1 ? 'holding' : 'holdings'}</p>
+                                <p className="text-xs text-white/70">{accountHoldings.length} {accountHoldings.length === 1 ? 'holding' : 'holdings'}</p>
                               )}
                             </div>
                             <div className="text-right shrink-0">
-                              <p className={`text-lg font-bold tabular-nums ${balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                              <p className={`text-lg font-bold tabular-nums ${balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
                                 {formatMoney(balance, account.currency)}
                               </p>
-                              <p className="text-[11px] text-muted-foreground">{account.currency}</p>
+                              <p className="text-[11px] text-white/60">{account.currency}</p>
                             </div>
                           </div>
                         </div>
