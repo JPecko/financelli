@@ -78,9 +78,9 @@ interface AccountCardProps {
 function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete, onOpenInvestments, onShare, onNavigate }: AccountCardProps) {
   const isInvestment = account.type === 'investment'
   return (
-    <Card className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={onNavigate}>
-      <CardContent className="p-0">
-        <div className={`py-3 sm:py-5 px-3 sm:px-5 ${isManualEditing ? 'pl-9' : ''}`}>
+    <Card className="overflow-hidden card-hoverable cursor-pointer aspect-[85.6/28]" style={{ background: accountGradient(account.color) }} onClick={onNavigate}>
+      <CardContent className="p-0 h-full">
+        <div className={`h-full flex flex-col justify-between py-3 sm:py-4 px-3 sm:px-4 ${isManualEditing ? 'pl-9' : ''}`}>
           {/* Top row: logo + name + menu */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -139,7 +139,7 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
           </div>
 
           {/* Bottom row: badges + balance */}
-          <div className="mt-3 flex items-end justify-between gap-2">
+          <div className="flex items-end justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
               <Badge className="text-xs bg-white/20 text-white border-transparent hover:bg-white/20">
                 {t(('accounts.types.' + account.type) as Parameters<typeof t>[0])}
@@ -539,9 +539,9 @@ export default function AccountsPage() {
                   const pnl = marketValue != null && costBasis != null ? marketValue - costBasis : null
                   const balance = effectiveBalance(account)
                   return (
-                    <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={() => { setFilterAccountId(account.id!); navigate('/transactions') }}>
-                      <CardContent className="p-0">
-                        <div className="py-3 sm:py-5 px-3 sm:px-5">
+                    <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer aspect-[85.6/40]" style={{ background: accountGradient(account.color) }} onClick={() => { setFilterAccountId(account.id!); navigate('/transactions') }}>
+                      <CardContent className="p-0 h-full">
+                        <div className="h-full flex flex-col justify-between py-3 sm:py-4 px-3 sm:px-4">
                           {/* Top row */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -596,7 +596,7 @@ export default function AccountsPage() {
                           </div>
 
                           {/* Bottom row */}
-                          <div className="mt-3 flex items-end justify-between gap-2">
+                          <div className="flex items-end justify-between gap-2">
                             <div className="space-y-0.5">
                               {effectiveInvestedBase > 0 && (
                                 <p className="text-xs text-white/70">
