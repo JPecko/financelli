@@ -19,10 +19,10 @@ export default function MobileHeader() {
   const initials = getUserInitials(user)
 
   return (
-    <header className="lg:hidden flex items-center justify-between gap-3 border-b border-border px-4 py-2 safe-area-top-pad-3 bg-sidebar">
+    <header className="relative z-20 overflow-visible lg:hidden flex items-center justify-between gap-3 border-b border-border px-4 py-2 safe-area-top-pad-3 bg-sidebar">
       <AppLogoButton height="h-8" showVersion />
 
-      <div className="flex items-center gap-2">
+      <div className="relative flex items-center gap-2">
         <LanguageSelect />
         <NavLink
           to="/settings"
