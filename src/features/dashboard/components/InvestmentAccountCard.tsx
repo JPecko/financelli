@@ -1,14 +1,16 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip as ReTooltip, ResponsiveContainer, ReferenceLine, Legend,
+  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as ReTooltip, ResponsiveContainer, Legend,
 } from 'recharts'
+import { parseISO, differenceInMonths, startOfMonth } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { useInvestmentAccountHistory, useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
-import { formatMoney, fromCents } from '@/domain/money'
+import { formatMoney, toCents } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import {
   computeAdjustedCostBasis,
@@ -22,6 +24,9 @@ const axisFmt = (v: number) => {
   if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(0)}k`
   return String(v)
 }
+
+// cents → rounded euros (chart data lives in euros, not cents)
+const toEur = (cents: number) => Math.round(cents) / 100
 
 interface Props {
   account:  Account
@@ -49,32 +54,34 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
   const effectiveInvestedBase = computeEffectiveInvestedBase(account, capitalTransactions)
   const computedBalance  = computeInvestmentBalance(account, holdings, assetMap, capitalTransactions)
 
-  // History from transactions (deposits + balance snapshots)
-  const { data: historyData = [] } = useInvestmentAccountHistory(account)
+  // Dynamic window: show since account creation (capped at 24 months)
+  const historyMonths = useMemo(() => {
+    const created = parseISO(account.createdAt)
+    const diff = differenceInMonths(startOfMonth(new Date()), startOfMonth(created)) + 1
+    return Math.min(Math.max(diff, 2), 24)
+  }, [account.createdAt])
 
-  const investedBaseEuros = effectiveInvestedBase > 0
-    ? Math.round(fromCents(effectiveInvestedBase) * 100) / 100
-    : null
+  const { data: historyData = [] } = useInvestmentAccountHistory(account, historyMonths)
 
-  // Build chart data:
-  // - patrimonio: balance from transaction history; last point = current computed balance
-  // - investido:  cumulative deposits, starting from what was invested before the window
-  const investedInWindow = historyData.reduce(
-    (s, d) => s + Math.round(fromCents(d.invested) * 100) / 100, 0,
+  const heldAssetIds = useMemo(
+    () => [...new Set(holdings.map(h => h.assetId))],
+    [holdings],
   )
-  const priorInvested = investedBaseEuros != null
+
+  const investedBaseEuros = effectiveInvestedBase > 0 ? toEur(effectiveInvestedBase) : null
+
+  const investedInWindow = historyData.reduce((s, d) => s + toEur(d.invested), 0)
+  const priorInvested    = investedBaseEuros != null
     ? Math.max(0, investedBaseEuros - investedInWindow)
     : 0
 
   let cumulativeInvested = priorInvested
   const chartData = historyData.map((d, i) => {
-    cumulativeInvested += Math.round(fromCents(d.invested) * 100) / 100
+    cumulativeInvested += toEur(d.invested)
     const isLast = i === historyData.length - 1
     return {
       month:      d.month,
-      patrimonio: isLast
-        ? Math.round(fromCents(computedBalance) * 100) / 100
-        : Math.round(fromCents(d.balance) * 100) / 100,
+      patrimonio: isLast ? toEur(computedBalance) : toEur(d.balance),
       investido:  cumulativeInvested,
     }
   })
@@ -155,35 +162,39 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
         )}
 
         {/* Assets held in this account: name, ticker, current price */}
-        {hasHoldings && (() => {
-          const heldAssetIds = [...new Set(holdings.map(h => h.assetId))]
-          return (
-            <div className="space-y-1">
-              {heldAssetIds.map(id => {
-                const asset = assetMap[id]
-                if (!asset) return null
-                return (
-                  <div key={id} className="flex items-center justify-between text-base sm:text-sm">
-                    <span className="text-muted-foreground truncate">
-                      {asset.name}{asset.ticker ? ` (${asset.ticker.toUpperCase()})` : ''}
-                    </span>
-                    <span className="font-medium tabular-nums shrink-0 ml-3">{formatMoney(asset.currentPrice)}</span>
-                  </div>
-                )
-              })}
-            </div>
-          )
-        })()}
+        {hasHoldings && (
+          <div className="space-y-1">
+            {heldAssetIds.map(id => {
+              const asset = assetMap[id]
+              if (!asset) return null
+              return (
+                <div key={id} className="flex items-center justify-between text-base sm:text-sm">
+                  <span className="text-muted-foreground truncate">
+                    {asset.name}{asset.ticker ? ` (${asset.ticker.toUpperCase()})` : ''}
+                  </span>
+                  <span className="font-medium tabular-nums shrink-0 ml-3">{formatMoney(asset.currentPrice)}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* History chart: patrimonio vs capital investido */}
         <ResponsiveContainer width="100%" height={160}>
-          <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id={`inv-grad-${account.id}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={account.color} stopOpacity={0.22} />
+                <stop offset="95%" stopColor={account.color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis
               dataKey="month"
               tick={{ fontSize: 10 }}
               tickLine={false}
               axisLine={false}
+              interval={historyMonths > 12 ? 1 : 0}
             />
             <YAxis
               width={42}
@@ -194,32 +205,21 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
             />
             <ReTooltip
               formatter={(value, name) => [
-                typeof value === 'number' ? formatMoney(Math.round(value * 100)) : String(value ?? ''),
+                typeof value === 'number' ? formatMoney(toCents(value)) : String(value ?? ''),
                 String(name ?? ''),
               ]}
               contentStyle={{ fontSize: 12 }}
             />
-            {/* Capital Investido total — dashed reference */}
-            {investedBaseEuros != null && investedBaseEuros > 0 && (
-              <ReferenceLine
-                y={investedBaseEuros}
-                stroke={account.color}
-                strokeDasharray="5 4"
-                strokeWidth={1.5}
-                label={{ value: t('investments.investedBase'), position: 'insideTopRight', fontSize: 9, fill: 'var(--muted-foreground)' }}
-              />
-            )}
-            {/* Patrimonio: portfolio value over time */}
-            <Line
+            <Area
               type="monotone"
               dataKey="patrimonio"
               name={t('dashboard.portfolioValue')}
               stroke={account.color}
               strokeWidth={2.5}
+              fill={`url(#inv-grad-${account.id})`}
               dot={false}
               connectNulls
             />
-            {/* Capital Investido: cumulative deposits */}
             <Line
               type="monotone"
               dataKey="investido"
@@ -235,7 +235,7 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
               wrapperStyle={{ fontSize: 10, paddingTop: 4 }}
               formatter={(value) => String(value ?? '')}
             />
-          </LineChart>
+          </ComposedChart>
         </ResponsiveContainer>
 
       </CardContent>
