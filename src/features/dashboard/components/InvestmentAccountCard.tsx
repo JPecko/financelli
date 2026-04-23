@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip as ReTooltip, ResponsiveContainer, Legend,
+  Tooltip as ReTooltip, ResponsiveContainer,
 } from 'recharts'
 import { parseISO, differenceInMonths, startOfMonth } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
@@ -24,6 +24,14 @@ const axisFmt = (v: number) => {
   if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(0)}k`
   return String(v)
 }
+
+const formatCompactMoney = (cents: number, currency = 'EUR') =>
+  new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(cents / 100)
 
 // cents → rounded euros (chart data lives in euros, not cents)
 const toEur = (cents: number) => Math.round(cents) / 100
@@ -86,9 +94,39 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
     }
   })
 
+  const stats = [
+    effectiveInvestedBase > 0 ? {
+      label: t('investments.investedBase'),
+      value: formatCompactMoney(effectiveInvestedBase, account.currency),
+      valueTitle: formatMoney(effectiveInvestedBase, account.currency),
+      hint: 'depositado',
+      hintClassName: 'text-muted-foreground',
+    } : null,
+    {
+      label: t('investments.costBasis'),
+      value: formatCompactMoney(adjCostBasis, account.currency),
+      valueTitle: formatMoney(adjCostBasis, account.currency),
+      hint: totalFees > 0 ? `incl. ${formatCompactMoney(totalFees, account.currency)} fees` : '\u00a0',
+      hintClassName: 'text-muted-foreground',
+    },
+    {
+      label: t('investments.marketValue'),
+      value: formatCompactMoney(marketValueCents, account.currency),
+      valueTitle: formatMoney(marketValueCents, account.currency),
+      hint: `${isPositive ? '+' : ''}${formatCompactMoney(pnl, account.currency)} (${isPositive ? '+' : ''}${pnlPct.toFixed(1)}%)`,
+      hintClassName: isPositive ? 'text-emerald-500' : 'text-rose-500',
+    },
+  ].filter(Boolean) as Array<{
+    label: string
+    value: string
+    valueTitle: string
+    hint: string
+    hintClassName: string
+  }>
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="min-w-0 pb-2">
         <div className="flex items-start justify-between gap-4">
           <button
             type="button"
@@ -120,40 +158,32 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 space-y-3">
+      <CardContent className="min-w-0 space-y-3 overflow-hidden pt-0">
 
         {/* Stats grid */}
         {hasHoldings ? (
-          <div className="grid auto-cols-fr grid-flow-col grid-rows-[minmax(2.75rem,auto)_minmax(1.75rem,auto)_minmax(1rem,auto)] gap-x-2 gap-y-1 rounded-lg bg-muted/30 px-3 py-2.5 text-center sm:grid-rows-[minmax(2.5rem,auto)_minmax(1.5rem,auto)_minmax(0.875rem,auto)]">
-            {effectiveInvestedBase > 0 && (
-              <div className="contents">
-                <p className="flex items-center justify-center text-xs text-muted-foreground uppercase tracking-wide leading-tight sm:text-[10px]">
-                  {t('investments.investedBase')}
+          <div
+            className={`grid grid-cols-1 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:gap-2 md:p-2 ${stats.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}
+          >
+            {stats.map(stat => (
+              <div
+                key={stat.label}
+                className="min-w-0 rounded-md bg-background/80 px-2 py-2 text-left shadow-sm md:px-3 md:py-2"
+              >
+                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground leading-tight">
+                  {stat.label}
                 </p>
-                <p className="flex items-center justify-center text-base font-semibold tabular-nums sm:text-sm">{formatMoney(effectiveInvestedBase)}</p>
-                <p className="flex items-start justify-center text-xs text-muted-foreground sm:text-[10px]">depositado</p>
+                <p
+                  className="mt-1 truncate text-lg font-semibold tabular-nums leading-tight md:text-base"
+                  title={stat.valueTitle}
+                >
+                  {stat.value}
+                </p>
+                <p className={`mt-1 truncate text-[11px] font-medium leading-tight md:text-[10px] ${stat.hintClassName}`}>
+                  {stat.hint}
+                </p>
               </div>
-            )}
-            <div className="contents">
-              <p className="flex items-center justify-center text-xs text-muted-foreground uppercase tracking-wide leading-tight sm:text-[10px]">
-                {t('investments.costBasis')}
-              </p>
-              <p className="flex items-center justify-center text-base font-semibold tabular-nums sm:text-sm">{formatMoney(adjCostBasis)}</p>
-              {totalFees > 0 && (
-                <p className="flex items-start justify-center text-xs text-muted-foreground sm:text-[10px]">incl. {formatMoney(totalFees)} fees</p>
-              ) || (
-                <p aria-hidden="true" className="flex items-start justify-center invisible text-xs sm:text-[10px]">.</p>
-              )}
-            </div>
-            <div className="contents">
-              <p className="flex items-center justify-center text-xs text-muted-foreground uppercase tracking-wide leading-tight sm:text-[10px]">
-                {t('investments.marketValue')}
-              </p>
-              <p className="flex items-center justify-center text-base font-semibold tabular-nums sm:text-sm">{formatMoney(marketValueCents)}</p>
-              <p className={`flex items-start justify-center text-xs font-medium sm:text-[10px] ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {isPositive ? '+' : ''}{formatMoney(pnl)} ({isPositive ? '+' : ''}{pnlPct.toFixed(1)}%)
-              </p>
-            </div>
+            ))}
           </div>
         ) : (
           <p className="px-1 text-sm text-muted-foreground sm:text-xs">
@@ -163,16 +193,16 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
 
         {/* Assets held in this account: name, ticker, current price */}
         {hasHoldings && (
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             {heldAssetIds.map(id => {
               const asset = assetMap[id]
               if (!asset) return null
               return (
-                <div key={id} className="flex items-center justify-between text-base sm:text-sm">
-                  <span className="text-muted-foreground truncate">
+                <div key={id} className="flex min-w-0 items-center justify-between gap-3 text-sm">
+                  <span className="min-w-0 truncate text-muted-foreground">
                     {asset.name}{asset.ticker ? ` (${asset.ticker.toUpperCase()})` : ''}
                   </span>
-                  <span className="font-medium tabular-nums shrink-0 ml-3">{formatMoney(asset.currentPrice)}</span>
+                  <span className="shrink-0 font-medium tabular-nums">{formatCompactMoney(asset.currentPrice, account.currency)}</span>
                 </div>
               )
             })}
@@ -180,63 +210,80 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
         )}
 
         {/* History chart: patrimonio vs capital investido */}
-        <ResponsiveContainer width="100%" height={160}>
-          <ComposedChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={`inv-grad-${account.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={account.color} stopOpacity={0.22} />
-                <stop offset="95%" stopColor={account.color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis
-              dataKey="month"
-              tick={{ fontSize: 10 }}
-              tickLine={false}
-              axisLine={false}
-              interval={historyMonths > 12 ? 1 : 0}
-            />
-            <YAxis
-              width={42}
-              tick={{ fontSize: 10 }}
-              tickFormatter={axisFmt}
-              tickLine={false}
-              axisLine={false}
-            />
-            <ReTooltip
-              formatter={(value, name) => [
-                typeof value === 'number' ? formatMoney(toCents(value)) : String(value ?? ''),
-                String(name ?? ''),
-              ]}
-              contentStyle={{ fontSize: 12 }}
-            />
-            <Area
-              type="monotone"
-              dataKey="patrimonio"
-              name={t('dashboard.portfolioValue')}
-              stroke={account.color}
-              strokeWidth={2.5}
-              fill={`url(#inv-grad-${account.id})`}
-              dot={false}
-              connectNulls
-            />
-            <Line
-              type="monotone"
-              dataKey="investido"
-              name={t('investments.investedBase')}
-              stroke="var(--muted-foreground)"
-              strokeWidth={1.5}
-              strokeDasharray="4 3"
-              dot={false}
-              connectNulls
-            />
-            <Legend
-              iconType="plainline"
-              wrapperStyle={{ fontSize: 10, paddingTop: 4 }}
-              formatter={(value) => String(value ?? '')}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: account.color }}
+              />
+              <span className="truncate">{t('dashboard.portfolioValue')}</span>
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="h-0.5 w-3 shrink-0 rounded-full bg-muted-foreground"
+              />
+              <span className="truncate">{t('investments.investedBase')}</span>
+            </span>
+          </div>
+
+          <ResponsiveContainer width="100%" height={160}>
+            <ComposedChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: -12 }}>
+              <defs>
+                <linearGradient id={`inv-grad-${account.id}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={account.color} stopOpacity={0.22} />
+                  <stop offset="95%" stopColor={account.color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                minTickGap={16}
+                tickMargin={8}
+                interval={historyMonths > 12 ? 'preserveStartEnd' : 0}
+              />
+              <YAxis
+                width={34}
+                tick={{ fontSize: 10 }}
+                tickFormatter={axisFmt}
+                tickLine={false}
+                axisLine={false}
+              />
+              <ReTooltip
+                formatter={(value, name) => [
+                  typeof value === 'number' ? formatMoney(toCents(value)) : String(value ?? ''),
+                  String(name ?? ''),
+                ]}
+                contentStyle={{ fontSize: 12 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="patrimonio"
+                name={t('dashboard.portfolioValue')}
+                stroke={account.color}
+                strokeWidth={2.5}
+                fill={`url(#inv-grad-${account.id})`}
+                dot={false}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="investido"
+                name={t('investments.investedBase')}
+                stroke="var(--muted-foreground)"
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                dot={false}
+                connectNulls
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
 
       </CardContent>
     </Card>

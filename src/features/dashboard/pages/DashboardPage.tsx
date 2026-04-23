@@ -80,7 +80,7 @@ export default function DashboardPage() {
           <p className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
             {t('dashboard.investmentHistory')}
           </p>
-          <div className={`grid gap-4 ${model.investmentAccounts.length > 1 ? 'lg:grid-cols-2' : ''}`}>
+          <div className="grid gap-4">
             {model.investmentAccounts.map(acc => (
               <InvestmentAccountCard
                 key={acc.id}

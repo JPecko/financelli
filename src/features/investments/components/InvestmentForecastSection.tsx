@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip as ReTooltip, ResponsiveContainer, Legend,
+  Tooltip as ReTooltip, ResponsiveContainer,
 } from 'recharts'
 import { Input } from '@/shared/components/ui/input'
 import { formatDecimal } from '@/domain/money'
@@ -43,6 +43,23 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
   )
 
   const finalPoint = chartData[chartData.length - 1]
+  const summaryCards = [
+    {
+      label: t('investments.forecastNominal'),
+      value: finalPoint ? formatDecimal(finalPoint.nominal) : '—',
+      valueClassName: 'text-emerald-600 dark:text-emerald-400',
+    },
+    {
+      label: t('investments.forecastReal'),
+      value: finalPoint ? formatDecimal(finalPoint.real) : '—',
+      valueClassName: 'text-violet-600 dark:text-violet-400',
+    },
+    {
+      label: t('investments.forecastInvested'),
+      value: finalPoint ? formatDecimal(finalPoint.invested) : '—',
+      valueClassName: '',
+    },
+  ]
 
   return (
     <section className="space-y-3">
@@ -56,7 +73,7 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
       <div className="rounded-xl border bg-card p-4 space-y-4">
 
         {/* Assumption inputs */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3">
           <label className="space-y-1">
             <span className="text-xs text-muted-foreground">{t('investments.forecastReturn')}</span>
             <div className="relative">
@@ -99,9 +116,9 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
         </div>
 
         {/* Horizon selector */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="shrink-0 text-xs text-muted-foreground">{t('investments.forecastHorizon')}:</span>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {HORIZONS.map(h => (
               <button
                 key={h}
@@ -120,97 +137,109 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
         </div>
 
         {/* Final-value summary */}
-        <div className="grid grid-cols-3 gap-3 rounded-lg bg-muted/30 px-3 py-2.5 text-center">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('investments.forecastNominal')}</p>
-            <p className="text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-              {finalPoint ? formatDecimal(finalPoint.nominal) : '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('investments.forecastReal')}</p>
-            <p className="text-base font-semibold tabular-nums text-violet-600 dark:text-violet-400">
-              {finalPoint ? formatDecimal(finalPoint.real) : '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('investments.forecastInvested')}</p>
-            <p className="text-base font-semibold tabular-nums">
-              {finalPoint ? formatDecimal(finalPoint.invested) : '—'}
-            </p>
-          </div>
+        <div className="grid grid-cols-1 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:grid-cols-3 md:gap-2 md:p-2">
+          {summaryCards.map(card => (
+            <div
+              key={card.label}
+              className="min-w-0 rounded-md bg-background/80 px-2 py-2 text-left shadow-sm md:px-3 md:py-2"
+            >
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground leading-tight">
+                {card.label}
+              </p>
+              <p className={`mt-1 truncate text-lg font-semibold tabular-nums leading-tight md:text-base ${card.valueClassName}`}>
+                {card.value}
+              </p>
+            </div>
+          ))}
         </div>
 
         {/* Chart */}
-        <ResponsiveContainer width="100%" height={200}>
-          <ComposedChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={gNominal} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#10b981" stopOpacity={0.18} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id={gReal} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.14} />
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis
-              dataKey="year"
-              tick={{ fontSize: 10 }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={v => `${v}y`}
-            />
-            <YAxis
-              width={48}
-              tick={{ fontSize: 10 }}
-              tickFormatter={fmtAxis}
-              tickLine={false}
-              axisLine={false}
-            />
-            <ReTooltip
-              formatter={(value, name) => [
-                typeof value === 'number' ? formatDecimal(value) : String(value ?? ''),
-                String(name ?? ''),
-              ]}
-              labelFormatter={v => `Year ${v}`}
-              contentStyle={{ fontSize: 12 }}
-            />
-            <Area
-              type="monotone"
-              dataKey="nominal"
-              name={t('investments.forecastNominal')}
-              stroke="#10b981"
-              strokeWidth={2}
-              fill={`url(#${gNominal})`}
-              dot={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="real"
-              name={t('investments.forecastReal')}
-              stroke="#8b5cf6"
-              strokeWidth={2}
-              fill={`url(#${gReal})`}
-              dot={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="invested"
-              name={t('investments.forecastInvested')}
-              stroke="var(--muted-foreground)"
-              strokeWidth={1.5}
-              strokeDasharray="4 3"
-              dot={false}
-            />
-            <Legend
-              iconType="plainline"
-              wrapperStyle={{ fontSize: 10, paddingTop: 4 }}
-              formatter={v => String(v ?? '')}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
+              <span className="truncate">{t('investments.forecastNominal')}</span>
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full bg-violet-500" />
+              <span className="truncate">{t('investments.forecastReal')}</span>
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="h-0.5 w-3 shrink-0 rounded-full bg-muted-foreground"
+              />
+              <span className="truncate">{t('investments.forecastInvested')}</span>
+            </span>
+          </div>
+
+          <ResponsiveContainer width="100%" height={200}>
+            <ComposedChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: -10 }}>
+              <defs>
+                <linearGradient id={gNominal} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#10b981" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id={gReal} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.14} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis
+                dataKey="year"
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                minTickGap={16}
+                tickMargin={8}
+                tickFormatter={v => `${v}y`}
+              />
+              <YAxis
+                width={38}
+                tick={{ fontSize: 10 }}
+                tickFormatter={fmtAxis}
+                tickLine={false}
+                axisLine={false}
+              />
+              <ReTooltip
+                formatter={(value, name) => [
+                  typeof value === 'number' ? formatDecimal(value) : String(value ?? ''),
+                  String(name ?? ''),
+                ]}
+                labelFormatter={v => `Year ${v}`}
+                contentStyle={{ fontSize: 12 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="nominal"
+                name={t('investments.forecastNominal')}
+                stroke="#10b981"
+                strokeWidth={2}
+                fill={`url(#${gNominal})`}
+                dot={false}
+              />
+              <Area
+                type="monotone"
+                dataKey="real"
+                name={t('investments.forecastReal')}
+                stroke="#8b5cf6"
+                strokeWidth={2}
+                fill={`url(#${gReal})`}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="invested"
+                name={t('investments.forecastInvested')}
+                stroke="var(--muted-foreground)"
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                dot={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
 
       </div>
     </section>
