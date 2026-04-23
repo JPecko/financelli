@@ -235,6 +235,17 @@ When implementing PWA-related features:
 
 Whenever a UI decision works well on desktop but poorly on mobile, prioritize mobile.
 
+### Responsive dashboard and investment chart conventions
+
+For dashboard investment widgets and investment growth/forecast sections:
+
+- investment cards in the dashboard should occupy full width, including on desktop
+- summary metric blocks should stack vertically below `md` and switch to a horizontal row from `md` upward
+- even in mobile layouts, keep visible spacing between label, value, and supporting hint text
+- assumption input blocks for forecast/growth charts should follow the same pattern: vertical below `md`, horizontal from `md`
+- avoid horizontal scroll in chart cards; compact axis widths, labels, and surrounding UI before shrinking chart readability too aggressively
+- when Recharts `Legend` creates width pressure, prefer a compact custom legend above the chart
+
 ## Styles
 
 Current base:
