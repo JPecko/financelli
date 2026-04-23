@@ -14,6 +14,7 @@ import AssetFormModal from '../components/AssetFormModal'
 import PortfolioSummary from '../components/PortfolioSummary'
 import InvestmentAccountCard from '../components/InvestmentAccountCard'
 import InvestmentForecastSection from '../components/InvestmentForecastSection'
+import InvestmentSimulatorSection from '../components/InvestmentSimulatorSection'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
 import type { Asset, Holding, Account } from '@/domain/types'
@@ -160,6 +161,8 @@ export default function InvestmentsPage() {
           totalPnLPct={totalPnLPct}
         />
       )}
+
+      <InvestmentSimulatorSection />
 
       <HoldingFormModal open={holdingModalOpen} onClose={() => setHoldingModalOpen(false)}
         accountId={modalAccount} holding={editHolding} assets={assets} />

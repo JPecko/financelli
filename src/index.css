@@ -224,7 +224,7 @@ body {
 
 /* Floating topbar — slides in from the top as a fixed overlay */
 .mobile-chrome-floating {
-  overflow: hidden;
+  overflow: visible;
   animation: topbar-slide-in 220ms ease-out;
   box-shadow: 0 2px 10px hsl(0 0% 0% / 0.15);
 }

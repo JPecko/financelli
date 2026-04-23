@@ -434,6 +434,14 @@ export const en = {
     syncDone:             'Prices updated.',
     syncNoKey:            'Add your Twelve Data API key in Settings → Integrations.',
     syncNoTickers:        'No assets with tickers to sync.',
+
+    simulatorTitle:             'Investment Simulator',
+    simulatorSubtitle:          'Project portfolio growth from scratch based on your assumptions',
+    simulatorInitial:           'Initial Amount',
+    simulatorHorizon:           'Horizon',
+    simulatorTicker:            'Asset / Ticker',
+    simulatorTickerPlaceholder: 'e.g. VUAA.DE, SXR8.DE, AAPL',
+    simulatorGain:              'Gain',
   },
 
   update: {

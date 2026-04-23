@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import TickerSuggestInput from './TickerSuggestInput'
 import { format } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
@@ -31,7 +32,7 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
 
   const today = format(new Date(), 'yyyy-MM-dd')
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     defaultValues: { name: '', label: '', ticker: '', currentPrice: '0', priceDate: today },
   })
 
@@ -105,11 +106,11 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
             <Label htmlFor="a-ticker">
               {t('investments.ticker')} <span className="text-muted-foreground text-xs">(optional)</span>
             </Label>
-            <Input
+            <TickerSuggestInput
               id="a-ticker"
-              placeholder="e.g. VWCE, AAPL"
-              className="uppercase"
-              {...register('ticker')}
+              value={watch('ticker')}
+              onChange={v => setValue('ticker', v)}
+              placeholder={t('investments.simulatorTickerPlaceholder')}
             />
           </div>
 

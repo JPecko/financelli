@@ -208,6 +208,14 @@ export const pt: typeof en = {
     syncDone:             'Preços atualizados.',
     syncNoKey:            'Adiciona a tua API key do Twelve Data em Definições → Integrações.',
     syncNoTickers:        'Nenhum ativo com ticker para sincronizar.',
+
+    simulatorTitle:             'Simulador de Investimento',
+    simulatorSubtitle:          'Projeta o crescimento do portefólio com base nas tuas hipóteses',
+    simulatorInitial:           'Montante Inicial',
+    simulatorHorizon:           'Horizonte',
+    simulatorTicker:            'Ativo / Ticker',
+    simulatorTickerPlaceholder: 'ex: VUAA.DE, SXR8.DE, AAPL',
+    simulatorGain:              'Ganho',
   },
 
   update: {
