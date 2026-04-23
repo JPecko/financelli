@@ -79,9 +79,9 @@ interface AccountCardProps {
 function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete, onOpenInvestments, onShare, onNavigate }: AccountCardProps) {
   const isInvestment = account.type === 'investment'
   return (
-    <Card className="overflow-hidden card-hoverable cursor-pointer aspect-[85.6/28]" style={{ background: accountGradient(account.color) }} onClick={onNavigate}>
+    <Card className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={onNavigate}>
       <CardContent className="p-0 h-full">
-        <div className={`h-full flex flex-col justify-between py-3 sm:py-4 px-3 sm:px-4 ${isManualEditing ? 'pl-9' : ''}`}>
+        <div className={`h-full flex flex-col justify-between py-2 px-3 sm:px-4 ${isManualEditing ? 'pl-9' : ''}`}>
           {/* Top row: logo + name + menu */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -543,7 +543,7 @@ export default function AccountsPage() {
                   return (
                     <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer aspect-[85.6/40]" style={{ background: accountGradient(account.color) }} onClick={() => { setFilterAccountId(account.id!); navigate('/transactions') }}>
                       <CardContent className="p-0 h-full">
-                        <div className="h-full flex flex-col justify-between py-3 sm:py-4 px-3 sm:px-4">
+                        <div className="h-full flex flex-col justify-between py-2 px-3 sm:px-4">
                           {/* Top row */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
