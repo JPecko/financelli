@@ -36,12 +36,21 @@ export interface Asset {
   createdAt: string
 }
 
+export interface AssetPrice {
+  id?: number
+  assetId: number
+  price: number     // cents per unit
+  date: string      // YYYY-MM-DD — the date this price was observed
+  createdAt: string
+}
+
 export interface Holding {
   id?: number
   accountId: number
   assetId: number        // FK → assets.id
   quantity: number       // number of units/shares (decimal)
   avgCost: number        // cents per unit (average cost basis)
+  date?: string          // YYYY-MM-DD — date the position was opened/purchased
   createdAt: string
 }
 

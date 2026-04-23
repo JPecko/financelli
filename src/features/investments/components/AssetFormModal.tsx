@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { format } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { toCents, fromCents } from '@/domain/money'
 import { addAsset, updateAsset } from '@/shared/hooks/useAssets'
+import { upsertAssetPrice } from '@/shared/hooks/useAssetPrices'
 import { useT } from '@/shared/i18n'
 import type { Asset } from '@/domain/types'
 
@@ -13,6 +15,7 @@ interface FormValues {
   name:         string
   ticker:       string
   currentPrice: string
+  priceDate:    string
 }
 
 interface Props {
@@ -25,8 +28,10 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
   const t      = useT()
   const isEdit = !!asset
 
+  const today = format(new Date(), 'yyyy-MM-dd')
+
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    defaultValues: { name: '', ticker: '', currentPrice: '0' },
+    defaultValues: { name: '', ticker: '', currentPrice: '0', priceDate: today },
   })
 
   useEffect(() => {
@@ -36,22 +41,28 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
         name:         asset.name,
         ticker:       asset.ticker ?? '',
         currentPrice: fromCents(asset.currentPrice).toFixed(4),
+        priceDate:    today,
       })
     } else {
-      reset({ name: '', ticker: '', currentPrice: '0' })
+      reset({ name: '', ticker: '', currentPrice: '0', priceDate: today })
     }
-  }, [open, asset, reset])
+  }, [open, asset, reset, today])
 
   const onSubmit = async (values: FormValues) => {
+    const priceCents = toCents(parseFloat(values.currentPrice.replace(',', '.')) || 0)
     const payload = {
       name:         values.name.trim(),
       ticker:       values.ticker.trim().toUpperCase() || undefined,
-      currentPrice: toCents(parseFloat(values.currentPrice) || 0),
+      currentPrice: priceCents,
     }
     if (isEdit && asset?.id != null) {
       await updateAsset(asset.id, payload)
+      if (values.priceDate) await upsertAssetPrice(asset.id, priceCents, values.priceDate)
     } else {
-      await addAsset(payload)
+      const created = await addAsset(payload)
+      if (values.priceDate && created.id != null) {
+        await upsertAssetPrice(created.id, priceCents, values.priceDate)
+      }
     }
     onClose()
   }
@@ -88,16 +99,25 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
             />
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="a-price">{t('investments.currentPrice')}</Label>
-            <Input
-              id="a-price"
-              type="number"
-              step="0.0001"
-              min="0"
-              placeholder="0.00"
-              {...register('currentPrice', { required: true })}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="a-price">{t('investments.currentPrice')}</Label>
+              <Input
+                id="a-price"
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                {...register('currentPrice', { required: true })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="a-price-date">{t('investments.priceDate')}</Label>
+              <Input
+                id="a-price-date"
+                type="date"
+                {...register('priceDate')}
+              />
+            </div>
           </div>
 
           <DialogFooter>

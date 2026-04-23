@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { format } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -13,6 +14,7 @@ interface FormValues {
   assetId:  string
   quantity: string
   avgCost:  string
+  date:     string
 }
 
 interface Props {
@@ -29,8 +31,10 @@ export default function HoldingFormModal({ open, onClose, accountId, holding, as
   const t      = useT()
   const isEdit = !!holding
 
+  const today = format(new Date(), 'yyyy-MM-dd')
+
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm<FormValues>({
-    defaultValues: { assetId: '', quantity: '', avgCost: '' },
+    defaultValues: { assetId: '', quantity: '', avgCost: '', date: today },
   })
 
   useEffect(() => {
@@ -40,9 +44,10 @@ export default function HoldingFormModal({ open, onClose, accountId, holding, as
         assetId:  String(holding.assetId),
         quantity: String(holding.quantity),
         avgCost:  fromCents(holding.avgCost).toFixed(4),
+        date:     holding.date ?? today,
       })
     } else {
-      reset({ assetId: assets[0]?.id ? String(assets[0].id) : '', quantity: '', avgCost: '' })
+      reset({ assetId: assets[0]?.id ? String(assets[0].id) : '', quantity: '', avgCost: '', date: today })
     }
   }, [open, holding, assets, reset])
 
@@ -52,6 +57,7 @@ export default function HoldingFormModal({ open, onClose, accountId, holding, as
       assetId:  parseInt(values.assetId),
       quantity: parseDecimal(values.quantity),
       avgCost:  toCents(parseDecimal(values.avgCost)),
+      date:     values.date || undefined,
     }
     if (isEdit && holding?.id != null) {
       await updateHolding(holding.id, payload)
@@ -115,6 +121,17 @@ export default function HoldingFormModal({ open, onClose, accountId, holding, as
                 {...register('avgCost', { required: true })}
               />
             </div>
+          </div>
+
+          {/* Purchase date */}
+          <div className="space-y-1.5">
+            <Label htmlFor="h-date">{t('investments.purchaseDate')}</Label>
+            <Input
+              id="h-date"
+              type="date"
+              className="text-base md:text-base"
+              {...register('date')}
+            />
           </div>
 
           <DialogFooter>

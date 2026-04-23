@@ -409,6 +409,18 @@ export const en = {
     investmentDetails:    'Investment details',
     viewHoldings:         'View Holdings',
     perUnit:              'per unit',
+    priceDate:            'Price date',
+    purchaseDate:         'Purchase Date',
+    forecastTitle:        'Growth Forecast',
+    forecastSubtitle:     'Long-term projection based on compound growth assumptions',
+    forecastReturn:       'Annual Return',
+    forecastInflation:    'Inflation',
+    forecastContribution: 'Monthly Contribution',
+    forecastHorizon:      'Horizon',
+    forecastYears:        'y',
+    forecastNominal:      'Nominal',
+    forecastReal:         "Real (today's €)",
+    forecastInvested:     'Total Invested',
   },
 
   update: {

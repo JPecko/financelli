@@ -190,6 +190,18 @@ export const pt: typeof en = {
     investmentDetails:    'Detalhes do investimento',
     viewHoldings:         'Ver Posições',
     perUnit:              'por unidade',
+    priceDate:            'Data do preço',
+    purchaseDate:         'Data de compra',
+    forecastTitle:        'Previsão de Crescimento',
+    forecastSubtitle:     'Projeção a longo prazo com base em juro composto',
+    forecastReturn:       'Retorno Anual',
+    forecastInflation:    'Inflação',
+    forecastContribution: 'Contribuição Mensal',
+    forecastHorizon:      'Horizonte',
+    forecastYears:        'a',
+    forecastNominal:      'Nominal',
+    forecastReal:         'Real (€ de hoje)',
+    forecastInvested:     'Total Investido',
   },
 
   update: {

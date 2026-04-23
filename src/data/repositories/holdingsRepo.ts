@@ -8,6 +8,7 @@ type HoldingRow = {
   asset_id: number
   quantity: number
   avg_cost: number
+  date: string | null
   created_at: string
 }
 
@@ -18,6 +19,7 @@ function toHolding(row: HoldingRow): Holding {
     assetId:   row.asset_id,
     quantity:  Number(row.quantity),
     avgCost:   row.avg_cost,
+    date:      row.date ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -50,6 +52,7 @@ export const holdingsRepo = {
         asset_id:   holding.assetId,
         quantity:   holding.quantity,
         avg_cost:   holding.avgCost,
+        date:       holding.date ?? null,
       })
       .select()
       .single()
@@ -62,6 +65,7 @@ export const holdingsRepo = {
     if (changes.assetId  !== undefined) row.asset_id = changes.assetId
     if (changes.quantity !== undefined) row.quantity  = changes.quantity
     if (changes.avgCost  !== undefined) row.avg_cost  = changes.avgCost
+    if (changes.date     !== undefined) row.date      = changes.date ?? null
     const { error } = await supabase.from('holdings').update(row).eq('id', id)
     if (error) throw error
   },

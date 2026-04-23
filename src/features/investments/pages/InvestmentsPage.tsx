@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react'
+import { format } from 'date-fns'
 import { TrendingUp } from 'lucide-react'
 import { useAccounts } from '@/shared/hooks/useAccounts'
 import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
 import { useHoldings, removeHolding } from '@/shared/hooks/useHoldings'
 import { useAssets, removeAsset, updateAsset } from '@/shared/hooks/useAssets'
+import { upsertAssetPrice } from '@/shared/hooks/useAssetPrices'
 import { toCents, fromCents } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import GeneralAssetsSection from '../components/GeneralAssetsSection'
@@ -11,6 +13,7 @@ import HoldingFormModal from '../components/HoldingFormModal'
 import AssetFormModal from '../components/AssetFormModal'
 import PortfolioSummary from '../components/PortfolioSummary'
 import InvestmentAccountCard from '../components/InvestmentAccountCard'
+import InvestmentForecastSection from '../components/InvestmentForecastSection'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
 import type { Asset, Holding, Account } from '@/domain/types'
@@ -29,7 +32,7 @@ export default function InvestmentsPage() {
   const [editAsset,        setEditAsset]        = useState<Asset | undefined>()
   const [accountModalOpen, setAccountModalOpen] = useState(false)
   const [editAccount,      setEditAccount]      = useState<Account | undefined>()
-  const [editingPrice,         setEditingPrice]         = useState<{ assetId: number; value: string } | null>(null)
+  const [editingPrice,         setEditingPrice]         = useState<{ assetId: number; value: string; date: string } | null>(null)
   const [confirmDeleteHolding, setConfirmDeleteHolding] = useState<Holding | null>(null)
   const [confirmDeleteAsset,   setConfirmDeleteAsset]   = useState<Asset | null>(null)
   const priceInputRef = useRef<HTMLInputElement>(null)
@@ -58,13 +61,21 @@ export default function InvestmentsPage() {
   }
 
   const startEditPrice = (a: Asset) => {
-    setEditingPrice({ assetId: a.id!, value: String(fromCents(a.currentPrice)) })
+    setEditingPrice({
+      assetId: a.id!,
+      value: String(fromCents(a.currentPrice)),
+      date: format(new Date(), 'yyyy-MM-dd'),
+    })
     setTimeout(() => priceInputRef.current?.select(), 0)
   }
   const commitEditPrice = async (a: Asset) => {
     if (!editingPrice || editingPrice.assetId !== a.id) return
     const parsed = parseFloat(editingPrice.value.replace(',', '.'))
-    if (!isNaN(parsed) && parsed >= 0) await updateAsset(a.id!, { currentPrice: toCents(parsed) })
+    if (!isNaN(parsed) && parsed >= 0) {
+      const priceCents = toCents(parsed)
+      await updateAsset(a.id!, { currentPrice: priceCents })
+      if (editingPrice.date) await upsertAssetPrice(a.id!, priceCents, editingPrice.date)
+    }
     setEditingPrice(null)
   }
 
@@ -100,6 +111,7 @@ export default function InvestmentsPage() {
         onDeleteAsset={a => { void handleDeleteAsset(a) }}
         onStartEditPrice={startEditPrice}
         onPriceChange={v => setEditingPrice(prev => prev ? { ...prev, value: v } : null)}
+        onDateChange={d => setEditingPrice(prev => prev ? { ...prev, date: d } : null)}
         onCommitEditPrice={a => { void commitEditPrice(a) }}
         onCancelEditPrice={() => setEditingPrice(null)}
       />
@@ -111,22 +123,34 @@ export default function InvestmentsPage() {
           <p className="text-sm text-muted-foreground mt-1">{t('investments.noInvestmentAccountsDesc')}</p>
         </div>
       ) : (
-        investmentAccounts.map(account => (
-          <InvestmentAccountCard
-            key={account.id}
-            account={account}
-            accountHoldings={holdings.filter(h => h.accountId === account.id)}
-            assetMap={assetMap}
-            capitalAmount={account.id != null ? (capitalAdjustments[account.id] ?? 0) : 0}
-            isOpen={expanded[account.id!] === true}
-            canAddHolding={assets.length > 0}
-            onToggle={() => setExpanded(prev => ({ ...prev, [account.id!]: !prev[account.id!] }))}
-            onAddHolding={() => openAddHolding(account.id!)}
-            onEditHolding={openEditHolding}
-            onDeleteHolding={h => { void handleDeleteHolding(h) }}
-            onEditAccount={() => { setEditAccount(account); setAccountModalOpen(true) }}
-          />
-        ))
+        investmentAccounts.map(account => {
+          const accountHoldings   = holdings.filter(h => h.accountId === account.id)
+          const accountMarketValue = accountHoldings.reduce(
+            (s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0,
+          )
+          return (
+            <div key={account.id} className="space-y-4">
+              <InvestmentAccountCard
+                account={account}
+                accountHoldings={accountHoldings}
+                assetMap={assetMap}
+                capitalAmount={account.id != null ? (capitalAdjustments[account.id] ?? 0) : 0}
+                isOpen={expanded[account.id!] === true}
+                canAddHolding={assets.length > 0}
+                onToggle={() => setExpanded(prev => ({ ...prev, [account.id!]: !prev[account.id!] }))}
+                onAddHolding={() => openAddHolding(account.id!)}
+                onEditHolding={openEditHolding}
+                onDeleteHolding={h => { void handleDeleteHolding(h) }}
+                onEditAccount={() => { setEditAccount(account); setAccountModalOpen(true) }}
+              />
+              <InvestmentForecastSection
+                currentValueCents={accountMarketValue}
+                accountName={account.name}
+                chartId={account.id}
+              />
+            </div>
+          )
+        })
       )}
 
       {investmentAccounts.length > 0 && holdings.length > 0 && (

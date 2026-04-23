@@ -7,6 +7,7 @@ import type { Asset } from '@/domain/types'
 interface EditingPrice {
   assetId: number
   value: string
+  date: string   // YYYY-MM-DD
 }
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
   onDeleteAsset: (asset: Asset) => void
   onStartEditPrice: (asset: Asset) => void
   onPriceChange: (value: string) => void
+  onDateChange: (date: string) => void
   onCommitEditPrice: (asset: Asset) => void
   onCancelEditPrice: () => void
 }
@@ -28,6 +30,7 @@ function AssetPriceField({
   priceInputRef,
   onStartEditPrice,
   onPriceChange,
+  onDateChange,
   onCommitEditPrice,
   onCancelEditPrice,
 }: {
@@ -36,6 +39,7 @@ function AssetPriceField({
   priceInputRef: React.RefObject<HTMLInputElement | null>
   onStartEditPrice: (asset: Asset) => void
   onPriceChange: (value: string) => void
+  onDateChange: (date: string) => void
   onCommitEditPrice: (asset: Asset) => void
   onCancelEditPrice: () => void
 }) {
@@ -43,21 +47,43 @@ function AssetPriceField({
 
   if (isEditing) {
     return (
-      <input
-        ref={priceInputRef}
-        type="number"
-        step="0.0001"
-        min="0"
-        className="h-9 w-28 rounded-lg border border-primary bg-background px-2 text-right text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-primary"
-        value={editingPrice?.value ?? ''}
-        onChange={event => onPriceChange(event.target.value)}
-        onBlur={() => { void onCommitEditPrice(asset) }}
-        onKeyDown={event => {
-          if (event.key === 'Enter') event.currentTarget.blur()
-          if (event.key === 'Escape') onCancelEditPrice()
+      <div
+        className="flex flex-col items-end gap-1.5"
+        onBlur={e => {
+          // commit only when focus leaves the entire compound editor
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            void onCommitEditPrice(asset)
+          }
         }}
-        onClick={event => event.stopPropagation()}
-      />
+      >
+        <input
+          ref={priceInputRef}
+          type="text"
+          inputMode="decimal"
+          className="h-9 w-28 rounded-lg border border-primary bg-background px-2 text-right text-base tabular-nums focus:outline-none focus:ring-1 focus:ring-primary"
+          value={editingPrice?.value ?? ''}
+          onChange={e => onPriceChange(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+            if (e.key === 'Escape') onCancelEditPrice()
+          }}
+          onClick={e => e.stopPropagation()}
+        />
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground whitespace-nowrap">price date</span>
+          <input
+            type="date"
+            className="h-8 w-32 rounded-lg border border-primary/60 bg-background px-2 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-primary"
+            value={editingPrice?.date ?? ''}
+            onChange={e => onDateChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') void onCommitEditPrice(asset)
+              if (e.key === 'Escape') onCancelEditPrice()
+            }}
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -81,6 +107,7 @@ function AssetRow({
   onDeleteAsset,
   onStartEditPrice,
   onPriceChange,
+  onDateChange,
   onCommitEditPrice,
   onCancelEditPrice,
 }: {
@@ -91,6 +118,7 @@ function AssetRow({
   onDeleteAsset: (asset: Asset) => void
   onStartEditPrice: (asset: Asset) => void
   onPriceChange: (value: string) => void
+  onDateChange: (date: string) => void
   onCommitEditPrice: (asset: Asset) => void
   onCancelEditPrice: () => void
 }) {
@@ -135,6 +163,7 @@ function AssetRow({
               priceInputRef={priceInputRef}
               onStartEditPrice={onStartEditPrice}
               onPriceChange={onPriceChange}
+              onDateChange={onDateChange}
               onCommitEditPrice={onCommitEditPrice}
               onCancelEditPrice={onCancelEditPrice}
             />
@@ -158,6 +187,7 @@ export default function GeneralAssetsSection({
   onDeleteAsset,
   onStartEditPrice,
   onPriceChange,
+  onDateChange,
   onCommitEditPrice,
   onCancelEditPrice,
 }: Props) {
@@ -190,6 +220,7 @@ export default function GeneralAssetsSection({
                 onDeleteAsset={onDeleteAsset}
                 onStartEditPrice={onStartEditPrice}
                 onPriceChange={onPriceChange}
+                onDateChange={onDateChange}
                 onCommitEditPrice={onCommitEditPrice}
                 onCancelEditPrice={onCancelEditPrice}
               />
@@ -218,6 +249,7 @@ export default function GeneralAssetsSection({
                         priceInputRef={priceInputRef}
                         onStartEditPrice={onStartEditPrice}
                         onPriceChange={onPriceChange}
+                        onDateChange={onDateChange}
                         onCommitEditPrice={onCommitEditPrice}
                         onCancelEditPrice={onCancelEditPrice}
                       />
