@@ -20,14 +20,14 @@ export default function MobileHeader() {
 
   return (
     <header className="relative z-20 overflow-visible lg:hidden flex items-center justify-between gap-3 border-b border-border px-4 py-2 safe-area-top-pad-3 bg-sidebar">
-      <AppLogoButton height="h-8" showVersion />
+      <AppLogoButton height="h-8" showVersion forceDark />
 
       <div className="relative flex items-center gap-2">
         <LanguageSelect />
         <NavLink
           to="/settings"
           className={({ isActive }) =>
-            `flex h-9 w-9 items-center justify-center rounded-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`
+            `flex h-9 w-9 items-center justify-center rounded-full transition-colors ${isActive ? 'text-primary' : 'text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent'}`
           }
           aria-label={t('sidebar.settings')}
         >

@@ -48,51 +48,59 @@
   --color-sidebar-ring:                 var(--sidebar-ring);
 }
 
-/* ─── Light mode — modern grey, enough contrast ──────────────── */
+/* ─── Light mode — Sage Forest ────────────────────────────────── */
 
 :root {
   --radius: 0.5rem;
 
-  --background:           #f0f0f0;
-  --foreground:           #121212;
+  /* Page surfaces */
+  --background:           #e8f0ea;  /* sage-green tint, not flat gray */
+  --foreground:           #0a1a0d;  /* near-black, green-warmed */
   --card:                 #ffffff;
-  --card-foreground:      #121212;
+  --card-foreground:      #0a1a0d;
   --popover:              #ffffff;
-  --popover-foreground:   #121212;
+  --popover-foreground:   #0a1a0d;
 
+  /* Brand */
   --primary:              #1db954;
   --primary-foreground:   #000000;
   --primary-hover:        #1ed760;
 
-  --secondary:            #e8e8e8;
-  --secondary-foreground: #121212;
-  --secondary-hover:      #dcdcdc;
+  /* Muted surfaces */
+  --secondary:            #d4e8d7;
+  --secondary-foreground: #0a1a0d;
+  --secondary-hover:      #c5dcc8;
 
-  --muted:                #e8e8e8;
-  --muted-foreground:     #6b6b6b;
-  --accent:               #ebebeb;
-  --accent-foreground:    #121212;
+  --muted:                #d4e8d7;
+  --muted-foreground:     #496b4d;  /* dark sage — readable on white + sage bg */
+  --accent:               #dceedd;
+  --accent-foreground:    #0a1a0d;
   --destructive:          #d93025;
 
-  --border:               #d9d9d9;
-  --input:                #f8f8f8;
+  /* Strokes */
+  --border:               #bad2bc;
+  --input:                #f4faf5;
   --ring:                 #1db954;
 
+  /* Charts unchanged */
   --chart-1:              #1db954;
   --chart-2:              #3b82f6;
   --chart-3:              #a78bfa;
   --chart-4:              #f59e0b;
   --chart-5:              #ef4444;
 
-  /* Sidebar — slightly darker than page bg */
-  --sidebar:                      #e0e0e0;
-  --sidebar-foreground:           #3d3d3d;
-  --sidebar-primary:              rgba(0, 0, 0, 0.07);
-  --sidebar-primary-foreground:   #121212;
-  --sidebar-accent:               rgba(0, 0, 0, 0.05);
-  --sidebar-accent-foreground:    #121212;
-  --sidebar-border:               #d0d0d0;
+  /* Sidebar — dark forest green: mirrors dark mode's bold black sidebar */
+  --sidebar:                      #131d15;
+  --sidebar-foreground:           #94b898;
+  --sidebar-primary:              rgb(255 255 255 / 0.10);
+  --sidebar-primary-foreground:   #ffffff;
+  --sidebar-accent:               rgb(255 255 255 / 0.07);
+  --sidebar-accent-foreground:    #ffffff;
+  --sidebar-border:               #1c2b1e;
   --sidebar-ring:                 #1db954;
+
+  /* Card hover shadow — softer in light mode */
+  --shadow-card-hover:            0 8px 24px rgb(0 0 0 / 0.12);
 }
 
 /* ─── Dark mode — Spotify palette ────────────────────────────── */
@@ -138,6 +146,8 @@
   --sidebar-accent-foreground:    #ffffff;
   --sidebar-border:               #282828;
   --sidebar-ring:                 #1db954;
+
+  --shadow-card-hover:            0 8px 24px rgb(0 0 0 / 0.30);
 }
 
 /* ─── Base ────────────────────────────────────────────────────── */
@@ -170,7 +180,7 @@ body {
 }
 .card-hoverable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.30);
+  box-shadow: var(--shadow-card-hover);
 }
 
 /* ─── iOS PWA safe area insets ───────────────────────────────────

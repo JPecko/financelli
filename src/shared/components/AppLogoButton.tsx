@@ -7,6 +7,8 @@ interface AppLogoButtonProps {
   showVersion?: boolean
   navigateTo?: string | false
   className?: string
+  /** Force the dark-background logo variant regardless of theme (e.g. inside dark sidebars in light mode) */
+  forceDark?: boolean
 }
 
 export default function AppLogoButton({
@@ -14,6 +16,7 @@ export default function AppLogoButton({
   showVersion = false,
   navigateTo = '/dashboard',
   className,
+  forceDark = false,
 }: AppLogoButtonProps) {
   const handleClick = useLogoClick({ navigateTo })
 
@@ -25,10 +28,21 @@ export default function AppLogoButton({
       aria-label="Check app updates"
       title="Check app updates"
     >
-      <img src="/financelli-logo-light.svg" alt="Financelli" className={cn(height, 'dark:hidden')} />
-      <img src="/financelli-logo-dark.svg" alt="Financelli" className={cn(height, 'hidden dark:block')} />
+      <img
+        src="/financelli-logo-light.svg"
+        alt="Financelli"
+        className={cn(height, forceDark ? 'hidden' : 'dark:hidden')}
+      />
+      <img
+        src="/financelli-logo-dark.svg"
+        alt="Financelli"
+        className={cn(height, forceDark ? '' : 'hidden dark:block')}
+      />
       {showVersion && (
-        <span className="text-[10px] text-muted-foreground/60 ml-1 pb-0.5">{APP_VERSION}</span>
+        <span className={cn(
+          'text-[10px] ml-1 pb-0.5',
+          forceDark ? 'text-white/30' : 'text-muted-foreground/60',
+        )}>{APP_VERSION}</span>
       )}
     </button>
   )

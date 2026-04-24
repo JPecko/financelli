@@ -45,7 +45,7 @@ export default function BottomNav() {
           key={to}
           to={to}
           end
-          className="group/tab flex flex-1 flex-col items-center gap-1 pb-2 pt-3 transition-colors text-muted-foreground hover:text-foreground [&.active]:text-primary"
+          className="group/tab flex flex-1 flex-col items-center gap-1 pb-2 pt-3 transition-colors text-sidebar-foreground hover:text-sidebar-primary-foreground [&.active]:text-primary"
         >
           <span className="h-0.5 w-5 rounded-full bg-current opacity-0 group-[.active]/tab:opacity-100 transition-opacity" />
           <Icon className="h-5 w-5" />

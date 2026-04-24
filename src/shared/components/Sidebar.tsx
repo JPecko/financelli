@@ -29,6 +29,7 @@ export default function Sidebar() {
       <AppLogoButton
         height="h-12"
         showVersion
+        forceDark
         className="w-full gap-2 px-6 py-2 border-b border-sidebar-border"
       />
 
@@ -63,7 +64,7 @@ export default function Sidebar() {
         <div className="flex items-center gap-1 px-2 pb-1">
           <button
             onClick={toggle}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
             aria-label={t(theme === 'dark' ? 'sidebar.themeLight' : 'sidebar.themeDark')}
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -80,7 +81,7 @@ export default function Sidebar() {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-medium text-sidebar-foreground">{displayName ?? user?.email}</p>
-                {displayName && <p className="truncate text-[11px] text-muted-foreground">{user?.email}</p>}
+                {displayName && <p className="truncate text-[11px] text-sidebar-foreground/70">{user?.email}</p>}
               </div>
             </button>
           </DropdownMenuTrigger>
