@@ -161,9 +161,9 @@ export default function GeneralAssetsSection({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-base font-semibold">{t('investments.assets')}</h2>
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {onSyncPrices && (
             <Button variant="outline" size="sm" loading={isSyncing} onClick={onSyncPrices}>
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
