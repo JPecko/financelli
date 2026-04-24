@@ -101,83 +101,42 @@ function AssetPriceField({
   )
 }
 
-function AssetRow({
-  asset,
-  editingPrice,
-  priceInputRef,
-  onEditAsset,
-  onDeleteAsset,
-  onStartEditPrice,
-  onPriceChange,
-  onDateChange,
-  onCommitEditPrice,
-  onCancelEditPrice,
-}: {
+function AssetRow({ asset, onEditAsset, onDeleteAsset }: {
   asset: Asset
-  editingPrice: EditingPrice | null
-  priceInputRef: React.RefObject<HTMLInputElement | null>
   onEditAsset: (asset: Asset) => void
   onDeleteAsset: (asset: Asset) => void
-  onStartEditPrice: (asset: Asset) => void
-  onPriceChange: (value: string) => void
-  onDateChange: (date: string) => void
-  onCommitEditPrice: (asset: Asset) => void
-  onCancelEditPrice: () => void
 }) {
   const t = useT()
 
   return (
-    <div className="grid gap-3 border-b px-4 py-3 last:border-b-0 lg:hidden">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate font-medium">{asset.label || asset.name}</p>
-          {asset.label && (
-            <p className="truncate text-xs text-muted-foreground">{asset.name}</p>
-          )}
-          <p className="mt-0.5 text-xs uppercase tracking-wide text-muted-foreground">
-            {asset.ticker ?? '—'}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            onClick={() => onEditAsset(asset)}
-            aria-label={`${t('common.edit')} ${asset.name}`}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => onDeleteAsset(asset)}
-            aria-label={`${t('common.delete')} ${asset.name}`}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+    <div className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0 lg:hidden">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{asset.label || asset.name}</p>
+        {asset.label && (
+          <p className="truncate text-xs text-muted-foreground">{asset.name}</p>
+        )}
+        {asset.ticker && (
+          <p className="mt-0.5 text-xs uppercase tracking-wide text-muted-foreground">{asset.ticker}</p>
+        )}
       </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg bg-muted/30 px-3 py-2">
-          <p className="text-[11px] text-muted-foreground">{t('investments.currentPrice')}</p>
-          <div className="mt-1">
-            <AssetPriceField
-              asset={asset}
-              editingPrice={editingPrice}
-              priceInputRef={priceInputRef}
-              onStartEditPrice={onStartEditPrice}
-              onPriceChange={onPriceChange}
-              onDateChange={onDateChange}
-              onCommitEditPrice={onCommitEditPrice}
-              onCancelEditPrice={onCancelEditPrice}
-            />
-          </div>
-        </div>
-        <div className="rounded-lg bg-muted/30 px-3 py-2">
-          <p className="text-[11px] text-muted-foreground">{t('investments.assetName')}</p>
-          <p className="mt-1 truncate text-sm font-medium">{asset.name}</p>
-        </div>
+      <p className="shrink-0 font-semibold tabular-nums">{formatMoney(asset.currentPrice)}</p>
+      <div className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          onClick={() => onEditAsset(asset)}
+          aria-label={`${t('common.edit')} ${asset.name}`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => onDeleteAsset(asset)}
+          aria-label={`${t('common.delete')} ${asset.name}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   )
@@ -202,9 +161,9 @@ export default function GeneralAssetsSection({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <h2 className="text-base font-semibold">{t('investments.assets')}</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
           {onSyncPrices && (
             <Button variant="outline" size="sm" loading={isSyncing} onClick={onSyncPrices}>
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
@@ -229,15 +188,8 @@ export default function GeneralAssetsSection({
               <AssetRow
                 key={asset.id}
                 asset={asset}
-                editingPrice={editingPrice}
-                priceInputRef={priceInputRef}
                 onEditAsset={onEditAsset}
                 onDeleteAsset={onDeleteAsset}
-                onStartEditPrice={onStartEditPrice}
-                onPriceChange={onPriceChange}
-                onDateChange={onDateChange}
-                onCommitEditPrice={onCommitEditPrice}
-                onCancelEditPrice={onCancelEditPrice}
               />
             ))}
           </div>

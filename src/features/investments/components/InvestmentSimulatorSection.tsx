@@ -6,6 +6,7 @@ import { Input } from '@/shared/components/ui/input'
 import { formatDecimal } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { useInvestmentSimulator, HORIZON_PRESETS } from '../hooks/useInvestmentSimulator'
+import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
 import TickerSuggestInput from './TickerSuggestInput'
 
 const fmtAxis = (v: number) => {
@@ -193,7 +194,8 @@ export default function InvestmentSimulatorSection() {
                   String(name ?? ''),
                 ]}
                 labelFormatter={v => `Year ${v}`}
-                contentStyle={{ fontSize: 12 }}
+                contentStyle={chartTooltipStyle}
+                labelStyle={chartTooltipLabelStyle}
               />
               <Area
                 type="monotone"

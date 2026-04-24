@@ -488,7 +488,7 @@ export default function AccountsPage() {
           {nonInvAccounts.length > 0 && (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={sortedIds} strategy={rectSortingStrategy}>
-                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                   {nonInvAccounts.map(account => {
                     const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
                     return (
@@ -527,7 +527,7 @@ export default function AccountsPage() {
                   </Button>
                 </NavLink>
               </div>
-              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                 {invAccounts.map(account => {
                   const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
                   const accountHoldings = holdings.filter(h => h.accountId === account.id)
@@ -541,7 +541,7 @@ export default function AccountsPage() {
                   const pnl = marketValue != null && costBasis != null ? marketValue - costBasis : null
                   const balance = effectiveBalance(account)
                   return (
-                    <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer aspect-[85.6/40]" style={{ background: accountGradient(account.color) }} onClick={() => { setFilterAccountId(account.id!); navigate('/transactions') }}>
+                    <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={() => { setFilterAccountId(account.id!); navigate('/transactions') }}>
                       <CardContent className="p-0 h-full">
                         <div className="h-full flex flex-col justify-between py-2 px-3 sm:px-4">
                           {/* Top row */}
@@ -599,7 +599,7 @@ export default function AccountsPage() {
 
                           {/* Bottom row */}
                           <div className="flex items-end justify-between gap-2">
-                            <div className="space-y-0.5">
+                            <div className="space-y-0.5 mt-3">
                               {effectiveInvestedBase > 0 && (
                                 <p className="text-xs text-white/70">
                                   {t('investments.investedBase')}: <span className="font-medium text-white">{formatMoney(effectiveInvestedBase, account.currency)}</span>

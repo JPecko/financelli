@@ -7,6 +7,7 @@ import {
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { formatTooltipValue } from '../utils/dashboardHelpers'
+import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
 
 interface Props {
   cashbackMonth: number
@@ -52,7 +53,11 @@ export default function PerksCard({ cashbackMonth, roundupMonth, yearBenefits, b
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="month" tick={{ fontSize: 11 }} />
             <YAxis width={50} tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v).replace(/[^0-9,.-]/g, '')} />
-            <ReTooltip formatter={(value, name) => [formatTooltipValue(value), String(name ?? '')]} />
+            <ReTooltip
+              formatter={(value, name) => [formatTooltipValue(value), String(name ?? '')]}
+              contentStyle={chartTooltipStyle}
+              labelStyle={chartTooltipLabelStyle}
+            />
             <Line type="monotone" dataKey="cashback" name={t('dashboard.cashback')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
             <Line type="monotone" dataKey="roundup"  name={t('dashboard.roundup')}  stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>

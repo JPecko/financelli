@@ -19,6 +19,7 @@ import {
   BadgePercent,
   Landmark,
   Dumbbell,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -31,18 +32,19 @@ export interface Category {
 }
 
 export const CATEGORIES: Category[] = [
-  { id: 'housing',       label: 'Housing',          icon: Home,           color: '#6366f1', type: 'expense' },
   { id: 'food',          label: 'Food & Drinks',    icon: Coffee,         color: '#f59e0b', type: 'expense' },
   { id: 'groceries',     label: 'Groceries',        icon: ShoppingBasket, color: '#65a30d', type: 'expense' },
+  { id: 'housing',       label: 'Housing',          icon: Home,           color: '#6366f1', type: 'expense' },
   { id: 'transport',     label: 'Transport',        icon: Car,            color: '#3b82f6', type: 'expense' },
-  { id: 'health',        label: 'Health',           icon: Heart,          color: '#ef4444', type: 'expense' },
   { id: 'entertainment', label: 'Entertainment',    icon: Gamepad2,       color: '#f97316', type: 'expense' },
+  { id: 'sport',         label: 'Sport',            icon: Dumbbell,       color: '#16a34a', type: 'expense' },
   { id: 'shopping',      label: 'Shopping',         icon: ShoppingBag,    color: '#ec4899', type: 'expense' },
   { id: 'utilities',     label: 'Utilities',        icon: Zap,            color: '#eab308', type: 'expense' },
+  { id: 'health',        label: 'Health',           icon: Heart,          color: '#ef4444', type: 'expense' },
   { id: 'education',     label: 'Education',        icon: GraduationCap,  color: '#06b6d4', type: 'expense' },
   { id: 'travel',        label: 'Travel',           icon: Plane,          color: '#14b8a6', type: 'expense' },
   { id: 'investing',     label: 'Investing',        icon: Landmark,       color: '#7c3aed', type: 'expense' },
-  { id: 'sport',         label: 'Sport',            icon: Dumbbell,       color: '#16a34a', type: 'expense' },
+  { id: 'wellness',      label: 'Wellness',         icon: Sparkles,       color: '#c026d3', type: 'expense' },
   { id: 'roundup',       label: 'Roundup',          icon: Coins,          color: '#78716c', type: 'expense' },
   { id: 'cashback',      label: 'Cashback',         icon: BadgePercent,   color: '#10b981', type: 'expense' },
   { id: 'salary',        label: 'Salary',           icon: Briefcase,      color: '#22c55e', type: 'income' },

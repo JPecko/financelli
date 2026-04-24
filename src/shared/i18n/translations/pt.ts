@@ -14,6 +14,7 @@ export const pt: typeof en = {
     travel:        'Viagem',
     investing:     'Investimento',
     sport:         'Desporto',
+    wellness:      'Wellness',
     roundup:       'Arredondamento',
     cashback:      'Cashback',
     salary:        'Salário',

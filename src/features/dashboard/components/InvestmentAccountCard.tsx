@@ -19,6 +19,7 @@ import {
   computeMarketValue,
 } from '@/features/investments/utils/investmentMetrics'
 import type { Account, Asset, Holding } from '@/domain/types'
+import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
 
 const axisFmt = (v: number) => {
   if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(0)}k`
@@ -266,7 +267,8 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
                   typeof value === 'number' ? formatMoney(toCents(value)) : String(value ?? ''),
                   String(name ?? ''),
                 ]}
-                contentStyle={{ fontSize: 12 }}
+                contentStyle={chartTooltipStyle}
+                labelStyle={chartTooltipLabelStyle}
               />
               <Area
                 type="monotone"

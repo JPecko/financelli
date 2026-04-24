@@ -12,6 +12,7 @@ export const en = {
     travel:        'Travel',
     investing:     'Investing',
     sport:         'Sport',
+    wellness:      'Wellness',
     roundup:       'Roundup',
     cashback:      'Cashback',
     salary:        'Salary',

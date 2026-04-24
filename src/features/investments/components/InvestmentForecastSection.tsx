@@ -7,6 +7,7 @@ import { Input } from '@/shared/components/ui/input'
 import { formatDecimal } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { buildForecastData } from '../utils/forecastHelpers'
+import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
 
 const HORIZONS = [10, 20, 30] as const
 type Horizon = typeof HORIZONS[number]
@@ -142,7 +143,7 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
         </div>
 
         {/* Final-value summary */}
-        <div className="grid grid-cols-1 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:grid-cols-4 md:gap-2 md:p-2">
+        <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:grid-cols-4 md:gap-2 md:p-2">
           {summaryCards.map(card => (
             <div
               key={card.label}
@@ -213,7 +214,8 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
                   String(name ?? ''),
                 ]}
                 labelFormatter={v => `Year ${v}`}
-                contentStyle={{ fontSize: 12 }}
+                contentStyle={chartTooltipStyle}
+                labelStyle={chartTooltipLabelStyle}
               />
               <Area
                 type="monotone"
