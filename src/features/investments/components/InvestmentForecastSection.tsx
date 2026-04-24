@@ -59,6 +59,11 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
       value: finalPoint ? formatDecimal(finalPoint.invested) : '—',
       valueClassName: '',
     },
+    {
+      label: t('investments.simulatorGain'),
+      value: finalPoint ? formatDecimal(finalPoint.nominal - finalPoint.invested) : '—',
+      valueClassName: 'text-emerald-600 dark:text-emerald-400',
+    },
   ]
 
   return (
@@ -137,7 +142,7 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
         </div>
 
         {/* Final-value summary */}
-        <div className="grid grid-cols-1 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:grid-cols-3 md:gap-2 md:p-2">
+        <div className="grid grid-cols-1 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:grid-cols-4 md:gap-2 md:p-2">
           {summaryCards.map(card => (
             <div
               key={card.label}

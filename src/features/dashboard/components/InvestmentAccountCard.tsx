@@ -83,16 +83,23 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
     ? Math.max(0, investedBaseEuros - investedInWindow)
     : 0
 
-  let cumulativeInvested = priorInvested
-  const chartData = historyData.map((d, i) => {
-    cumulativeInvested += toEur(d.invested)
-    const isLast = i === historyData.length - 1
-    return {
-      month:      d.month,
-      patrimonio: isLast ? toEur(computedBalance) : toEur(d.balance),
-      investido:  cumulativeInvested,
-    }
-  })
+  const { chartData } = historyData.reduce<{
+    chartData: { month: string; patrimonio: number; investido: number }[]
+    cum: number
+  }>(
+    ({ chartData, cum }, d, i) => {
+      const newCum = cum + toEur(d.invested)
+      return {
+        cum: newCum,
+        chartData: [...chartData, {
+          month:      d.month,
+          patrimonio: i === historyData.length - 1 ? toEur(computedBalance) : toEur(d.balance),
+          investido:  newCum,
+        }],
+      }
+    },
+    { chartData: [], cum: priorInvested },
+  )
 
   const stats = [
     effectiveInvestedBase > 0 ? {
@@ -163,7 +170,7 @@ export default function InvestmentAccountCard({ account, holdings, assets }: Pro
         {/* Stats grid */}
         {hasHoldings ? (
           <div
-            className={`grid grid-cols-1 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:gap-2 md:p-2 ${stats.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}
+            className={`grid grid-cols-2 gap-1.5 rounded-lg bg-muted/30 p-1.5 md:gap-2 md:p-2 ${stats.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}
           >
             {stats.map(stat => (
               <div
