@@ -110,7 +110,17 @@ export function useMonthlyNetFlow(year: number, month: number) {
           ...investMoves,
         ].reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0) + groupInvestingAmt
         const roundup   = cash.filter(t => t.amount < 0 && t.category === 'roundup').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
-        const expenses  = cash.filter(t => t.amount < 0 && t.category !== 'investing' && t.category !== 'roundup' && t.category !== 'invest-move').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0)
+        // Settlement outflows: real cash paid from a linked account to settle group debts.
+        // isReimbursable=true+category='transfer'+amount<0 uniquely identifies these transactions.
+        // They are excluded by divisorFor (Infinity) to avoid double-counting with myShare in
+        // useMonthSummary, but the bar chart should reflect the actual cash movement.
+        const settlementOutflows = all
+          .filter(t => t.isReimbursable && t.category === 'transfer' && t.amount < 0)
+          .reduce((s, t) => {
+            const divisor = t.splitN ?? accounts.find(a => a.id === t.accountId)?.participants ?? 1
+            return s + Math.abs(t.amount) / divisor
+          }, 0)
+        const expenses  = cash.filter(t => t.amount < 0 && t.category !== 'investing' && t.category !== 'roundup' && t.category !== 'invest-move').reduce((s, t) => s + Math.abs(t.amount) / divisorFor(t), 0) + settlementOutflows
         result.push({ month: format(d, 'MMM yy'), income, expenses, investing, roundup, net: income - expenses - investing - roundup })
       }
       return result
