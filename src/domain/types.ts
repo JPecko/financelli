@@ -19,11 +19,11 @@ export interface Account {
   ownerFullName?: string
   participants?: number    // 1 + number of shares (maintained by DB trigger)
   sharedWith?: AccountShare[] // list of users this account is shared with (guests only)
-  bankCode?: string        // e.g. 'revolut' — matches BANK_OPTIONS code
-  cashbackPct?: number     // e.g. 1 = 1% cashback on expenses (null = disabled)
-  roundupMultiplier?: number // e.g. 5 = ×5 roundup on expenses (null = disabled)
-  investedBase?: number    // total capital invested (deposits), in cents — investment accounts only
-  entryFee?: number        // fixed fee per holding entry (purchase), in cents — investment accounts only
+  bankCode?: string | null        // e.g. 'revolut' — matches BANK_OPTIONS code
+  cashbackPct?: number | null     // e.g. 1 = 1% cashback on expenses (null = disabled)
+  roundupMultiplier?: number | null // e.g. 5 = ×5 roundup on expenses (null = disabled)
+  investedBase?: number | null    // total capital invested (deposits), in cents — investment accounts only
+  entryFee?: number | null        // fixed fee per holding entry (purchase), in cents — investment accounts only
 }
 
 // ---- Assets & Holdings (investment portfolio tracking) -----------------
