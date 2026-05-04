@@ -116,11 +116,11 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       balance:           toCents(parseDecimal(values.balance)),
       currency:          values.currency,
       color:             values.color,
-      bankCode:          values.bankCode !== 'none' ? values.bankCode : undefined,
-      cashbackPct:       values.cashbackPct ? parseDecimal(values.cashbackPct) : undefined,
-      roundupMultiplier: values.roundupMultiplier && values.roundupMultiplier !== 'off' ? parseInt(values.roundupMultiplier) : undefined,
-      investedBase:      values.type === 'investment' && values.investedBase ? toCents(parseDecimal(values.investedBase)) : undefined,
-      entryFee:          values.type === 'investment' && values.entryFee ? toCents(parseDecimal(values.entryFee)) : undefined,
+      bankCode:          values.bankCode !== 'none' ? values.bankCode : null,
+      cashbackPct:       values.cashbackPct ? parseDecimal(values.cashbackPct) : null,
+      roundupMultiplier: values.roundupMultiplier && values.roundupMultiplier !== 'off' ? parseInt(values.roundupMultiplier) : null,
+      investedBase:      values.type === 'investment' ? (values.investedBase ? toCents(parseDecimal(values.investedBase)) : null) : undefined,
+      entryFee:          values.type === 'investment' ? (values.entryFee ? toCents(parseDecimal(values.entryFee)) : null) : undefined,
     }
     if (isEdit && account?.id != null) {
       await updateAccount(account.id, payload)
