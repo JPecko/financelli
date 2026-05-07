@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { getYear, getMonth } from 'date-fns'
 import { useQuery } from '@tanstack/react-query'
-import { useTransactionsByMonth, useRunningBalances, removeTransaction } from '@/shared/hooks/useTransactions'
+import { useTransactionsByMonth, useRunningBalances, removeTransaction, isCashFlow } from '@/shared/hooks/useTransactions'
 import { useSharedExpensesByMonth, removeSharedExpense, updateSharedExpense } from '@/shared/hooks/useSharedExpenses'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
@@ -122,6 +122,34 @@ export function useTransactionsPageModel() {
     })
   }, [transactions, sharedExpenses, myGroupExpenses, txSeMap, txGroupMap, seGroupMap, filterAccountId, filterCategory, filterSource])
 
+  const filteredTotals = useMemo(() => {
+    let income = 0
+    let expenses = 0
+    for (const item of listItems) {
+      if (item.kind === 'tx') {
+        if (!isCashFlow(item.data)) continue
+        if (item.data.amount > 0) income += item.data.amount
+        else expenses += item.data.amount
+      } else if (item.kind === 'se') {
+        expenses -= item.data.myShare
+      } else if (item.kind === 'group-expense') {
+        expenses -= item.data.myShare
+      }
+    }
+    return { income, expenses }
+  }, [listItems])
+
+  const activeFilterCount =
+    (filterAccountId !== null ? 1 : 0) +
+    (filterCategory  !== null ? 1 : 0) +
+    (filterSource    !== 'all' ? 1 : 0)
+
+  const clearFilters = () => {
+    setFilterAccountId(null)
+    setFilterCategory(null)
+    setFilterSource('all')
+  }
+
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); return }
     setMonth(m => m - 1)
@@ -180,6 +208,7 @@ export function useTransactionsPageModel() {
     editingTx,
     editingSE,
     listItems,
+    filteredTotals,
     txSeMap,
     txGroupMap,
     seGroupMap,
@@ -191,9 +220,11 @@ export function useTransactionsPageModel() {
     filterAccountId,
     filterCategory,
     filterSource,
+    activeFilterCount,
     setFilterAccountId,
     setFilterCategory,
     setFilterSource,
+    clearFilters,
     prevMonth,
     nextMonth,
     openCreateModal,

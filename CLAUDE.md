@@ -121,6 +121,7 @@ More important than exact line count:
 - there is state logic that is not purely visual
 - there are several `useEffect`, `useMemo`, `watch`, handlers, or derived values
 - the component mixes rendering with submission logic, filters, mappings, or synchronization
+- there are derived counts, labels, or reset functions based on filter/store state — these belong in the model hook, not the page (e.g., `activeFilterCount`, `clearFilters`)
 
 Good examples:
 - `useTransactionForm`
@@ -134,10 +135,19 @@ Good examples:
 - part of the UI can be read and tested separately
 
 Examples:
-- `TransactionFilters`
+- `TransactionFilterPopover`
+- `TransactionList`
 - `InvestmentAccountCard`
 - `AccountColorPicker`
 - `GroupSplitEditor`
+
+Small private UI helpers (under ~30 lines, no state, purely presentational) can be colocated at the bottom of the same file instead of creating a separate file:
+
+```tsx
+// bottom of TransactionFilterPopover.tsx
+function FilterRow({ icon, label, selected, onClick }: FilterRowProps) { ... }
+function FadeGradient() { ... }
+```
 
 ### Extract pure helpers when:
 
@@ -192,6 +202,13 @@ utils/
 Good rule:
 - if the `return (...)` dominates almost the entire file, the UI may be too large
 - if the logic dominates almost the entire file, it probably deserves a hook
+- when a hook returns many values, alias it to a short variable to keep the page lean:
+
+```tsx
+const m = useTransactionsPageModel()
+// use m.listItems, m.handleEdit, m.filteredTotals, etc.
+// instead of a 30-line destructure block
+```
 
 ## Hook conventions
 
@@ -201,6 +218,7 @@ Hooks are the preferred place to encapsulate:
 - React Query integration
 - effects
 - coordination between stores, auth, and repositories
+- derived filter values: counts (`activeFilterCount`), reset functions (`clearFilters`), computed totals from filtered data (`filteredTotals`) — do not compute these in the page component
 
 Name hooks with clear intent:
 - `useTransactionForm`

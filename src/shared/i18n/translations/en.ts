@@ -256,6 +256,7 @@ export const en = {
     addFirst:           'Add first transaction',
     income:             'Income',
     expenses:           'Expenses',
+    outcome:            'Outcome',
     balance:            'Balance',
     myExpenses:         'my',
     searchPlaceholder:  'Search transactions...',

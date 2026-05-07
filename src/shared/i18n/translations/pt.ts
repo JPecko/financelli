@@ -422,6 +422,7 @@ export const pt: typeof en = {
     addFirst:           'Adicionar o primeiro movimento',
     income:             'Receitas',
     expenses:           'Despesas',
+    outcome:            'Saídas',
     balance:            'Saldo',
     myExpenses:         'meu',
     searchPlaceholder:  'Pesquisar movimentos...',

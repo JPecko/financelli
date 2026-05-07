@@ -14,7 +14,9 @@
       "Bash(npx --yes sharp-cli --version)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
       "Bash(pkill -f \"vite --port 5173\")",
-      "Bash(pkill -f \"vite\")"
+      "Bash(pkill -f \"vite\")",
+      "Bash(sed -n '255,262p' /Users/jpecorelli/DEV/Personalli/financelli/src/shared/i18n/translations/en.ts)",
+      "Bash(sed -n '421,428p' /Users/jpecorelli/DEV/Personalli/financelli/src/shared/i18n/translations/pt.ts)"
     ]
   }
 }
