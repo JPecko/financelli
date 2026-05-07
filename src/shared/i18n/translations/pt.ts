@@ -420,7 +420,7 @@ export const pt: typeof en = {
     noTransactions:     'Sem movimentos este mês',
     noTransactionsDesc: 'Começa a adicionar as tuas receitas e despesas para controlar os gastos mensais.',
     addFirst:           'Adicionar o primeiro movimento',
-    income:             'Receitas',
+    income:             'Entradas',
     expenses:           'Despesas',
     outcome:            'Saídas',
     balance:            'Saldo',
