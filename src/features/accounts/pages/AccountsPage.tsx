@@ -599,7 +599,60 @@ export default function AccountsPage() {
 
                           {/* Bottom row */}
                           <div className="flex items-end justify-between gap-2">
-                            <div className="space-y-0.5 mt-3">
+                            <div className="space-y-1 mt-3 min-w-0">
+                              {/* Shared badge */}
+                              {(account.participants ?? 1) > 1 && (
+                                <div className="flex items-center gap-1.5">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge className="text-xs gap-1 cursor-default bg-transparent border-white/40 text-white hover:bg-white/10">
+                                        <Users className="h-3 w-3" />
+                                        {account.participants}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom">
+                                      <div className="space-y-0.5">
+                                        <p>
+                                          {account.ownerId === user?.id
+                                            ? (user?.user_metadata?.full_name ?? user?.email)
+                                            : (account.ownerFullName ?? account.ownerEmail ?? 'Owner')
+                                          }
+                                          {' '}<span className="opacity-60">({t('accounts.owner')})</span>
+                                        </p>
+                                        {account.sharedWith?.map(s => (
+                                          <p key={s.userId}>{s.fullName ?? s.email}</p>
+                                        ))}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              )}
+
+                              {/* Holdings per asset */}
+                              {accountHoldings.length === 0 ? (
+                                <p className="text-xs text-white/60">No holdings</p>
+                              ) : (
+                                <div className="space-y-0.5">
+                                  {accountHoldings.slice(0, 3).map(h => {
+                                    const asset = assetMap[h.assetId]
+                                    const label = asset?.ticker?.toUpperCase() ?? asset?.name?.substring(0, 14) ?? '—'
+                                    const qty   = h.quantity % 1 === 0
+                                      ? h.quantity.toFixed(0)
+                                      : parseFloat(h.quantity.toFixed(4)).toString()
+                                    return (
+                                      <p key={h.id} className="text-xs text-white/70 tabular-nums">
+                                        <span className="font-medium text-white/90">{label}</span>
+                                        {' '}{qty}
+                                      </p>
+                                    )
+                                  })}
+                                  {accountHoldings.length > 3 && (
+                                    <p className="text-xs text-white/50">+{accountHoldings.length - 3} more</p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Financial summary */}
                               {effectiveInvestedBase > 0 && (
                                 <p className="text-xs text-white/70">
                                   {t('investments.investedBase')}: <span className="font-medium text-white">{formatMoney(effectiveInvestedBase, account.currency)}</span>
@@ -609,12 +662,6 @@ export default function AccountsPage() {
                                 <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                                   {t('investments.pnl')}: {pnl >= 0 ? '+' : ''}{formatMoney(pnl, account.currency)}
                                 </p>
-                              )}
-                              {accountHoldings.length === 0 && (
-                                <p className="text-xs text-white/70">{accountHoldings.length} holdings</p>
-                              )}
-                              {accountHoldings.length > 0 && (
-                                <p className="text-xs text-white/70">{accountHoldings.length} {accountHoldings.length === 1 ? 'holding' : 'holdings'}</p>
                               )}
                             </div>
                             <div className="text-right shrink-0">

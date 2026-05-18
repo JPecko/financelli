@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Pencil, Plus, Settings2, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Pencil, Plus, Settings2, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
@@ -31,6 +31,7 @@ interface Props {
   onEditHolding:   (h: Holding) => void
   onDeleteHolding: (h: Holding) => void
   onEditAccount:   () => void
+  onImport?:       () => void
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -190,6 +191,9 @@ function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, to
                   {asset?.ticker && <span className="uppercase mr-1.5">{asset.ticker}</span>}
                   {fmtQty(h.quantity)} × {formatMoney(h.avgCost, account.currency)}
                 </p>
+                {h.date && (
+                  <p className="text-xs text-muted-foreground/70 mt-0.5">{h.date}</p>
+                )}
               </div>
               <div className="text-right shrink-0">
                 <p className="font-semibold tabular-nums text-sm">{formatMoney(marketVal, account.currency)}</p>
@@ -242,6 +246,7 @@ function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, to
                   <td className="px-5 py-3">
                     <p className="font-medium">{asset?.name ?? '—'}</p>
                     {asset?.ticker && <p className="text-xs text-muted-foreground uppercase">{asset.ticker}</p>}
+                    {h.date && <p className="text-xs text-muted-foreground/70">{h.date}</p>}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmtQty(h.quantity)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{formatMoney(h.avgCost, account.currency)}</td>
@@ -283,7 +288,7 @@ function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, to
 
 export default function InvestmentAccountCard({
   account, accountHoldings, assetMap, capitalAmount,
-  isOpen, canAddHolding, onToggle, onAddHolding, onEditHolding, onDeleteHolding, onEditAccount,
+  isOpen, canAddHolding, onToggle, onAddHolding, onEditHolding, onDeleteHolding, onEditAccount, onImport,
 }: Props) {
   const t = useT()
 
@@ -309,7 +314,13 @@ export default function InvestmentAccountCard({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
+        {onImport && (
+          <Button size="sm" variant="outline" onClick={onImport}>
+            <Upload className="h-3.5 w-3.5 mr-1.5" />
+            Import CSV
+          </Button>
+        )}
         <Button size="sm" disabled={!canAddHolding} onClick={onAddHolding}>
           <Plus className="h-3.5 w-3.5 mr-1.5" />
           {t('investments.addHolding')}

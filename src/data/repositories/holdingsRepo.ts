@@ -29,7 +29,8 @@ export const holdingsRepo = {
     const { data, error } = await supabase
       .from('holdings')
       .select('*')
-      .order('asset_id')
+      .order('date', { ascending: false, nullsFirst: false })
+      .order('id',   { ascending: false })
     if (error) throw error
     return (data as HoldingRow[]).map(toHolding)
   },
@@ -39,7 +40,8 @@ export const holdingsRepo = {
       .from('holdings')
       .select('*')
       .eq('account_id', accountId)
-      .order('asset_id')
+      .order('date', { ascending: false, nullsFirst: false })
+      .order('id',   { ascending: false })
     if (error) throw error
     return (data as HoldingRow[]).map(toHolding)
   },
@@ -72,6 +74,11 @@ export const holdingsRepo = {
 
   remove: async (id: number): Promise<void> => {
     const { error } = await supabase.from('holdings').delete().eq('id', id)
+    if (error) throw error
+  },
+
+  removeByAsset: async (assetId: number): Promise<void> => {
+    const { error } = await supabase.from('holdings').delete().eq('asset_id', assetId)
     if (error) throw error
   },
 

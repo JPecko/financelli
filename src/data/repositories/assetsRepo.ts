@@ -7,6 +7,7 @@ type AssetRow = {
   name: string
   label: string | null
   ticker: string | null
+  isin: string | null
   current_price: number
   created_at: string
 }
@@ -17,6 +18,7 @@ function toAsset(row: AssetRow): Asset {
     name:         row.name,
     label:        row.label ?? undefined,
     ticker:       row.ticker ?? undefined,
+    isin:         row.isin ?? undefined,
     currentPrice: row.current_price,
     createdAt:    row.created_at,
   }
@@ -36,6 +38,7 @@ export const assetsRepo = {
         name:          asset.name,
         label:         asset.label ?? null,
         ticker:        asset.ticker ?? null,
+        isin:          asset.isin ?? null,
         current_price: asset.currentPrice,
       })
       .select()
@@ -49,6 +52,7 @@ export const assetsRepo = {
     if (changes.name         !== undefined) row.name          = changes.name
     if (changes.label        !== undefined) row.label         = changes.label ?? null
     if (changes.ticker       !== undefined) row.ticker        = changes.ticker ?? null
+    if (changes.isin         !== undefined) row.isin          = changes.isin ?? null
     if (changes.currentPrice !== undefined) row.current_price = changes.currentPrice
     const { error } = await supabase.from('assets').update(row).eq('id', id)
     if (error) throw error

@@ -1,4 +1,4 @@
-import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
@@ -115,9 +115,19 @@ function AssetRow({ asset, onEditAsset, onDeleteAsset }: {
         {asset.label && (
           <p className="truncate text-xs text-muted-foreground">{asset.name}</p>
         )}
-        {asset.ticker && (
-          <p className="mt-0.5 text-xs uppercase tracking-wide text-muted-foreground">{asset.ticker}</p>
-        )}
+        {asset.ticker
+          ? <p className="mt-0.5 text-xs uppercase tracking-wide text-muted-foreground">{asset.ticker}</p>
+          : asset.isin && (
+            <button
+              type="button"
+              onClick={() => onEditAsset(asset)}
+              className="mt-0.5 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:underline"
+            >
+              <TriangleAlert className="h-3 w-3" />
+              Add ticker to sync prices
+            </button>
+          )
+        }
       </div>
       <p className="shrink-0 font-semibold tabular-nums">{formatMoney(asset.currentPrice)}</p>
       <div className="flex shrink-0 items-center gap-1">
@@ -213,7 +223,23 @@ export default function GeneralAssetsSection({
                         <p className="text-xs text-muted-foreground truncate max-w-xs">{asset.name}</p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs uppercase text-muted-foreground">{asset.ticker ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs uppercase text-muted-foreground">
+                      {asset.ticker
+                        ? asset.ticker
+                        : asset.isin
+                          ? (
+                            <button
+                              type="button"
+                              onClick={() => onEditAsset(asset)}
+                              className="flex items-center gap-1 normal-case text-amber-600 dark:text-amber-400 hover:underline"
+                            >
+                              <TriangleAlert className="h-3 w-3 shrink-0" />
+                              Add ticker to sync
+                            </button>
+                          )
+                          : '—'
+                      }
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <AssetPriceField
                         asset={asset}

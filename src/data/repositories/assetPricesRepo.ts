@@ -31,6 +31,17 @@ export const assetPricesRepo = {
     return (data as AssetPriceRow[]).map(toAssetPrice)
   },
 
+  getByAssets: async (assetIds: number[]): Promise<AssetPrice[]> => {
+    if (assetIds.length === 0) return []
+    const { data, error } = await supabase
+      .from('asset_prices')
+      .select('*')
+      .in('asset_id', assetIds)
+      .order('date', { ascending: true })
+    if (error) throw error
+    return (data as AssetPriceRow[]).map(toAssetPrice)
+  },
+
   // One price per asset per date — upsert on (asset_id, date) unique constraint
   upsert: async (assetId: number, price: number, date: string): Promise<void> => {
     const { error } = await supabase

@@ -24,6 +24,7 @@ export interface Account {
   roundupMultiplier?: number | null // e.g. 5 = ×5 roundup on expenses (null = disabled)
   investedBase?: number | null    // total capital invested (deposits), in cents — investment accounts only
   entryFee?: number | null        // fixed fee per holding entry (purchase), in cents — investment accounts only
+  broker?: string | null          // e.g. 'xtb', 'degiro', 'traderepublic' — investment accounts only
 }
 
 // ---- Assets & Holdings (investment portfolio tracking) -----------------
@@ -33,8 +34,19 @@ export interface Asset {
   name: string           // e.g. "Vanguard S&P 500 UCITS ETF USD Acc"
   label?: string         // short display alias, e.g. "S&P 500 ETF"
   ticker?: string        // e.g. "VWCE", "AAPL"
+  isin?: string          // e.g. "IE00B3RBWM25" — used for DEGIRO/Trade Republic matching
   currentPrice: number   // cents per unit (manually updated market price)
   createdAt: string
+}
+
+export interface PurchaseHistory {
+  id?: number
+  accountId:  number
+  assetId:    number
+  date:       string   // YYYY-MM-DD
+  quantity:   number   // positive = buy, negative = sell
+  priceCents: number   // per unit, in cents
+  createdAt:  string
 }
 
 export interface AssetPrice {

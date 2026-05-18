@@ -40,7 +40,12 @@ export const queryKeys = {
     all: () => ['assets'] as const,
   },
   assetPrices: {
-    byAsset: (assetId: number) => ['assetPrices', 'byAsset', assetId] as const,
+    byAsset:   (assetId: number)    => ['assetPrices', 'byAsset', assetId]      as const,
+    byAssets:  (ids: number[])      => ['assetPrices', 'byAssets', ...ids]      as const,
+  },
+  purchaseHistory: {
+    all:       ()                   => ['purchaseHistory']                       as const,
+    byAccount: (accountId: number)  => ['purchaseHistory', 'byAccount', accountId] as const,
   },
   userSettings: {
     all: () => ['userSettings'] as const,

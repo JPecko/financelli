@@ -44,7 +44,7 @@ export default function HoldingFormModal({ open, onClose, accountId, holding, as
         assetId:  String(holding.assetId),
         quantity: String(holding.quantity),
         avgCost:  fromCents(holding.avgCost).toFixed(4),
-        date:     holding.date ?? today,
+        date:     holding.date ?? '',
       })
     } else {
       reset({ assetId: assets[0]?.id ? String(assets[0].id) : '', quantity: '', avgCost: '', date: today })

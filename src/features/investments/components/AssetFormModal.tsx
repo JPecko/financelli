@@ -16,6 +16,7 @@ interface FormValues {
   name:         string
   label:        string
   ticker:       string
+  isin:         string
   currentPrice: string
   priceDate:    string
 }
@@ -33,7 +34,7 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
   const today = format(new Date(), 'yyyy-MM-dd')
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    defaultValues: { name: '', label: '', ticker: '', currentPrice: '0', priceDate: today },
+    defaultValues: { name: '', label: '', ticker: '', isin: '', currentPrice: '0', priceDate: today },
   })
 
   useEffect(() => {
@@ -43,11 +44,12 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
         name:         asset.name,
         label:        asset.label ?? '',
         ticker:       asset.ticker ?? '',
+        isin:         asset.isin ?? '',
         currentPrice: fromCents(asset.currentPrice).toFixed(4),
         priceDate:    today,
       })
     } else {
-      reset({ name: '', label: '', ticker: '', currentPrice: '0', priceDate: today })
+      reset({ name: '', label: '', ticker: '', isin: '', currentPrice: '0', priceDate: today })
     }
   }, [open, asset, reset, today])
 
@@ -57,6 +59,7 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
       name:         values.name.trim(),
       label:        values.label.trim() || undefined,
       ticker:       values.ticker.trim().toUpperCase() || undefined,
+      isin:         values.isin.trim().toUpperCase() || undefined,
       currentPrice: priceCents,
     }
     if (isEdit && asset?.id != null) {
@@ -102,16 +105,29 @@ export default function AssetFormModal({ open, onClose, asset }: Props) {
             />
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="a-ticker">
-              {t('investments.ticker')} <span className="text-muted-foreground text-xs">(optional)</span>
-            </Label>
-            <TickerSuggestInput
-              id="a-ticker"
-              value={watch('ticker')}
-              onChange={v => setValue('ticker', v)}
-              placeholder={t('investments.simulatorTickerPlaceholder')}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="a-ticker">
+                {t('investments.ticker')} <span className="text-muted-foreground text-xs">(optional)</span>
+              </Label>
+              <TickerSuggestInput
+                id="a-ticker"
+                value={watch('ticker')}
+                onChange={v => setValue('ticker', v)}
+                placeholder={t('investments.simulatorTickerPlaceholder')}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="a-isin">
+                {t('investments.isin')} <span className="text-muted-foreground text-xs">(optional)</span>
+              </Label>
+              <Input
+                id="a-isin"
+                placeholder="e.g. IE00B3RBWM25"
+                className="uppercase"
+                {...register('isin')}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

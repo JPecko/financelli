@@ -16,7 +16,19 @@
       "Bash(pkill -f \"vite --port 5173\")",
       "Bash(pkill -f \"vite\")",
       "Bash(sed -n '255,262p' /Users/jpecorelli/DEV/Personalli/financelli/src/shared/i18n/translations/en.ts)",
-      "Bash(sed -n '421,428p' /Users/jpecorelli/DEV/Personalli/financelli/src/shared/i18n/translations/pt.ts)"
+      "Bash(sed -n '421,428p' /Users/jpecorelli/DEV/Personalli/financelli/src/shared/i18n/translations/pt.ts)",
+      "Read(//Users/jpecorelli/Downloads/EUR_51558774_2006-01-01_2026-05-18_csv_export/**)",
+      "Read(//Users/jpecorelli/Downloads/51558774 2/**)",
+      "Bash(awk -F'\",\"' '{print $8}')",
+      "Bash(awk -F',' '{print $4}' \"/Users/jpecorelli/Downloads/DEGIRO_Transactions.csv\")",
+      "Bash(awk -F',' '{print $2}')",
+      "Bash(awk -F'\",\"' '{print $8, $2}')",
+      "Bash(sort -k1,1 -k2,2r)",
+      "Bash(awk '{print $1}')",
+      "Bash(sort -u -t' ' -k1,1)",
+      "Bash(awk -F'\",\"' '{if\\($8==\"IE00B5BMR087\"\\) print $2}')",
+      "Bash(awk -F'\",\"' '{if\\($8==\"IE00BFMXXD54\"\\) print $2}')",
+      "Bash(awk -F'\",\"' '{print $7, \"|\", $8}')"
     ]
   }
 }

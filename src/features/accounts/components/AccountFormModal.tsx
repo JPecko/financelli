@@ -19,6 +19,13 @@ const COLORS = [
 
 const ROUNDUP_VALUES = ['off', '1', '2', '3', '4', '5', '10']
 
+const BROKER_OPTIONS = [
+  { value: 'none',          label: 'None' },
+  { value: 'xtb',           label: 'XTB' },
+  { value: 'degiro',        label: 'DEGIRO' },
+  { value: 'traderepublic', label: 'Trade Republic' },
+]
+
 interface FormValues {
   name: string
   bankCode: string
@@ -30,6 +37,7 @@ interface FormValues {
   roundupMultiplier: string
   investedBase: string
   entryFee: string
+  broker: string
 }
 
 interface Props {
@@ -58,6 +66,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       roundupMultiplier: 'off',
       investedBase: '',
       entryFee: '',
+      broker: 'none',
     },
   })
 
@@ -65,6 +74,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
   const selectedBankCode = watch('bankCode')
   const selectedType     = watch('type')
   const selectedRoundup  = watch('roundupMultiplier')
+  const selectedBroker   = watch('broker')
   const isInvestmentType = selectedType === 'investment'
 
   const accountTypes: { value: AccountType; label: string }[] = [
@@ -92,6 +102,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         roundupMultiplier: account.roundupMultiplier != null ? String(account.roundupMultiplier) : 'off',
         investedBase:      account.investedBase != null ? fromCents(account.investedBase).toFixed(2) : '',
         entryFee:          account.entryFee != null ? fromCents(account.entryFee).toFixed(2) : '',
+        broker:            account.broker ?? 'none',
       })
     } else if (open) {
       reset({
@@ -105,6 +116,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         roundupMultiplier: 'off',
         investedBase: '',
         entryFee: '',
+        broker: 'none',
       })
     }
   }, [open, account, reset])
@@ -121,6 +133,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       roundupMultiplier: values.roundupMultiplier && values.roundupMultiplier !== 'off' ? parseInt(values.roundupMultiplier) : null,
       investedBase:      values.type === 'investment' ? (values.investedBase ? toCents(parseDecimal(values.investedBase)) : null) : undefined,
       entryFee:          values.type === 'investment' ? (values.entryFee ? toCents(parseDecimal(values.entryFee)) : null) : undefined,
+      broker:            values.type === 'investment' ? (values.broker !== 'none' ? values.broker : null) : undefined,
     }
     if (isEdit && account?.id != null) {
       await updateAccount(account.id, payload)
@@ -220,6 +233,15 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
 
           {/* Investment-only fields */}
           {isInvestmentType && (
+            <>
+            <div className="space-y-1">
+              <Label>{t('accounts.form.broker')}</Label>
+              <PlainSelect
+                value={selectedBroker}
+                onChange={v => setValue('broker', v)}
+                options={BROKER_OPTIONS}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="acc-invested">{t('accounts.form.investedBase')}</Label>
@@ -244,6 +266,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
                 <p className="text-xs text-muted-foreground">{t('accounts.form.entryFeeDesc')}</p>
               </div>
             </div>
+            </>
           )}
 
           {/* Cashback & Roundup */}

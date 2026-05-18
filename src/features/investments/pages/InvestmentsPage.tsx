@@ -10,11 +10,13 @@ import { useAssetPriceEditor } from '../hooks/useAssetPriceEditor'
 import { useT } from '@/shared/i18n'
 import GeneralAssetsSection from '../components/GeneralAssetsSection'
 import HoldingFormModal from '../components/HoldingFormModal'
+import HoldingImportModal from '../components/HoldingImportModal'
 import AssetFormModal from '../components/AssetFormModal'
 import PortfolioSummary from '../components/PortfolioSummary'
 import InvestmentAccountCard from '../components/InvestmentAccountCard'
 import InvestmentForecastSection from '../components/InvestmentForecastSection'
 import InvestmentSimulatorSection from '../components/InvestmentSimulatorSection'
+import InvestmentHistoryChart from '../components/InvestmentHistoryChart'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
 import type { Asset, Holding, Account } from '@/domain/types'
@@ -39,6 +41,8 @@ export default function InvestmentsPage() {
   const [editAsset,        setEditAsset]        = useState<Asset | undefined>()
   const [accountModalOpen, setAccountModalOpen] = useState(false)
   const [editAccount,      setEditAccount]      = useState<Account | undefined>()
+  const [importModalOpen,  setImportModalOpen]  = useState(false)
+  const [importAccount,    setImportAccount]    = useState<Account | undefined>()
   const [confirmDeleteHolding, setConfirmDeleteHolding] = useState<Holding | null>(null)
   const [confirmDeleteAsset,   setConfirmDeleteAsset]   = useState<Asset | null>(null)
 
@@ -121,7 +125,9 @@ export default function InvestmentsPage() {
         </div>
       ) : (
         investmentAccounts.map(account => {
-          const accountHoldings   = holdings.filter(h => h.accountId === account.id)
+          const accountHoldings   = holdings
+            .filter(h => h.accountId === account.id)
+            .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
           const accountMarketValue = accountHoldings.reduce(
             (s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0,
           )
@@ -139,6 +145,12 @@ export default function InvestmentsPage() {
                 onEditHolding={openEditHolding}
                 onDeleteHolding={h => { void handleDeleteHolding(h) }}
                 onEditAccount={() => { setEditAccount(account); setAccountModalOpen(true) }}
+                onImport={account.broker ? () => { setImportAccount(account); setImportModalOpen(true) } : undefined}
+              />
+              <InvestmentHistoryChart
+                accountId={account.id!}
+                accountName={account.name}
+                assetMap={assetMap}
               />
               <InvestmentForecastSection
                 currentValueCents={accountMarketValue}
@@ -169,6 +181,16 @@ export default function InvestmentsPage() {
       <AssetFormModal open={assetModalOpen} onClose={() => setAssetModalOpen(false)} asset={editAsset} />
       <AccountFormModal open={accountModalOpen} onClose={() => { setAccountModalOpen(false); setEditAccount(undefined) }}
         account={editAccount} />
+      {importAccount && (
+        <HoldingImportModal
+          open={importModalOpen}
+          onClose={() => { setImportModalOpen(false); setImportAccount(undefined) }}
+          accountId={importAccount.id!}
+          broker={importAccount.broker}
+          assets={assets}
+          holdings={holdings}
+        />
+      )}
 
       <ConfirmDialog
         open={confirmDeleteHolding != null}

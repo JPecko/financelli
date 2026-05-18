@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { assetsRepo } from '@/data/repositories/assetsRepo'
+import { holdingsRepo } from '@/data/repositories/holdingsRepo'
+import { purchaseHistoryRepo } from '@/data/repositories/purchaseHistoryRepo'
 import { queryClient } from '@/app/queryClient'
 import { queryKeys } from '@/data/queryKeys'
 import type { Asset } from '@/domain/types'
@@ -23,6 +25,10 @@ export async function updateAsset(id: number, data: Partial<Asset>) {
 }
 
 export async function removeAsset(id: number) {
+  await purchaseHistoryRepo.clearByAsset(id)
+  await holdingsRepo.removeByAsset(id)
   await assetsRepo.remove(id)
   queryClient.invalidateQueries({ queryKey: queryKeys.assets.all() })
+  queryClient.invalidateQueries({ queryKey: queryKeys.holdings.all() })
+  queryClient.invalidateQueries({ queryKey: queryKeys.purchaseHistory.all() })
 }
