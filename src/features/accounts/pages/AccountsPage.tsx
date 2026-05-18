@@ -41,6 +41,7 @@ import { computeEffectiveInvestedBase, computeInvestmentBalance } from '@/featur
 import type { Account } from '@/domain/types'
 import { useT } from '@/shared/i18n'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { accountGradient } from '@/shared/utils/accountGradient'
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   checking:   Banknote,
@@ -49,10 +50,6 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   cash:       HandCoins,
   credit:     CreditCard,
   meal:       UtensilsCrossed,
-}
-
-function accountGradient(color: string): string {
-  return `linear-gradient(135deg, color-mix(in srgb, ${color} 18%, #000000) 0%, ${color} 100%)`
 }
 
 const SORT_KEYS: SortKey[] = ['default', 'name', 'type', 'color', 'balance', 'manual']
@@ -503,7 +500,13 @@ export default function AccountsPage() {
                           onDelete={handleDelete}
                           onOpenInvestments={handleOpenInvestments}
                           onShare={setSharing}
-                          onNavigate={() => { setFilterAccountId(account.id!); navigate('/transactions') }}
+                          onNavigate={() => {
+                            if (account.type === 'investment') {
+                              navigate('/investments', { state: { selectedAccountId: account.id } })
+                            } else {
+                              setFilterAccountId(account.id!); navigate('/transactions')
+                            }
+                          }}
                         />
                       </SortableCard>
                     )
@@ -541,7 +544,7 @@ export default function AccountsPage() {
                   const pnl = marketValue != null && costBasis != null ? marketValue - costBasis : null
                   const balance = effectiveBalance(account)
                   return (
-                    <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={() => { setFilterAccountId(account.id!); navigate('/transactions') }}>
+                    <Card key={account.id} className="overflow-hidden card-hoverable cursor-pointer" style={{ background: accountGradient(account.color) }} onClick={() => navigate('/investments', { state: { selectedAccountId: account.id } })}>
                       <CardContent className="p-0 h-full">
                         <div className="h-full flex flex-col justify-between py-2 px-3 sm:px-4">
                           {/* Top row */}

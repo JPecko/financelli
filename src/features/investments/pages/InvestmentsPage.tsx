@@ -1,100 +1,30 @@
-import { useState } from 'react'
 import { TrendingUp } from 'lucide-react'
-import { useAuth } from '@/features/auth/AuthContext'
-import { useAccounts } from '@/shared/hooks/useAccounts'
-import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
-import { useHoldings, removeHolding } from '@/shared/hooks/useHoldings'
-import { useAssets, removeAsset } from '@/shared/hooks/useAssets'
-import { usePriceSync } from '@/shared/hooks/usePriceSync'
-import { syncAssets } from '@/data/services/syncService'
-import { useAssetPriceEditor } from '../hooks/useAssetPriceEditor'
 import { useT } from '@/shared/i18n'
+import { useInvestmentsPageModel } from '../hooks/useInvestmentsPageModel'
 import GeneralAssetsSection from '../components/GeneralAssetsSection'
 import HoldingFormModal from '../components/HoldingFormModal'
 import HoldingImportModal from '../components/HoldingImportModal'
 import AssetFormModal from '../components/AssetFormModal'
 import PortfolioSummary from '../components/PortfolioSummary'
 import InvestmentAccountCard from '../components/InvestmentAccountCard'
+import InvestmentAccountSelector from '../components/InvestmentAccountSelector'
 import InvestmentForecastSection from '../components/InvestmentForecastSection'
 import InvestmentSimulatorSection from '../components/InvestmentSimulatorSection'
 import InvestmentHistoryChart from '../components/InvestmentHistoryChart'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
-import type { Asset, Holding, Account } from '@/domain/types'
 
 export default function InvestmentsPage() {
   const t = useT()
-  const { user } = useAuth()
-  const { data: accounts = [], isLoading: loadingAccounts } = useAccounts()
-  const { data: holdings = [], isLoading: loadingHoldings } = useHoldings()
-  const { data: assets = [],   isLoading: loadingAssets }   = useAssets()
+  const m = useInvestmentsPageModel()
 
-
-  usePriceSync()
-
-  const { editingPrice, priceInputRef, startEditPrice, commitEditPrice, cancelEditPrice, onPriceChange, onDateChange } = useAssetPriceEditor()
-
-  const [syncing, setSyncing] = useState(false)
-  const [holdingModalOpen, setHoldingModalOpen] = useState(false)
-  const [editHolding,      setEditHolding]      = useState<Holding | undefined>()
-  const [modalAccount,     setModalAccount]     = useState<number>(0)
-  const [expanded,         setExpanded]         = useState<Record<number, boolean>>({})
-  const [assetModalOpen,   setAssetModalOpen]   = useState(false)
-  const [editAsset,        setEditAsset]        = useState<Asset | undefined>()
-  const [accountModalOpen, setAccountModalOpen] = useState(false)
-  const [editAccount,      setEditAccount]      = useState<Account | undefined>()
-  const [importModalOpen,  setImportModalOpen]  = useState(false)
-  const [importAccount,    setImportAccount]    = useState<Account | undefined>()
-  const [confirmDeleteHolding, setConfirmDeleteHolding] = useState<Holding | null>(null)
-  const [confirmDeleteAsset,   setConfirmDeleteAsset]   = useState<Asset | null>(null)
-
-  const investmentAccounts    = accounts.filter(a => a.type === 'investment')
-  const assetMap              = Object.fromEntries(assets.map(a => [a.id!, a]))
-  const investmentAccountIds  = investmentAccounts.flatMap(a => a.id != null ? [a.id] : [])
-  const { data: capitalAdjustments = {} } = useInvestmentCapitalAdjustments(investmentAccountIds)
-
-  const handleSyncPrices = async () => {
-    setSyncing(true)
-    try {
-      await syncAssets(assets)
-    } finally {
-      setSyncing(false)
-    }
-  }
-
-  const openAddHolding  = (accountId: number) => { setEditHolding(undefined); setModalAccount(accountId); setHoldingModalOpen(true) }
-  const openEditHolding = (h: Holding)        => { setEditHolding(h); setModalAccount(h.accountId); setHoldingModalOpen(true) }
-  const handleDeleteHolding = (h: Holding) => setConfirmDeleteHolding(h)
-  const handleConfirmDeleteHolding = async () => {
-    if (!confirmDeleteHolding) return
-    await removeHolding(confirmDeleteHolding.id!)
-    setConfirmDeleteHolding(null)
-  }
-
-  const openAddAsset  = () => { setEditAsset(undefined); setAssetModalOpen(true) }
-  const openEditAsset = (a: Asset) => { setEditAsset(a); setAssetModalOpen(true) }
-  const handleDeleteAsset = (a: Asset) => setConfirmDeleteAsset(a)
-  const handleConfirmDeleteAsset = async () => {
-    if (!confirmDeleteAsset) return
-    await removeAsset(confirmDeleteAsset.id!)
-    setConfirmDeleteAsset(null)
-  }
-
-  if (loadingAccounts || loadingHoldings || loadingAssets) {
+  if (m.isLoading) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
         {t('common.loading')}
       </div>
     )
   }
-
-  const totalMarketValue  = holdings.reduce((s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0)
-  const totalCost         = holdings.reduce((s, h) => s + h.quantity * h.avgCost, 0)
-  const totalFees         = investmentAccounts.reduce((s, a) => s + (a.entryFee ?? 0) * holdings.filter(h => h.accountId === a.id).length, 0)
-  const totalAdjustedCost = totalCost + totalFees
-  const totalPnL          = totalMarketValue - totalAdjustedCost
-  const totalPnLPct       = totalAdjustedCost > 0 ? (totalPnL / totalAdjustedCost) * 100 : 0
-  const totalInvestedBase = investmentAccounts.reduce((s, a) => s + (a.investedBase ?? 0), 0)
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
@@ -104,115 +34,145 @@ export default function InvestmentsPage() {
       </div>
 
       <GeneralAssetsSection
-        assets={assets}
-        editingPrice={editingPrice}
-        priceInputRef={priceInputRef}
-        onAddAsset={openAddAsset}
-        onEditAsset={openEditAsset}
-        onDeleteAsset={a => { void handleDeleteAsset(a) }}
-        onStartEditPrice={startEditPrice}
-        onPriceChange={onPriceChange}
-        onDateChange={onDateChange}
-        onCommitEditPrice={a => { void commitEditPrice(a) }}
-        onCancelEditPrice={cancelEditPrice}
-        onSyncPrices={assets.some(a => a.ticker) ? () => { void handleSyncPrices() } : undefined}
-        isSyncing={syncing}
+        assets={m.assets}
+        editingPrice={m.priceEditor.editingPrice}
+        priceInputRef={m.priceEditor.priceInputRef}
+        onAddAsset={m.openAddAsset}
+        onEditAsset={m.openEditAsset}
+        onDeleteAsset={a => { void m.handleDeleteAsset(a) }}
+        onStartEditPrice={m.priceEditor.startEditPrice}
+        onPriceChange={m.priceEditor.onPriceChange}
+        onDateChange={m.priceEditor.onDateChange}
+        onCommitEditPrice={a => { void m.priceEditor.commitEditPrice(a) }}
+        onCancelEditPrice={m.priceEditor.cancelEditPrice}
+        onSyncPrices={m.assets.some(a => a.ticker) ? () => { void m.handleSyncPrices() } : undefined}
+        isSyncing={m.syncing}
       />
 
-      {investmentAccounts.length === 0 ? (
+      {m.investmentAccounts.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
           <TrendingUp className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
           <p className="font-medium">{t('investments.noInvestmentAccounts')}</p>
           <p className="text-sm text-muted-foreground mt-1">{t('investments.noInvestmentAccountsDesc')}</p>
         </div>
       ) : (
-        investmentAccounts.map(account => {
-          const accountHoldings   = holdings
-            .filter(h => h.accountId === account.id)
-            .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
-          const accountMarketValue = accountHoldings.reduce(
-            (s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0,
-          )
-          const isOwner = account.ownerId === user?.id
-          return (
-            <div key={account.id} className="space-y-4">
-              <InvestmentAccountCard
-                account={account}
-                accountHoldings={accountHoldings}
-                assetMap={assetMap}
-                capitalAmount={account.id != null ? (capitalAdjustments[account.id] ?? 0) : 0}
-                isOpen={expanded[account.id!] === true}
-                canAddHolding={assets.length > 0}
-                canManageHoldings={isOwner}
-                onToggle={() => setExpanded(prev => ({ ...prev, [account.id!]: !prev[account.id!] }))}
-                onAddHolding={() => openAddHolding(account.id!)}
-                onEditHolding={openEditHolding}
-                onDeleteHolding={h => { void handleDeleteHolding(h) }}
-                onEditAccount={() => { setEditAccount(account); setAccountModalOpen(true) }}
-                onImport={account.broker ? () => { setImportAccount(account); setImportModalOpen(true) } : undefined}
-              />
-              <InvestmentHistoryChart
-                accountId={account.id!}
-                accountName={account.name}
-                assetMap={assetMap}
-              />
-              <InvestmentForecastSection
-                currentValueCents={accountMarketValue}
-                accountName={account.name}
-                chartId={account.id}
-              />
-            </div>
-          )
-        })
-      )}
+        <>
+          <InvestmentAccountSelector
+            accounts={m.investmentAccounts}
+            statsMap={m.accountStatsMap}
+            selectedId={m.selectedAccountId}
+            onSelect={m.handleSelectAccount}
+          />
 
-      {investmentAccounts.length > 0 && holdings.length > 0 && (
-        <PortfolioSummary
-          title="Portfolio Total"
-          totalInvestedBase={totalInvestedBase}
-          totalAdjustedCost={totalAdjustedCost}
-          totalFees={totalFees}
-          totalMarketValue={totalMarketValue}
-          totalPnL={totalPnL}
-          totalPnLPct={totalPnLPct}
-        />
+          {m.selectedAccount && (
+            <div className="space-y-4">
+              <InvestmentAccountCard
+                account={m.selectedAccount}
+                accountHoldings={m.selectedHoldings}
+                assetMap={m.assetMap}
+                capitalAmount={m.capitalAmount}
+                isOpen={true}
+                hideToggle={true}
+                canAddHolding={m.assets.length > 0}
+                canManageHoldings={m.isOwner}
+                onToggle={() => {}}
+                onAddHolding={() => m.openAddHolding(m.selectedAccount!.id!)}
+                onEditHolding={m.openEditHolding}
+                onDeleteHolding={h => { void m.handleDeleteHolding(h) }}
+                onEditAccount={() => { m.setEditAccount(m.selectedAccount!); m.setAccountModalOpen(true) }}
+                onImport={m.selectedAccount.broker
+                  ? () => { m.setImportAccount(m.selectedAccount!); m.setImportModalOpen(true) }
+                  : undefined}
+              />
+
+              <InvestmentHistoryChart
+                accountId={m.selectedAccount.id!}
+                accountName={m.selectedAccount.name}
+                assetMap={m.assetMap}
+              />
+
+              <InvestmentForecastSection
+                currentValueCents={m.selMarketValue}
+                accountName={m.selectedAccount.name}
+                chartId={m.selectedAccount.id}
+              />
+
+              {m.selectedHoldings.length > 0 && (
+                <PortfolioSummary
+                  title={m.selectedAccount.name}
+                  totalInvestedBase={m.selInvestedBase}
+                  totalAdjustedCost={m.selAdjCost}
+                  totalFees={m.selFees}
+                  totalMarketValue={m.selMarketValue}
+                  totalPnL={m.selPnL}
+                  totalPnLPct={m.selPnLPct}
+                  accentColor={m.selectedAccount.color}
+                />
+              )}
+            </div>
+          )}
+
+          {m.investmentAccounts.length > 1 && m.holdings.length > 0 && (
+            <PortfolioSummary
+              title="Portfolio Total"
+              totalInvestedBase={m.totalInvestedBase}
+              totalAdjustedCost={m.totalAdjustedCost}
+              totalFees={m.totalFees}
+              totalMarketValue={m.totalMarketValue}
+              totalPnL={m.totalPnL}
+              totalPnLPct={m.totalPnLPct}
+            />
+          )}
+        </>
       )}
 
       <InvestmentSimulatorSection />
 
-      <HoldingFormModal open={holdingModalOpen} onClose={() => setHoldingModalOpen(false)}
-        accountId={modalAccount} holding={editHolding} assets={assets} />
-      <AssetFormModal open={assetModalOpen} onClose={() => setAssetModalOpen(false)} asset={editAsset} />
-      <AccountFormModal open={accountModalOpen} onClose={() => { setAccountModalOpen(false); setEditAccount(undefined) }}
-        account={editAccount} />
-      {importAccount && (
+      <HoldingFormModal
+        open={m.holdingModalOpen}
+        onClose={() => m.setHoldingModalOpen(false)}
+        accountId={m.modalAccount}
+        holding={m.editHolding}
+        assets={m.assets}
+      />
+      <AssetFormModal
+        open={m.assetModalOpen}
+        onClose={() => m.setAssetModalOpen(false)}
+        asset={m.editAsset}
+      />
+      <AccountFormModal
+        open={m.accountModalOpen}
+        onClose={() => { m.setAccountModalOpen(false); m.setEditAccount(undefined) }}
+        account={m.editAccount}
+      />
+      {m.importAccount && (
         <HoldingImportModal
-          open={importModalOpen}
-          onClose={() => { setImportModalOpen(false); setImportAccount(undefined) }}
-          accountId={importAccount.id!}
-          broker={importAccount.broker}
-          assets={assets}
-          holdings={holdings}
+          open={m.importModalOpen}
+          onClose={() => { m.setImportModalOpen(false); m.setImportAccount(undefined) }}
+          accountId={m.importAccount.id!}
+          broker={m.importAccount.broker}
+          assets={m.assets}
+          holdings={m.holdings}
         />
       )}
 
       <ConfirmDialog
-        open={confirmDeleteHolding != null}
+        open={m.confirmDeleteHolding != null}
         title={t('common.delete')}
         description={t('investments.deleteConfirm')}
         confirmLabel={t('common.delete')}
         variant="destructive"
-        onConfirm={handleConfirmDeleteHolding}
-        onCancel={() => setConfirmDeleteHolding(null)}
+        onConfirm={m.handleConfirmDeleteHolding}
+        onCancel={() => m.setConfirmDeleteHolding(null)}
       />
       <ConfirmDialog
-        open={confirmDeleteAsset != null}
+        open={m.confirmDeleteAsset != null}
         title={t('common.delete')}
         description={t('investments.deleteAssetConfirm')}
         confirmLabel={t('common.delete')}
         variant="destructive"
-        onConfirm={handleConfirmDeleteAsset}
-        onCancel={() => setConfirmDeleteAsset(null)}
+        onConfirm={m.handleConfirmDeleteAsset}
+        onCancel={() => m.setConfirmDeleteAsset(null)}
       />
     </div>
   )

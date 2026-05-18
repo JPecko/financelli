@@ -27,6 +27,7 @@ interface Props {
   isOpen:             boolean
   canAddHolding:      boolean
   canManageHoldings:  boolean
+  hideToggle?:        boolean
   onToggle:           () => void
   onAddHolding:       () => void
   onEditHolding:      (h: Holding) => void
@@ -52,19 +53,23 @@ interface HeaderStats {
   hasHoldings:      boolean
 }
 
-function AccountHeader({ account, bank, isOpen, stats, onToggle, onEditAccount }: {
+function AccountHeader({ account, bank, isOpen, hideToggle, stats, onToggle, onEditAccount }: {
   account:       Account
   bank:          ReturnType<typeof BANK_OPTIONS.find>
   isOpen:        boolean
+  hideToggle?:   boolean
   stats:         HeaderStats
   onToggle:      () => void
   onEditAccount: () => void
 }) {
   const t = useT()
   return (
-    <div role="button" tabIndex={0} className={cx.header}
-      onClick={onToggle}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onToggle() }}
+    <div
+      role={hideToggle ? undefined : 'button'}
+      tabIndex={hideToggle ? undefined : 0}
+      className={cx.header + (hideToggle ? ' cursor-default hover:bg-transparent' : '')}
+      onClick={hideToggle ? undefined : onToggle}
+      onKeyDown={hideToggle ? undefined : (e => { if (e.key === 'Enter' || e.key === ' ') onToggle() })}
     >
       {bank ? (
         <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
@@ -101,9 +106,9 @@ function AccountHeader({ account, bank, isOpen, stats, onToggle, onEditAccount }
         onClick={e => { e.stopPropagation(); onEditAccount() }}>
         <Settings2 className="h-3.5 w-3.5" />
       </button>
-      {isOpen
+      {!hideToggle && (isOpen
         ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-        : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
+        : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />)}
     </div>
   )
 }
@@ -294,7 +299,8 @@ function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, to
 
 export default function InvestmentAccountCard({
   account, accountHoldings, assetMap, capitalAmount,
-  isOpen, canAddHolding, canManageHoldings, onToggle, onAddHolding, onEditHolding, onDeleteHolding, onEditAccount, onImport,
+  isOpen, canAddHolding, canManageHoldings, hideToggle,
+  onToggle, onAddHolding, onEditHolding, onDeleteHolding, onEditAccount, onImport,
 }: Props) {
   const t = useT()
 
@@ -336,7 +342,7 @@ export default function InvestmentAccountCard({
       )}
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <AccountHeader account={account} bank={bank} isOpen={isOpen} stats={stats}
+        <AccountHeader account={account} bank={bank} isOpen={isOpen} hideToggle={hideToggle} stats={stats}
           onToggle={onToggle} onEditAccount={onEditAccount} />
         <MobileStats account={account} stats={stats} />
 
