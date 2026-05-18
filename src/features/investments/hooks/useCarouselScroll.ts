@@ -23,7 +23,7 @@ export function useCarouselScroll({ count, selectedId, onSelect }: Options) {
   const scrollStart  = useRef(0)
 
   const isProgrammaticScroll    = useRef(false)
-  const programmaticScrollTimer = useRef<ReturnType<typeof setTimeout>>()
+  const programmaticScrollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const [cardWidth, setCardWidth] = useState(CAROUSEL_MIN_WIDTH)
 
