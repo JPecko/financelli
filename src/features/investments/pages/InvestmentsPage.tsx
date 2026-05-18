@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { TrendingUp } from 'lucide-react'
+import { useAuth } from '@/features/auth/AuthContext'
 import { useAccounts } from '@/shared/hooks/useAccounts'
 import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
 import { useHoldings, removeHolding } from '@/shared/hooks/useHoldings'
@@ -23,6 +24,7 @@ import type { Asset, Holding, Account } from '@/domain/types'
 
 export default function InvestmentsPage() {
   const t = useT()
+  const { user } = useAuth()
   const { data: accounts = [], isLoading: loadingAccounts } = useAccounts()
   const { data: holdings = [], isLoading: loadingHoldings } = useHoldings()
   const { data: assets = [],   isLoading: loadingAssets }   = useAssets()
@@ -131,6 +133,7 @@ export default function InvestmentsPage() {
           const accountMarketValue = accountHoldings.reduce(
             (s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0,
           )
+          const isOwner = account.ownerId === user?.id
           return (
             <div key={account.id} className="space-y-4">
               <InvestmentAccountCard
@@ -140,6 +143,7 @@ export default function InvestmentsPage() {
                 capitalAmount={account.id != null ? (capitalAdjustments[account.id] ?? 0) : 0}
                 isOpen={expanded[account.id!] === true}
                 canAddHolding={assets.length > 0}
+                canManageHoldings={isOwner}
                 onToggle={() => setExpanded(prev => ({ ...prev, [account.id!]: !prev[account.id!] }))}
                 onAddHolding={() => openAddHolding(account.id!)}
                 onEditHolding={openEditHolding}

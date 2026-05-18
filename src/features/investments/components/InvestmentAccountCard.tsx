@@ -20,18 +20,19 @@ const cx = {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  account:         Account
-  accountHoldings: Holding[]
-  assetMap:        Record<number, Asset>
-  capitalAmount:   number
-  isOpen:          boolean
-  canAddHolding:   boolean
-  onToggle:        () => void
-  onAddHolding:    () => void
-  onEditHolding:   (h: Holding) => void
-  onDeleteHolding: (h: Holding) => void
-  onEditAccount:   () => void
-  onImport?:       () => void
+  account:            Account
+  accountHoldings:    Holding[]
+  assetMap:           Record<number, Asset>
+  capitalAmount:      number
+  isOpen:             boolean
+  canAddHolding:      boolean
+  canManageHoldings:  boolean
+  onToggle:           () => void
+  onAddHolding:       () => void
+  onEditHolding:      (h: Holding) => void
+  onDeleteHolding:    (h: Holding) => void
+  onEditAccount:      () => void
+  onImport?:          () => void
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -153,12 +154,13 @@ function MobileStats({ account, stats }: { account: Account; stats: HeaderStats 
 
 // ── HoldingsList ──────────────────────────────────────────────────────────────
 
-function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, totalPnL, onEdit, onDelete }: {
+function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, totalPnL, canManage, onEdit, onDelete }: {
   account:          Account
   accountHoldings:  Holding[]
   assetMap:         Record<number, Asset>
   totalMarketValue: number
   totalPnL:         number
+  canManage:        boolean
   onEdit:           (h: Holding) => void
   onDelete:         (h: Holding) => void
 }) {
@@ -201,10 +203,12 @@ function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, to
                   {sign(pnl)}{formatMoney(pnl, account.currency)} ({sign(pnlPctH)}{pnlPctH.toFixed(1)}%)
                 </p>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button type="button" className={cx.iconBtn} onClick={() => onEdit(h)}><Pencil className="h-3.5 w-3.5" /></button>
-                <button type="button" className={cx.deleteBtn} onClick={() => onDelete(h)}><Trash2 className="h-3.5 w-3.5" /></button>
-              </div>
+              {canManage && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <button type="button" className={cx.iconBtn} onClick={() => onEdit(h)}><Pencil className="h-3.5 w-3.5" /></button>
+                  <button type="button" className={cx.deleteBtn} onClick={() => onDelete(h)}><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              )}
             </div>
           )
         })}
@@ -257,10 +261,12 @@ function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, to
                     <span className={`text-xs ${pnlCls(pnl)}`}>{sign(pnlPctH)}{pnlPctH.toFixed(1)}%</span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 justify-end">
-                      <button type="button" className={cx.iconBtn} onClick={() => onEdit(h)}><Pencil className="h-3.5 w-3.5" /></button>
-                      <button type="button" className={cx.deleteBtn} onClick={() => onDelete(h)}><Trash2 className="h-3.5 w-3.5" /></button>
-                    </div>
+                    {canManage && (
+                      <div className="flex items-center gap-1 justify-end">
+                        <button type="button" className={cx.iconBtn} onClick={() => onEdit(h)}><Pencil className="h-3.5 w-3.5" /></button>
+                        <button type="button" className={cx.deleteBtn} onClick={() => onDelete(h)}><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               )
@@ -288,7 +294,7 @@ function HoldingsList({ account, accountHoldings, assetMap, totalMarketValue, to
 
 export default function InvestmentAccountCard({
   account, accountHoldings, assetMap, capitalAmount,
-  isOpen, canAddHolding, onToggle, onAddHolding, onEditHolding, onDeleteHolding, onEditAccount, onImport,
+  isOpen, canAddHolding, canManageHoldings, onToggle, onAddHolding, onEditHolding, onDeleteHolding, onEditAccount, onImport,
 }: Props) {
   const t = useT()
 
@@ -314,18 +320,20 @@ export default function InvestmentAccountCard({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-end gap-2">
-        {onImport && (
-          <Button size="sm" variant="outline" onClick={onImport}>
-            <Upload className="h-3.5 w-3.5 mr-1.5" />
-            Import CSV
+      {canManageHoldings && (
+        <div className="flex items-center justify-end gap-2">
+          {onImport && (
+            <Button size="sm" variant="outline" onClick={onImport}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" />
+              Import CSV
+            </Button>
+          )}
+          <Button size="sm" disabled={!canAddHolding} onClick={onAddHolding}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            {t('investments.addHolding')}
           </Button>
-        )}
-        <Button size="sm" disabled={!canAddHolding} onClick={onAddHolding}>
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          {t('investments.addHolding')}
-        </Button>
-      </div>
+        </div>
+      )}
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <AccountHeader account={account} bank={bank} isOpen={isOpen} stats={stats}
@@ -340,6 +348,7 @@ export default function InvestmentAccountCard({
               assetMap={assetMap}
               totalMarketValue={totalMarketValue}
               totalPnL={totalPnL}
+              canManage={canManageHoldings}
               onEdit={onEditHolding}
               onDelete={onDeleteHolding}
             />
