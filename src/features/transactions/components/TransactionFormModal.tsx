@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
+import styles from './TransactionFormModal.module.scss'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { useGroups } from '@/shared/hooks/useGroups'
 import { useAuth } from '@/features/auth/AuthContext'
@@ -73,7 +74,7 @@ export default function TransactionFormModal({
   return (
     <Dialog open={open} onOpenChange={isOpen => !isOpen && onClose()}>
       <DialogContent
-        className="sm:max-w-lg max-h-[90vh] overflow-y-auto"
+        className={`${styles.dialog} max-h-[90vh] overflow-y-auto`}
         aria-describedby={undefined}
       >
         <DialogHeader>

@@ -121,20 +121,20 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
         setSplits(members.map(m => ({ memberId: m.id!, amount: '' })))
         setSplitMode('even')
       }
+      const defaultAccountId = accounts[0]?.id ? String(accounts[0].id) : ''
       if (entry.transactionId) {
         supabase.from('transactions').select('account_id').eq('id', entry.transactionId).single()
           .then(({ data }) => {
             if (data) {
               setTxAccountId(String((data as { account_id: number }).account_id))
-              setCreateTx(true)
             } else {
-              setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
-              setCreateTx(false)
+              setTxAccountId(defaultAccountId)
             }
+            setCreateTx(true)
           })
       } else {
-        setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
-        setCreateTx(false)
+        setTxAccountId(defaultAccountId)
+        setCreateTx(entryPaidByMe)
       }
     } else {
       reset({
