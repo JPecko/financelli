@@ -37,7 +37,7 @@ export default function HoldingImportModal({ open, onClose, accountId, broker, a
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Import Holdings from CSV</DialogTitle>
+          <DialogTitle>Import Holdings from CSV / XLSX</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-2">
@@ -64,7 +64,7 @@ export default function HoldingImportModal({ open, onClose, accountId, broker, a
               <Button variant="outline" onClick={handleClose}>Cancel</Button>
               <Button onClick={() => fileRef.current?.click()}>
                 <Upload className="h-4 w-4 mr-2" />
-                Choose CSV file
+                Choose file
               </Button>
             </>
           )}
@@ -90,7 +90,7 @@ export default function HoldingImportModal({ open, onClose, accountId, broker, a
         <input
           ref={fileRef}
           type="file"
-          accept=".csv"
+          accept=".csv,.xlsx,.xls"
           className="hidden"
           onChange={onFileChange}
         />
@@ -109,7 +109,7 @@ function UploadStep({ brokerLabel, error, fileRef }: {
       {brokerLabel ? (
         <p className="text-sm text-muted-foreground">
           Detected broker: <span className="font-medium text-foreground">{brokerLabel}</span>.
-          Export your transaction history as CSV from {brokerLabel} and upload it here.
+          Export your transaction history as CSV or XLSX from {brokerLabel} and upload it here.
         </p>
       ) : (
         <p className="text-sm text-destructive">
@@ -124,8 +124,8 @@ function UploadStep({ brokerLabel, error, fileRef }: {
         className="w-full border-2 border-dashed rounded-lg p-10 flex flex-col items-center gap-3 text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <FileText className="h-10 w-10" />
-        <span className="text-sm font-medium">Click to choose a CSV file</span>
-        <span className="text-xs">Only CSV files are supported</span>
+        <span className="text-sm font-medium">Click to choose a file</span>
+        <span className="text-xs">CSV and XLSX files are supported</span>
       </button>
 
       {error && (

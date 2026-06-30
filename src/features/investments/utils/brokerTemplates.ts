@@ -33,7 +33,7 @@ export interface BrokerTemplate {
 export const BROKER_TEMPLATES: Record<BrokerKey, BrokerTemplate> = {
   xtb: {
     label: 'XTB',
-    separator: ',',
+    separator: '\t',
     skipToHeader: true,
     headerFirstCell: 'Type',
     columns: {
@@ -43,7 +43,7 @@ export const BROKER_TEMPLATES: Record<BrokerKey, BrokerTemplate> = {
       quantity:     '',            // derived from comment
       price:        '',            // derived from comment
       commentCol:   'Comment',
-      commentRegex: 'OPEN BUY ([\\d.]+) @ ([\\d.]+)',
+      commentRegex: 'OPEN BUY ([\\d.]+)(?:/[\\d.]+)? @ ([\\d.]+)',
       typeCol:      'Type',
       buyValue:     'Stock purchase',
     },

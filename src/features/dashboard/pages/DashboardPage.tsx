@@ -1,6 +1,5 @@
 import { format } from 'date-fns'
 import PageLoader from '@/shared/components/PageLoader'
-import InvestmentAccountCard from '../components/InvestmentAccountCard'
 import GroupsWidget from '../components/GroupsWidget'
 import NetWorthCard from '../components/NetWorthCard'
 import MonthSummaryCard from '../components/MonthSummaryCard'
@@ -9,6 +8,7 @@ import PerksCard from '../components/PerksCard'
 import CashFlowChart from '../components/CashFlowChart'
 import SpendingByCategoryCard from '../components/SpendingByCategoryCard'
 import TopExpensesCard from '../components/TopExpensesCard'
+import DashboardInvestmentsSection from '../components/DashboardInvestmentsSection'
 import { useDashboardModel } from '../hooks/useDashboardModel'
 import { usePriceSync } from '@/shared/hooks/usePriceSync'
 import { useT } from '@/shared/i18n'
@@ -74,24 +74,7 @@ export default function DashboardPage() {
         {model.hasBenefits && <PerksCard {...perksProps} className="hidden lg:block" />}
       </div>
 
-      {/* Investment account evolution */}
-      {model.investmentAccounts.length > 0 && (
-        <div>
-          <p className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            {t('dashboard.investmentHistory')}
-          </p>
-          <div className="grid gap-4">
-            {model.investmentAccounts.map(acc => (
-              <InvestmentAccountCard
-                key={acc.id}
-                account={acc}
-                holdings={model.allHoldings.filter(h => h.accountId === acc.id)}
-                assets={model.allAssets}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <DashboardInvestmentsSection />
     </div>
   )
 }

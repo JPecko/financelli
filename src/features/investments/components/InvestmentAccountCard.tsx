@@ -331,7 +331,7 @@ export default function InvestmentAccountCard({
           {onImport && (
             <Button size="sm" variant="outline" onClick={onImport}>
               <Upload className="h-3.5 w-3.5 mr-1.5" />
-              Import CSV
+              Import CSV / XLSX
             </Button>
           )}
           <Button size="sm" disabled={!canAddHolding} onClick={onAddHolding}>

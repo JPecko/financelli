@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import * as XLSX from 'xlsx'
 import { addAsset, updateAsset } from '@/shared/hooks/useAssets'
 import { addHolding, updateHolding, removeHolding } from '@/shared/hooks/useHoldings'
 import { replacePurchaseHistory } from '@/shared/hooks/usePurchaseHistory'
@@ -7,6 +8,16 @@ import type { BrokerKey } from '../utils/brokerTemplates'
 import { BROKER_TEMPLATES } from '../utils/brokerTemplates'
 import { parseCsvToRows, buildPreviewItems } from '../utils/holdingImportHelpers'
 import type { ImportPreviewItem } from '../utils/holdingImportHelpers'
+
+async function readFileAsText(file: File, separator: string): Promise<string> {
+  if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+    const buffer = await file.arrayBuffer()
+    const wb = XLSX.read(buffer, { type: 'array' })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    return XLSX.utils.sheet_to_csv(ws, { FS: separator })
+  }
+  return file.text()
+}
 
 type Step = 'upload' | 'preview' | 'done'
 
@@ -28,7 +39,7 @@ export function useHoldingImport(accountId: number, broker: BrokerKey | null, as
       return
     }
 
-    const text = await file.text()
+    const text = await readFileAsText(file, template.separator)
     const rows = parseCsvToRows(text, template)
     if (rows.length === 0) {
       setError('No valid transactions found in this file. Make sure you are using the correct broker export.')

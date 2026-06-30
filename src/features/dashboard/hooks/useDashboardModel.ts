@@ -194,9 +194,6 @@ export function useDashboardModel() {
     categoryData,
     categoryTotal,
     topExpenses,
-    investmentAccounts,
-    allHoldings,
-    allAssets,
     handleCategoryClick,
   }
 }

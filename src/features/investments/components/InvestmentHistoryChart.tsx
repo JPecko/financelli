@@ -38,24 +38,22 @@ export default function InvestmentHistoryChart({ accountId, accountName, assetMa
     [purchases, assetMap, allPrices],
   )
 
-  if (chartData.length === 0) return null
-
-  const last      = chartData[chartData.length - 1]
-  const pnl       = last.value - last.invested
-  const pnlPct    = last.invested > 0 ? (pnl / last.invested) * 100 : 0
+  const last      = chartData.length > 0 ? chartData[chartData.length - 1] : null
+  const pnl       = last ? last.value - last.invested : 0
+  const pnlPct    = last && last.invested > 0 ? (pnl / last.invested) * 100 : 0
   const pnlColor  = pnl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'
   const gradId    = `hc-invested-${accountId}`
   const gradValId = `hc-value-${accountId}`
 
-  const summaryCards = [
+  const summaryCards = last ? [
     { label: 'Total Invested',   value: fmtEur(last.invested), cls: '' },
     { label: 'Market Value',     value: fmtEur(last.value),    cls: 'text-violet-600 dark:text-violet-400' },
     { label: 'P&L',              value: `${pnl >= 0 ? '+' : ''}${fmtEur(pnl)}`, cls: pnlColor },
     { label: 'Return',           value: `${pnl >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`, cls: pnlColor },
-  ]
+  ] : []
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3 min-h-[22rem]">
       <div>
         <h2 className="text-base font-semibold">
           Portfolio History{accountName ? ` — ${accountName}` : ''}
