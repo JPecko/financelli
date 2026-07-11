@@ -338,18 +338,18 @@ export const groupsRepo = {
     return result
   },
 
-  /** Batch: for a list of transactionIds, returns a map txId → { groupId, groupName }. */
-  getLinkedGroups: async (transactionIds: number[]): Promise<Record<number, { groupId: number; groupName: string }>> => {
+  /** Batch: for a list of transactionIds, returns a map txId → { groupId, groupName, totalAmount }. */
+  getLinkedGroups: async (transactionIds: number[]): Promise<Record<number, { groupId: number; groupName: string; totalAmount: number }>> => {
     if (transactionIds.length === 0) return {}
     const { data, error } = await supabase
       .from('group_entries')
-      .select('transaction_id, group_id, groups!inner(name)')
+      .select('transaction_id, group_id, total_amount, groups!inner(name)')
       .in('transaction_id', transactionIds)
     if (error || !data) return {}
-    const result: Record<number, { groupId: number; groupName: string }> = {}
-    for (const row of (data as unknown as Array<{ transaction_id: number; group_id: number; groups: { name: string } }>)) {
+    const result: Record<number, { groupId: number; groupName: string; totalAmount: number }> = {}
+    for (const row of (data as unknown as Array<{ transaction_id: number; group_id: number; total_amount: number; groups: { name: string } }>)) {
       if (row.transaction_id != null) {
-        result[row.transaction_id] = { groupId: row.group_id, groupName: row.groups.name }
+        result[row.transaction_id] = { groupId: row.group_id, groupName: row.groups.name, totalAmount: row.total_amount }
       }
     }
     return result
@@ -414,6 +414,7 @@ export const groupsRepo = {
       date:        row.group_entries.date,
       category:    row.group_entries.category,
       myShare:     row.amount,
+      totalAmount: row.group_entries.total_amount,
       paidByName:  row.group_entries.payer?.name ?? '—',
       paidByMe:    memberIds.includes(row.group_entries.paid_by_member_id),
       _transactionId: row.group_entries.transaction_id,

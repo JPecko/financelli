@@ -179,6 +179,7 @@ export interface GroupExpenseItem {
   date:               string   // YYYY-MM-DD
   category:           string
   myShare:            number   // cents – user's split amount
+  totalAmount:        number   // cents – full expense amount
   paidByName:         string
   paidByMe:           boolean  // true when the current user paid the full amount
   paymentAccountId?:   number  // account id when paidByMe and a bank tx is linked

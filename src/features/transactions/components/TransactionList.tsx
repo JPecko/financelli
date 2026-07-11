@@ -15,7 +15,7 @@ interface Props {
   accountsById:    Record<number, Account>
   runningBalances: Record<number, number>
   txSeMap:         Record<number, SharedExpense>
-  txGroupMap:      Record<number, { groupId: number; groupName: string }>
+  txGroupMap:      Record<number, { groupId: number; groupName: string; totalAmount: number }>
   seGroupMap:      Record<number, { groupId: number; groupName: string }>
   currentUserId?:  string
   onEditTx:        (tx: Transaction) => void

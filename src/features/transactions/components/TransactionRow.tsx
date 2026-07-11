@@ -24,7 +24,7 @@ interface TransactionRowProps {
   onDelete: (id: number) => Promise<void>
   linkedSE?:    SharedExpense
   onReopenSE?:  (id: number) => Promise<void>
-  linkedGroup?: { groupId: number; groupName: string }
+  linkedGroup?: { groupId: number; groupName: string; totalAmount: number }
   currentUserId?: string
 }
 
@@ -37,9 +37,19 @@ function amountClassName(tx: Transaction): string {
   return tx.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'
 }
 
+function formatSignedAmount(amount: number): string {
+  return `${amount >= 0 ? '+' : ''}${formatMoney(amount)}`
+}
+
 function formatTxAmount(tx: Transaction): string {
   if (isInternalTransfer(tx)) return formatMoney(Math.abs(tx.amount))
-  return `${tx.amount >= 0 ? '+' : ''}${formatMoney(tx.amount)}`
+  return formatSignedAmount(tx.amount)
+}
+
+/** Group expenses show the full expense total as the main amount; myShare stays visible below it. */
+function groupDisplayAmount(tx: Transaction, linkedGroup?: { totalAmount: number }): number | null {
+  if (!linkedGroup) return null
+  return tx.amount < 0 ? -linkedGroup.totalAmount : linkedGroup.totalAmount
 }
 
 function accountLabel(tx: Transaction, accountsById: Record<number, Account>) {
@@ -67,7 +77,7 @@ function TransactionMetaBadges({
 }: {
   tx: Transaction
   personalBadge: { label: string; cls: string } | null
-  linkedGroup?: { groupId: number; groupName: string }
+  linkedGroup?: { groupId: number; groupName: string; totalAmount: number }
   linkedSE?: SharedExpense
   onEdit: (tx: Transaction) => void
   t: ReturnType<typeof useT>
@@ -119,7 +129,7 @@ function TransactionDescription({
 }: {
   tx: Transaction
   personalBadge: { label: string; cls: string } | null
-  linkedGroup?: { groupId: number; groupName: string }
+  linkedGroup?: { groupId: number; groupName: string; totalAmount: number }
   linkedSE?: SharedExpense
   onEdit: (tx: Transaction) => void
   t: ReturnType<typeof useT>
@@ -159,6 +169,7 @@ export default function TransactionRow({
     : null
   const transfer = isInternalTransfer(tx)
   const txBalance = tx.id != null ? runningBalances[tx.id] : undefined
+  const groupAmount = groupDisplayAmount(tx, linkedGroup)
   const amountColor = amountClassName(tx)
   const accountCell = accountLabel(tx, accountsById)
 
@@ -221,8 +232,13 @@ export default function TransactionRow({
 
       <div className="shrink-0 lg:text-right">
         <span className={`block text-sm font-semibold tabular-nums ${amountColor}`}>
-          {formatTxAmount(tx)}
+          {groupAmount != null ? formatSignedAmount(groupAmount) : formatTxAmount(tx)}
         </span>
+        {groupAmount != null && (
+          <div className="block text-xs text-muted-foreground/60 tabular-nums">
+            {formatSignedAmount(tx.amount)}
+          </div>
+        )}
         {txBalance != null && (
           <div className="block text-xs text-muted-foreground/60 tabular-nums">
             {formatMoney(txBalance)}

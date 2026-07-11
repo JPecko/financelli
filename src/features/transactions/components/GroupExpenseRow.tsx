@@ -89,11 +89,14 @@ export default function GroupExpenseRow({ item, accountsById }: Props) {
         </div>
       </div>
 
-      {/* Amount — user's share, shown as expense */}
+      {/* Amount — full expense total, user's share shown below */}
       <div className="shrink-0 lg:text-right">
         <span className="block text-sm font-semibold tabular-nums text-rose-600">
-          -{formatMoney(item.myShare)}
+          -{formatMoney(item.totalAmount)}
         </span>
+        <div className="block text-xs text-muted-foreground/60 tabular-nums">
+          -{formatMoney(item.myShare)}
+        </div>
       </div>
 
       {/* Navigate to group */}
