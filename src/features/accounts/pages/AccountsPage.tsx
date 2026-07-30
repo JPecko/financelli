@@ -180,6 +180,15 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
   )
 }
 
+function AccountSectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</p>
+      {action}
+    </div>
+  )
+}
+
 function SortableCard({ account, isManual, children }: SortableCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: account.id!,
@@ -340,9 +349,10 @@ export default function AccountsPage() {
   const orderForSort = isManualEditing ? effectiveDraftOrder : manualOrder
   const sorted = sortAccounts(accounts, sort, orderForSort, colorOrder)
 
-  const nonInvAccounts = sorted.filter(a => a.type !== 'investment')
-  const invAccounts    = sorted.filter(a => a.type === 'investment')
-  const sortedIds      = nonInvAccounts.map(a => a.id!)
+  const currentAccounts = sorted.filter(a => a.type !== 'investment' && a.type !== 'savings')
+  const savingsAccounts = sorted.filter(a => a.type === 'savings')
+  const invAccounts     = sorted.filter(a => a.type === 'investment')
+  const sortedIds       = currentAccounts.map(a => a.id!)
 
   const handleEdit = (account: Account) => {
     setEditing(account)
@@ -481,55 +491,83 @@ export default function AccountsPage() {
         />
       ) : (
         <div className="space-y-8">
-          {/* ── Regular accounts ──────────────────────────────────────────── */}
-          {nonInvAccounts.length > 0 && (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={sortedIds} strategy={rectSortingStrategy}>
-                <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-                  {nonInvAccounts.map(account => {
-                    const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
-                    return (
-                      <SortableCard key={account.id} account={account} isManual={isManualEditing}>
-                        <AccountCard
-                          account={account}
-                          bank={bank}
-                          isManualEditing={isManualEditing}
-                          user={user}
-                          t={t}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          onOpenInvestments={handleOpenInvestments}
-                          onShare={setSharing}
-                          onNavigate={() => {
-                            if (account.type === 'investment') {
-                              navigate('/investments', { state: { selectedAccountId: account.id } })
-                            } else {
+          {/* ── Current accounts ──────────────────────────────────────────── */}
+          {currentAccounts.length > 0 && (
+            <div>
+              <AccountSectionHeader title={t('accounts.sections.current')} />
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={sortedIds} strategy={rectSortingStrategy}>
+                  <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                    {currentAccounts.map(account => {
+                      const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
+                      return (
+                        <SortableCard key={account.id} account={account} isManual={isManualEditing}>
+                          <AccountCard
+                            account={account}
+                            bank={bank}
+                            isManualEditing={isManualEditing}
+                            user={user}
+                            t={t}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onOpenInvestments={handleOpenInvestments}
+                            onShare={setSharing}
+                            onNavigate={() => {
                               setFilterAccountId(account.id!); navigate('/transactions')
-                            }
-                          }}
-                        />
-                      </SortableCard>
-                    )
-                  })}
-                </div>
-              </SortableContext>
-            </DndContext>
+                            }}
+                          />
+                        </SortableCard>
+                      )
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          )}
+
+          {/* ── Savings accounts ──────────────────────────────────────────── */}
+          {savingsAccounts.length > 0 && (
+            <div>
+              <AccountSectionHeader title={t('accounts.sections.savings')} />
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                {savingsAccounts.map(account => {
+                  const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
+                  return (
+                    <AccountCard
+                      key={account.id}
+                      account={account}
+                      bank={bank}
+                      isManualEditing={false}
+                      user={user}
+                      t={t}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onOpenInvestments={handleOpenInvestments}
+                      onShare={setSharing}
+                      onNavigate={() => {
+                        setFilterAccountId(account.id!); navigate('/transactions')
+                      }}
+                    />
+                  )
+                })}
+              </div>
+            </div>
           )}
 
           {/* ── Investment accounts ───────────────────────────────────────── */}
           {invAccounts.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  {t('accounts.types.investment')}
-                </p>
-                <NavLink to="/investments">
-                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs">
-                    <ExternalLink className="h-3 w-3" />
-                    {t('investments.viewHoldings')}
-                  </Button>
-                </NavLink>
-              </div>
+              <AccountSectionHeader
+                title={t('accounts.sections.investment')}
+                action={
+                  <NavLink to="/investments">
+                    <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs">
+                      <ExternalLink className="h-3 w-3" />
+                      {t('investments.viewHoldings')}
+                    </Button>
+                  </NavLink>
+                }
+              />
               <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                 {invAccounts.map(account => {
                   const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined

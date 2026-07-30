@@ -216,6 +216,11 @@ export const en = {
     owner:         'owner',
     loading:       'Loading accounts...',
     deleteConfirm: 'Delete this account? All associated transactions will remain.',
+    sections: {
+      current:    'Current Accounts',
+      savings:    'Savings',
+      investment: 'Investments',
+    },
     types: {
       checking:   'Checking',
       savings:    'Savings',

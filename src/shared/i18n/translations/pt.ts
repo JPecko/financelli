@@ -383,6 +383,11 @@ export const pt: typeof en = {
     owner:          'proprietário',
     loading:        'A carregar contas...',
     deleteConfirm:  'Eliminar esta conta? Todos os movimentos associados serão mantidos.',
+    sections: {
+      current:    'Contas Correntes',
+      savings:    'Poupanças',
+      investment: 'Investimentos',
+    },
     types: {
       checking:   'Conta à Ordem',
       savings:    'Poupança',
