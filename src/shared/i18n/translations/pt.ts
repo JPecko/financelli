@@ -355,6 +355,21 @@ export const pt: typeof en = {
     investmentHistory:  'Histórico de Investimento',
     invested:           'Investido',
     portfolioValue:     'Valor da carteira',
+    exportReport:       'Exportar PDF',
+    report: {
+      title:               'Relatório Mensal',
+      subtitleCurrent:     '{{month}} · valores atuais (hoje)',
+      subtitlePast:        '{{month}}',
+      netWorthByType:      'Patrimônio Líquido por Tipo',
+      excludesInvestments: 'Exclui contas de investimento — mostradas em baixo, já que não é possível reconstruir o valor de um mês passado.',
+      investmentsSnapshot: 'Investimentos (valores atuais)',
+      investmentsNotePast: 'Reflete os dados de mercado de hoje, não de {{month}} — não há histórico de posições guardado.',
+      investmentsNoteNow:  'Reflete os dados de mercado atuais.',
+      vs:                  'vs',
+      pnl:                 'P&L',
+      marketValue:         'Valor de Mercado',
+      page:                'página',
+    },
   },
 
   accounts: {

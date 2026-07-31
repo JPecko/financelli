@@ -55,8 +55,17 @@ export default defineConfig({
       workbox: {
         // Cache all build output (js, css, html, images)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // pdf-export chunk is large and only needed when generating a report — don't block install precache on it
+        globIgnores: ['**/pdf-export-*.js'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
 
         runtimeCaching: [
+          // pdf-export chunk — cached on first use instead of at install time
+          {
+            urlPattern: /\/pdf-export-.*\.js$/i,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'pdf-export-chunk' },
+          },
           // Google Fonts — cache-first, 1 year TTL
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -100,6 +109,16 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'pdf-export': ['@react-pdf/renderer'],
+        },
+      },
     },
   },
 })

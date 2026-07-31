@@ -28,7 +28,9 @@
       "Bash(sort -u -t' ' -k1,1)",
       "Bash(awk -F'\",\"' '{if\\($8==\"IE00B5BMR087\"\\) print $2}')",
       "Bash(awk -F'\",\"' '{if\\($8==\"IE00BFMXXD54\"\\) print $2}')",
-      "Bash(awk -F'\",\"' '{print $7, \"|\", $8}')"
+      "Bash(awk -F'\",\"' '{print $7, \"|\", $8}')",
+      "Bash(npx vite *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

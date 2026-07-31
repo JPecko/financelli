@@ -366,7 +366,7 @@ export function useYearBenefits(year: number) {
 // ─── Running balance ─────────────────────────────────────────────────────────
 
 /** Fetches the total amount of transactions AFTER the given month for each account. */
-function useLaterSums(year: number, month: number) {
+export function useLaterSums(year: number, month: number) {
   const nextMonth = month === 12 ? 1 : month + 1
   const nextYear  = month === 12 ? year + 1 : year
   const afterDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
@@ -375,11 +375,15 @@ function useLaterSums(year: number, month: number) {
     queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
-        .select('account_id, amount')
+        .select('account_id, to_account_id, amount')
         .gte('date', afterDate)
       const map: Record<number, number> = {}
-      for (const row of (data ?? []) as { account_id: number; amount: number }[]) {
+      for (const row of (data ?? []) as { account_id: number; to_account_id: number | null; amount: number }[]) {
         map[row.account_id] = (map[row.account_id] ?? 0) + row.amount
+        // Transfers credit the destination account with the opposite effect
+        if (row.to_account_id != null) {
+          map[row.to_account_id] = (map[row.to_account_id] ?? 0) - row.amount
+        }
       }
       return map
     },

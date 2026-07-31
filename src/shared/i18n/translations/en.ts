@@ -188,6 +188,21 @@ export const en = {
     investmentHistory:  'Investment History',
     invested:           'Invested',
     portfolioValue:     'Portfolio value',
+    exportReport:       'Export PDF',
+    report: {
+      title:               'Monthly Report',
+      subtitleCurrent:     '{{month}} · values as of today',
+      subtitlePast:        '{{month}}',
+      netWorthByType:      'Net Worth by Type',
+      excludesInvestments: 'Excludes investment accounts — shown separately below since they can\'t be reconstructed for a past month.',
+      investmentsSnapshot: 'Investments (current snapshot)',
+      investmentsNotePast: 'Reflects today\'s market data, not {{month}} — no historical holdings snapshot is available.',
+      investmentsNoteNow:  'Reflects current market data.',
+      vs:                  'vs',
+      pnl:                 'P&L',
+      marketValue:         'Market Value',
+      page:                'page',
+    },
   },
 
   accounts: {

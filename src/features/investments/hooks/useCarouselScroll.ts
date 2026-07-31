@@ -33,16 +33,31 @@ export function useCarouselScroll({ count, selectedId, onSelect }: Options) {
     if (el) el.style.scrollSnapType = 'x mandatory'
   }, [])
 
-  // Recompute card width whenever viewport or card count changes
+  // Full-bleed breakout + card width, recomputed whenever the layout changes.
+  // Measured against the nearest scrolling ancestor (`<main>`) rather than `100vw`,
+  // because a `100vw` CSS breakout wrongly includes the desktop sidebar's width,
+  // pushing the carousel past the visible content area and causing horizontal scroll.
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    const scrollAncestor = el.closest('main') ?? document.documentElement
+
     const compute = () => {
-      const rem       = parseFloat(getComputedStyle(document.documentElement).fontSize)
-      const vw        = el.clientWidth
-      const edgePx    = Math.max((vw - MAX_WIDTH_REM * rem) / 2 + PADDING_REM * rem, PADDING_REM * rem)
+      const rem    = parseFloat(getComputedStyle(document.documentElement).fontSize)
+      const vw     = scrollAncestor.clientWidth
+      const edgePx = Math.max((vw - MAX_WIDTH_REM * rem) / 2 + PADDING_REM * rem, PADDING_REM * rem)
+
+      const parent = el.parentElement
+      if (parent) {
+        const insetLeft = parent.getBoundingClientRect().left - scrollAncestor.getBoundingClientRect().left
+        el.style.width        = `${vw}px`
+        el.style.marginLeft   = `${-insetLeft}px`
+        el.style.paddingLeft  = `${edgePx}px`
+        el.style.paddingRight = `${edgePx}px`
+      }
+
       const available = vw - 2 * edgePx
-      const totalMin  = count * CAROUSEL_MIN_WIDTH + (count - 1) * CAROUSEL_GAP
+      const totalMin   = count * CAROUSEL_MIN_WIDTH + (count - 1) * CAROUSEL_GAP
       setCardWidth(
         totalMin <= available
           ? Math.floor((available - (count - 1) * CAROUSEL_GAP) / count)
@@ -50,7 +65,7 @@ export function useCarouselScroll({ count, selectedId, onSelect }: Options) {
       )
     }
     const ro = new ResizeObserver(compute)
-    ro.observe(el)
+    ro.observe(scrollAncestor)
     compute()
     return () => ro.disconnect()
   }, [count])

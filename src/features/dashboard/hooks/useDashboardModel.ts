@@ -14,7 +14,7 @@ import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterSto
 import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
 import { useT } from '@/shared/i18n'
-import { computeInvestmentBalance } from '@/features/investments/utils/investmentMetrics'
+import { computeInvestmentBalance, computeEffectiveInvestedBase, computeMarketValue } from '@/features/investments/utils/investmentMetrics'
 import type { AccountType, Transaction } from '@/domain/types'
 
 const now   = new Date()
@@ -32,20 +32,20 @@ export type CategoryDataItem = {
   id: string; name: string; value: number; color: string
 }
 
-export function useDashboardModel() {
+export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number = DASHBOARD_MONTH) {
   const t        = useT()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { setFilterCategory, setFilterAccountId } = useTransactionsFilterStore()
 
   const netWorthFromHook                = useNetWorth()
-  const summary                         = useMonthSummary(DASHBOARD_YEAR, DASHBOARD_MONTH)
-  const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(DASHBOARD_YEAR, DASHBOARD_MONTH)
+  const summary                         = useMonthSummary(year, month)
+  const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(year, month)
   const { data: accounts     = [], isLoading: accLoading } = useSortedAccounts()
-  const { data: barData         = [] } = useMonthlyNetFlow(DASHBOARD_YEAR, DASHBOARD_MONTH)
-  const { data: benefitsData    = [] } = useMonthlyBenefits(DASHBOARD_YEAR, DASHBOARD_MONTH)
-  const { data: yearBenefits        } = useYearBenefits(DASHBOARD_YEAR)
-  const { data: sharedExpenses  = [] } = useSharedExpensesByMonth(DASHBOARD_YEAR, DASHBOARD_MONTH)
+  const { data: barData         = [] } = useMonthlyNetFlow(year, month)
+  const { data: benefitsData    = [] } = useMonthlyBenefits(year, month)
+  const { data: yearBenefits        } = useYearBenefits(year)
+  const { data: sharedExpenses  = [] } = useSharedExpensesByMonth(year, month)
   const { data: allHoldings     = [] } = useHoldings()
   const { data: allAssets       = [] } = useAssets()
 
@@ -148,6 +148,19 @@ export function useDashboardModel() {
 
   const categoryTotal = useMemo(() => categoryData.reduce((s, d) => s + d.value, 0), [categoryData])
 
+  const investmentSummary = useMemo(() => {
+    let totalInvested = 0
+    let totalMarketValue = 0
+    for (const account of investmentAccounts) {
+      if (account.id == null) continue
+      const holdings = allHoldings.filter(h => h.accountId === account.id)
+      const capTx = [{ accountId: account.id, amount: capitalAdjustments[account.id] ?? 0, category: 'capital' } as unknown as Transaction]
+      totalInvested    += computeEffectiveInvestedBase(account, capTx)
+      totalMarketValue += holdings.length > 0 ? computeMarketValue(holdings, allAssetMap) : effectiveBalances[account.id] ?? 0
+    }
+    return { totalInvested, totalMarketValue, totalPnl: totalMarketValue - totalInvested }
+  }, [investmentAccounts, allHoldings, allAssetMap, capitalAdjustments, effectiveBalances])
+
   const topExpenses = useMemo<TopExpenseItem[]>(() => [
     ...transactions
       .filter(tx => isCashFlow(tx) && tx.amount < 0 && personalDivisorFor(tx, user?.id, accounts) !== Infinity)
@@ -193,6 +206,7 @@ export function useDashboardModel() {
     hasBenefits,
     categoryData,
     categoryTotal,
+    investmentSummary,
     topExpenses,
     handleCategoryClick,
   }

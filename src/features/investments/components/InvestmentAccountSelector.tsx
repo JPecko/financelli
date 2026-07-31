@@ -8,9 +8,6 @@ import type { Account } from '@/domain/types'
 import type { AccountStats } from '../hooks/useInvestmentsPageModel'
 import { useCarouselScroll, CAROUSEL_GAP } from '../hooks/useCarouselScroll'
 
-// CSS max() for visual alignment with max-w-4xl p-6 content sections
-const EDGE_PADDING = 'max(calc((100vw - 56rem) / 2 + 1.5rem), 1.5rem)'
-
 interface Props {
   accounts:   Account[]
   statsMap:   Record<number, AccountStats>
@@ -31,10 +28,8 @@ export default function InvestmentAccountSelector({ accounts, statsMap, selected
         ref={containerRef}
         className="overflow-x-auto scrollbar-hide select-none"
         style={{
-          width:         '100vw',
-          marginLeft:    'calc(50% - 50vw)',
-          paddingLeft:   EDGE_PADDING,
-          paddingRight:  EDGE_PADDING,
+          // width/marginLeft/paddingLeft/paddingRight are set imperatively by useCarouselScroll,
+          // measured against the actual scroll container instead of a `100vw` CSS breakout
           paddingTop:    '0.375rem',
           paddingBottom: '0.375rem',
           display:       'flex',
