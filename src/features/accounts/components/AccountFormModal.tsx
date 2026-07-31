@@ -7,10 +7,12 @@ import { Label } from '@/shared/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import PlainSelect from '@/shared/components/PlainSelect'
 import { toCents, fromCents } from '@/domain/money'
-import { addAccount, updateAccount } from '@/shared/hooks/useAccounts'
+import { addAccount, updateAccount, useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { useT } from '@/shared/i18n'
 import { buildBankSelectOptions, buildAccountTypeSelectOptions } from './accountFormOptions'
+import { buildAccountSelectOption } from '@/features/transactions/components/accountSelectOptions'
 import type { Account, AccountType } from '@/domain/types'
+import type { PlainSelectOption } from '@/shared/components/PlainSelect'
 
 const COLORS = [
   '#6366f1', '#3b82f6', '#22c55e', '#f59e0b',
@@ -35,6 +37,7 @@ interface FormValues {
   color: string
   cashbackPct: string
   roundupMultiplier: string
+  roundupToAccountId: string
   investedBase: string
   entryFee: string
   broker: string
@@ -64,6 +67,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       color: COLORS[0],
       cashbackPct: '',
       roundupMultiplier: 'off',
+      roundupToAccountId: 'none',
       investedBase: '',
       entryFee: '',
       broker: 'none',
@@ -74,8 +78,17 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
   const selectedBankCode = watch('bankCode')
   const selectedType     = watch('type')
   const selectedRoundup  = watch('roundupMultiplier')
+  const selectedRoundupTo = watch('roundupToAccountId')
   const selectedBroker   = watch('broker')
   const isInvestmentType = selectedType === 'investment'
+
+  const { data: allAccounts = [] } = useSortedAccounts()
+  const roundupToOptions: PlainSelectOption[] = [
+    { value: 'none', label: t('accounts.form.roundupToExternal') },
+    ...allAccounts
+      .filter(a => a.id !== account?.id)
+      .map(buildAccountSelectOption),
+  ]
 
   const accountTypes: { value: AccountType; label: string }[] = [
     { value: 'checking',   label: t('accounts.types.checking') },
@@ -100,6 +113,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         color:             account.color,
         cashbackPct:       account.cashbackPct != null ? String(account.cashbackPct) : '',
         roundupMultiplier: account.roundupMultiplier != null ? String(account.roundupMultiplier) : 'off',
+        roundupToAccountId: account.roundupToAccountId != null ? String(account.roundupToAccountId) : 'none',
         investedBase:      account.investedBase != null ? fromCents(account.investedBase).toFixed(2) : '',
         entryFee:          account.entryFee != null ? fromCents(account.entryFee).toFixed(2) : '',
         broker:            account.broker ?? 'none',
@@ -114,6 +128,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
         color: COLORS[0],
         cashbackPct: '',
         roundupMultiplier: 'off',
+        roundupToAccountId: 'none',
         investedBase: '',
         entryFee: '',
         broker: 'none',
@@ -131,6 +146,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
       bankCode:          values.bankCode !== 'none' ? values.bankCode : null,
       cashbackPct:       values.cashbackPct ? parseDecimal(values.cashbackPct) : null,
       roundupMultiplier: values.roundupMultiplier && values.roundupMultiplier !== 'off' ? parseInt(values.roundupMultiplier) : null,
+      roundupToAccountId: values.roundupMultiplier !== 'off' && values.roundupToAccountId !== 'none' ? parseInt(values.roundupToAccountId) : null,
       investedBase:      values.type === 'investment' ? (values.investedBase ? toCents(parseDecimal(values.investedBase)) : null) : undefined,
       entryFee:          values.type === 'investment' ? (values.entryFee ? toCents(parseDecimal(values.entryFee)) : null) : undefined,
       broker:            values.type === 'investment' ? (values.broker !== 'none' ? values.broker : null) : undefined,
@@ -306,6 +322,18 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
               </Select>
             </div>
           </div>
+
+          {selectedRoundup !== 'off' && (
+            <div className="space-y-1">
+              <Label>{t('accounts.form.roundupTo')}</Label>
+              <PlainSelect
+                value={selectedRoundupTo}
+                onChange={v => setValue('roundupToAccountId', v)}
+                options={roundupToOptions}
+              />
+              <p className="text-xs text-muted-foreground">{t('accounts.form.roundupToDesc')}</p>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>

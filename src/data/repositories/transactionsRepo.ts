@@ -84,17 +84,18 @@ async function createAutoTransactions(
     const baseCents = remainder === 0 ? 100 : 100 - remainder  // gap to next euro (whole = 1€)
     if (baseCents > 0) {
       const roundupCents = baseCents * account.roundupMultiplier
-      await supabase.from('transactions').insert({
-        account_id:        tx.accountId,
-        to_account_id:     null,
-        amount:            -roundupCents,
-        type:              'expense',
-        category:          'roundup',
-        description:       `${tx.description} - Roundup ×${account.roundupMultiplier}`,
-        date:              tx.date,
-        recurring_rule_id: null,
-      })
-      await accountsRepo.adjustBalance(tx.accountId, -roundupCents)
+      // With a destination set, the roundup is a real transfer; otherwise it just stays as an expense in the source account
+      const roundupTx: Omit<Transaction, 'id' | 'createdAt'> = {
+        accountId:   tx.accountId,
+        toAccountId: account.roundupToAccountId ?? undefined,
+        amount:      -roundupCents,
+        type:        account.roundupToAccountId ? 'transfer' : 'expense',
+        category:    'roundup',
+        description: `${tx.description} - Roundup ×${account.roundupMultiplier}`,
+        date:        tx.date,
+      }
+      await supabase.from('transactions').insert(toRow(roundupTx))
+      await applyBalances(roundupTx)
     }
   }
 }
@@ -110,7 +111,7 @@ async function removeLinkedRoundup(tx: Transaction): Promise<void> {
     .limit(1)
   if (error || !data?.length) return
   const roundup = toTransaction(data[0] as TransactionRow)
-  await accountsRepo.adjustBalance(roundup.accountId, -roundup.amount)
+  await reverseBalances(roundup)
   await supabase.from('transactions').delete().eq('id', roundup.id!)
 }
 
@@ -228,7 +229,7 @@ export const transactionsRepo = {
 
     for (const row of (roundups as TransactionRow[]) ?? []) {
       const roundup = toTransaction(row)
-      await accountsRepo.adjustBalance(roundup.accountId, -roundup.amount)
+      await reverseBalances(roundup)
       await supabase.from('transactions').delete().eq('id', roundup.id!)
     }
 

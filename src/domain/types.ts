@@ -22,6 +22,7 @@ export interface Account {
   bankCode?: string | null        // e.g. 'revolut' — matches BANK_OPTIONS code
   cashbackPct?: number | null     // e.g. 1 = 1% cashback on expenses (null = disabled)
   roundupMultiplier?: number | null // e.g. 5 = ×5 roundup on expenses (null = disabled)
+  roundupToAccountId?: number | null // destination account for roundup transfers; null = roundup stays in the source account
   investedBase?: number | null    // total capital invested (deposits), in cents — investment accounts only
   entryFee?: number | null        // fixed fee per holding entry (purchase), in cents — investment accounts only
   broker?: string | null          // e.g. 'xtb', 'degiro', 'traderepublic' — investment accounts only

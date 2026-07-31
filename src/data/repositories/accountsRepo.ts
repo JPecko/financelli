@@ -14,6 +14,7 @@ type AccountRow = {
   bank_code: string | null
   cashback_pct: number | null
   roundup_multiplier: number | null
+  roundup_to_account_id: number | null
   invested_base: number | null
   entry_fee: number | null
   broker: string | null
@@ -34,6 +35,7 @@ function toAccount(row: AccountRow): Account {
     bankCode:          row.bank_code ?? undefined,
     cashbackPct:       row.cashback_pct ?? undefined,
     roundupMultiplier: row.roundup_multiplier ?? undefined,
+    roundupToAccountId: row.roundup_to_account_id ?? undefined,
     investedBase:      row.invested_base ?? undefined,
     entryFee:          row.entry_fee ?? undefined,
     broker:            row.broker ?? undefined,
@@ -119,6 +121,7 @@ export const accountsRepo = {
         bank_code:          account.bankCode ?? null,
         cashback_pct:       account.cashbackPct ?? null,
         roundup_multiplier: account.roundupMultiplier ?? null,
+        roundup_to_account_id: account.roundupToAccountId ?? null,
         invested_base:      account.investedBase ?? null,
         entry_fee:          account.entryFee ?? null,
         broker:             account.broker ?? null,
@@ -139,6 +142,7 @@ export const accountsRepo = {
     if (changes.bankCode          !== undefined) row.bank_code          = changes.bankCode ?? null
     if (changes.cashbackPct       !== undefined) row.cashback_pct       = changes.cashbackPct ?? null
     if (changes.roundupMultiplier !== undefined) row.roundup_multiplier = changes.roundupMultiplier ?? null
+    if (changes.roundupToAccountId !== undefined) row.roundup_to_account_id = changes.roundupToAccountId ?? null
     if (changes.investedBase      !== undefined) row.invested_base      = changes.investedBase ?? null
     if (changes.entryFee          !== undefined) row.entry_fee          = changes.entryFee ?? null
     if (changes.broker            !== undefined) row.broker             = changes.broker ?? null
