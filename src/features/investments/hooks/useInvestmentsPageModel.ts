@@ -8,13 +8,14 @@ import { usePriceSync } from '@/shared/hooks/usePriceSync'
 import { syncAssets } from '@/data/services/syncService'
 import { useAssetPriceEditor } from './useAssetPriceEditor'
 import { useAuth } from '@/features/auth/AuthContext'
-import { computeMarketValue } from '../utils/investmentMetrics'
+import { computeMarketValue, computeAccountBalance } from '../utils/investmentMetrics'
 import type { Asset, Holding, Account } from '@/domain/types'
 
 export type AccountStats = {
-  marketValue: number
-  pnl:         number
-  pnlPct:      number
+  marketValue:      number
+  pnl:              number
+  pnlPct:           number
+  portfolioBalance: number
 }
 
 export function useInvestmentsPageModel() {
@@ -81,7 +82,8 @@ export function useInvestmentsPageModel() {
     const adjCost      = costBasis + (account.entryFee ?? 0) * acctHoldings.length
     const pnl          = marketValue - adjCost
     const pnlPct       = adjCost > 0 ? (pnl / adjCost) * 100 : 0
-    accountStatsMap[account.id] = { marketValue, pnl, pnlPct }
+    const portfolioBalance = computeAccountBalance(account, acctHoldings, assetMap)
+    accountStatsMap[account.id] = { marketValue, pnl, pnlPct, portfolioBalance }
   }
 
   // Selected account totals

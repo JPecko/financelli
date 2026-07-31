@@ -35,6 +35,7 @@ export function sortAccounts(
   sort: SortKey,
   manualOrder: number[],
   colorOrder: string[],
+  balanceOf: (account: Account) => number = a => a.balance,
 ): Account[] {
   if (sort === 'manual' && manualOrder.length > 0) {
     const idx = Object.fromEntries(manualOrder.map((id, i) => [id, i]))
@@ -49,7 +50,7 @@ export function sortAccounts(
       return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
     })
   }
-  if (sort === 'balance') return [...accounts].sort((a, b) => b.balance - a.balance)
+  if (sort === 'balance') return [...accounts].sort((a, b) => balanceOf(b) - balanceOf(a))
   return accounts
 }
 

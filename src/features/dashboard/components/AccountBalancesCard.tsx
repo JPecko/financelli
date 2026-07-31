@@ -14,15 +14,42 @@ interface Props {
 export default function AccountBalancesCard({ accounts, effectiveBalances }: Props) {
   const t = useT()
 
+  const currentAccounts    = accounts.filter(a => a.type !== 'investment' && a.type !== 'savings')
+  const savingsAccounts    = accounts.filter(a => a.type === 'savings')
+  const investmentAccounts = accounts.filter(a => a.type === 'investment')
+
   return (
     <Card className="sm:col-span-2 xl:col-span-1">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.accountBalances')}</CardTitle>
       </CardHeader>
-      <CardContent className="divide-y divide-border">
+      <CardContent className="space-y-4">
         {accounts.length === 0 ? (
           <p className="py-2 text-sm text-muted-foreground">{t('dashboard.noAccounts')}</p>
-        ) : accounts.map(account => {
+        ) : (
+          <>
+            {currentAccounts.length > 0 && (
+              <AccountGroup title={t('accounts.sections.current')} accounts={currentAccounts} effectiveBalances={effectiveBalances} />
+            )}
+            {savingsAccounts.length > 0 && (
+              <AccountGroup title={t('accounts.sections.savings')} accounts={savingsAccounts} effectiveBalances={effectiveBalances} />
+            )}
+            {investmentAccounts.length > 0 && (
+              <AccountGroup title={t('accounts.sections.investment')} accounts={investmentAccounts} effectiveBalances={effectiveBalances} />
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function AccountGroup({ title, accounts, effectiveBalances }: Props & { title: string }) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-medium text-muted-foreground">{title}</p>
+      <div className="divide-y divide-border">
+        {accounts.map(account => {
           const meta    = ACCOUNT_TYPE_META[account.type]
           const Icon    = meta.icon
           const bank    = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
@@ -50,7 +77,7 @@ export default function AccountBalancesCard({ accounts, effectiveBalances }: Pro
             />
           )
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

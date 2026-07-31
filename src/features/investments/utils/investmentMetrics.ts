@@ -28,16 +28,8 @@ export function computeMarketValue(holdings: Holding[], assetMap: Record<number,
   ), 0)
 }
 
-export function computeInvestmentBalance(
-  account: Account,
-  holdings: Holding[],
-  assetMap: Record<number, Asset>,
-  transactions: Transaction[],
-) {
-  const effectiveInvestedBase = computeEffectiveInvestedBase(account, transactions)
-  if (holdings.length === 0) return effectiveInvestedBase || account.balance
-
-  const marketValue = computeMarketValue(holdings, assetMap)
-  const adjustedCostBasis = computeAdjustedCostBasis(account, holdings)
-  return effectiveInvestedBase + (marketValue - adjustedCostBasis)
+/** Investment account "balance" — always the live market value of what's held; falls back to the stored balance when there are no holdings to price. */
+export function computeAccountBalance(account: Account, holdings: Holding[], assetMap: Record<number, Asset>) {
+  if (holdings.length === 0) return account.balance
+  return computeMarketValue(holdings, assetMap)
 }

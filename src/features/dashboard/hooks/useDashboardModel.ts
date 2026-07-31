@@ -14,7 +14,7 @@ import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterSto
 import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
 import { useT } from '@/shared/i18n'
-import { computeInvestmentBalance, computeEffectiveInvestedBase, computeMarketValue } from '@/features/investments/utils/investmentMetrics'
+import { computeAccountBalance, computeEffectiveInvestedBase, computeMarketValue } from '@/features/investments/utils/investmentMetrics'
 import type { AccountType, Transaction } from '@/domain/types'
 
 const now   = new Date()
@@ -66,12 +66,11 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
         result[account.id] = account.balance
       } else {
         const holdings = allHoldings.filter(h => h.accountId === account.id)
-        const capTx = [{ accountId: account.id, amount: capitalAdjustments[account.id] ?? 0, category: 'capital' } as unknown as Transaction]
-        result[account.id] = computeInvestmentBalance(account, holdings, allAssetMap, capTx)
+        result[account.id] = computeAccountBalance(account, holdings, allAssetMap)
       }
     }
     return result
-  }, [accounts, allHoldings, allAssetMap, capitalAdjustments])
+  }, [accounts, allHoldings, allAssetMap])
 
   const netWorthByType = useMemo(() => {
     const map: Partial<Record<AccountType, number>> = {}

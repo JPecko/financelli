@@ -3,7 +3,7 @@ import { useAccounts } from '@/shared/hooks/useAccounts'
 import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
 import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
-import { computeMarketValue } from '@/features/investments/utils/investmentMetrics'
+import { computeMarketValue, computeAccountBalance } from '@/features/investments/utils/investmentMetrics'
 import type { AccountStats } from '@/features/investments/hooks/useInvestmentsPageModel'
 
 export function useDashboardInvestmentsSection() {
@@ -36,7 +36,8 @@ export function useDashboardInvestmentsSection() {
       const adjCost      = costBasis + (account.entryFee ?? 0) * acctHoldings.length
       const pnl          = marketValue - adjCost
       const pnlPct       = adjCost > 0 ? (pnl / adjCost) * 100 : 0
-      map[account.id]    = { marketValue, pnl, pnlPct }
+      const portfolioBalance = computeAccountBalance(account, acctHoldings, assetMap)
+      map[account.id]    = { marketValue, pnl, pnlPct, portfolioBalance }
     }
     return map
   }, [investmentAccounts, holdings, assetMap])

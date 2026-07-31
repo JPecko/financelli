@@ -4,8 +4,8 @@ import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
-import { computeInvestmentBalance, computeMarketValue } from '../utils/investmentMetrics'
-import type { Account, Asset, Holding, Transaction } from '@/domain/types'
+import { computeAccountBalance, computeMarketValue } from '../utils/investmentMetrics'
+import type { Account, Asset, Holding } from '@/domain/types'
 
 // ── Local class constants ─────────────────────────────────────────────────────
 
@@ -304,15 +304,12 @@ export default function InvestmentAccountCard({
 }: Props) {
   const t = useT()
 
-  const capitalTxs       = capitalAmount !== 0
-    ? [{ accountId: account.id, amount: capitalAmount, category: 'capital' } as unknown as Transaction]
-    : []
   const totalMarketValue = computeMarketValue(accountHoldings, assetMap)
   const totalCostBasis   = accountHoldings.reduce((sum, h) => sum + h.quantity * h.avgCost, 0)
   const adjCostBasis     = totalCostBasis + (account.entryFee ?? 0) * accountHoldings.length
   const totalPnL         = totalMarketValue - adjCostBasis
   const pnlPct           = adjCostBasis > 0 ? (totalPnL / adjCostBasis) * 100 : 0
-  const portfolioBalance = computeInvestmentBalance(account, accountHoldings, assetMap, capitalTxs)
+  const portfolioBalance = computeAccountBalance(account, accountHoldings, assetMap)
   const bank             = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
 
   const stats: HeaderStats = {

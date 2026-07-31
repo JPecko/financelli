@@ -45,7 +45,7 @@ export default function InvestmentAccountSelector({ accounts, statsMap, selected
           <AccountSelectorCard
             key={account.id}
             account={account}
-            stats={statsMap[account.id!] ?? { marketValue: 0, pnl: 0, pnlPct: 0 }}
+            stats={statsMap[account.id!] ?? { marketValue: 0, pnl: 0, pnlPct: 0, portfolioBalance: 0 }}
             selected={account.id === selectedId}
             width={cardWidth}
             cardRef={el => {
@@ -133,7 +133,7 @@ function AccountSelectorCard({ account, stats, selected, width, cardRef, onClick
       <div className="h-px bg-white/15 mb-3" />
 
       <p className="text-lg font-bold tabular-nums text-white leading-none">
-        {formatMoney(stats.marketValue, account.currency)}
+        {formatMoney(stats.portfolioBalance, account.currency)}
       </p>
 
       <div className={cn('flex items-center gap-1.5 mt-1.5', isPos ? 'text-emerald-300' : 'text-rose-300')}>

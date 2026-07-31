@@ -37,7 +37,7 @@ import AccountFormModal from '../components/AccountFormModal'
 import RevalueModal from '../components/RevalueModal'
 import ShareAccountModal from '../components/ShareAccountModal'
 import { usePriceSync } from '@/shared/hooks/usePriceSync'
-import { computeEffectiveInvestedBase, computeInvestmentBalance } from '@/features/investments/utils/investmentMetrics'
+import { computeEffectiveInvestedBase, computeAccountBalance } from '@/features/investments/utils/investmentMetrics'
 import type { Account } from '@/domain/types'
 import { useT } from '@/shared/i18n'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -342,12 +342,12 @@ export default function AccountsPage() {
   const effectiveBalance = (account: Account) => {
     if (account.type !== 'investment') return account.balance
     const accountHoldings = holdings.filter(holding => holding.accountId === account.id)
-    return computeInvestmentBalance(account, accountHoldings, assetMap, capitalTransactionsByAccount[account.id!] ?? [])
+    return computeAccountBalance(account, accountHoldings, assetMap)
   }
 
   const totalBalance = accounts.reduce((sum, account) => sum + effectiveBalance(account), 0)
   const orderForSort = isManualEditing ? effectiveDraftOrder : manualOrder
-  const sorted = sortAccounts(accounts, sort, orderForSort, colorOrder)
+  const sorted = sortAccounts(accounts, sort, orderForSort, colorOrder, effectiveBalance)
 
   const currentAccounts = sorted.filter(a => a.type !== 'investment' && a.type !== 'savings')
   const savingsAccounts = sorted.filter(a => a.type === 'savings')
