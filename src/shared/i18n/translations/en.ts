@@ -18,6 +18,7 @@ export const en = {
     salary:        'Salary',
     freelance:     'Freelance',
     investment:    'Investment Return',
+    reimbursement: 'Reimbursement',
     'invest-move': 'Investment Move',
     capital:       'Capital Movement',
     transfer:      'Transfer',

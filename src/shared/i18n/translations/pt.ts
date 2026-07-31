@@ -20,6 +20,7 @@ export const pt: typeof en = {
     salary:        'Salário',
     freelance:     'Freelance',
     investment:    'Lucro',
+    reimbursement: 'Reembolso',
     'invest-move': 'Mov. de Investimento',
     capital:       'Mov. de Capital',
     transfer:      'Transferência',

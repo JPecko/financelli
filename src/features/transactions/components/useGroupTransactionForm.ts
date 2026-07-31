@@ -13,9 +13,8 @@ import type { Transaction, GroupMember, GroupEntry, GroupEntrySplit, SharedExpen
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-export const GROUP_EXPENSE_CATS = EXPENSE_CATEGORIES.filter(
-  c => c.id !== 'roundup' && c.id !== 'cashback' && c.id !== 'investing',
-)
+// Same category list as a personal expense — group and personal expenses should offer identical options
+export const GROUP_EXPENSE_CATS = EXPENSE_CATEGORIES
 
 // Normalises European comma decimal separator before parsing
 const parseMoney = (v: string) => parseFloat(String(v).replace(',', '.')) || 0
