@@ -1,5 +1,6 @@
 import { useGroupTransactionForm } from './useGroupTransactionForm'
 import GroupTransactionForm from './GroupTransactionForm'
+import type { SharedFormOverride } from './useTransactionForm'
 import type { Account, SharedExpense, Transaction } from '@/domain/types'
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
   accounts: Account[]
   groups: { id: number; name: string }[]
   currentUserId?: string
+  initialOverride?: SharedFormOverride
+  onValuesChange?: (values: SharedFormOverride) => void
 }
 
 export default function GroupTransactionTab({
@@ -20,8 +23,12 @@ export default function GroupTransactionTab({
   accounts,
   groups,
   currentUserId,
+  initialOverride,
+  onValuesChange,
 }: Props) {
-  const grpHook = useGroupTransactionForm({ open, onClose, transaction, sharedExpense, accounts })
+  const grpHook = useGroupTransactionForm({
+    open, onClose, transaction, sharedExpense, accounts, groups, initialOverride, onValuesChange,
+  })
 
   return (
     <GroupTransactionForm

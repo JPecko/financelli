@@ -172,21 +172,8 @@ export default function GroupTransactionForm({
             </div>
           )}
 
-          {/* Description + Date */}
+          {/* Total + Date — same order/position as the personal expense form's Amount + Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="grp-desc">{t('transactions.colDescription')}</Label>
-              <Input id="grp-desc" placeholder="Jantar, táxi..." {...register('description')} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="grp-date">{t('transactions.colDate')}</Label>
-              <DateInput id="grp-date" value={watch('date') ?? ''} onChange={v => setValue('date', v)} />
-            </div>
-          </div>
-
-          {/* Category + Total */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <CategorySelect categories={GROUP_EXPENSE_CATS} value={category} onChange={v => setValue('category', v)} />
             <div className="space-y-1.5">
               <Label htmlFor="grp-total">{t('groups.totalAmount')}</Label>
               <AmountInput
@@ -199,6 +186,17 @@ export default function GroupTransactionForm({
                 className={errors.totalAmount ? 'border-destructive' : ''}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="grp-date">{t('transactions.colDate')}</Label>
+              <DateInput id="grp-date" value={watch('date') ?? ''} onChange={v => setValue('date', v)} />
+            </div>
+          </div>
+
+          <CategorySelect categories={GROUP_EXPENSE_CATS} value={category} onChange={v => setValue('category', v)} />
+
+          <div className="space-y-1.5">
+            <Label htmlFor="grp-desc">{t('transactions.colDescription')}</Label>
+            <Input id="grp-desc" placeholder="Jantar, táxi..." {...register('description')} />
           </div>
 
           {/* Split mode */}

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo } from 'react'
+import { useEffect, useLayoutEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES } from '@/domain/categories'
@@ -9,6 +9,13 @@ import { isoToday } from '@/shared/utils/format'
 import type { Transaction, TransactionType } from '@/domain/types'
 
 export const EXTERNAL = '__external__'
+
+// Fields carried over when switching between the Personal and Group tabs of the same modal
+export interface SharedFormOverride {
+  description?: string
+  amount?:      string
+  date?:        string
+}
 
 export interface TransactionFormValues {
   type:           TransactionType
@@ -57,15 +64,16 @@ function buildPayload(v: TransactionFormValues): Omit<Transaction, 'id' | 'creat
 
 function makeDefaults(
   type: TransactionType, firstId: string, secondId: string, splitN: number, isShared: boolean,
+  override?: SharedFormOverride,
 ): TransactionFormValues {
   return {
     type,
     fromId:         type === 'income'   ? EXTERNAL : firstId,
     toId:           type === 'income'   ? firstId  : type === 'transfer' ? secondId : EXTERNAL,
-    amount:         '',
+    amount:         override?.amount ?? '',
     category:       type === 'transfer' ? 'transfer' : 'other',
-    description:    '',
-    date:           isoToday(),
+    description:    override?.description ?? '',
+    date:           override?.date ?? isoToday(),
     isShared:       type !== 'income' && isShared,
     splitN,
     isReimbursable: false,
@@ -113,8 +121,9 @@ function makeResetValues(
   splitN: number,
   isShared: boolean,
   participants?: number,
+  override?: SharedFormOverride,
 ): TransactionFormValues {
-  const defaults = makeDefaults(targetType, firstId, secondId, splitN, isShared)
+  const defaults = makeDefaults(targetType, firstId, secondId, splitN, isShared, override)
   if (!transaction) return defaults
 
   const editValues = makeEditValues(transaction, participants)
@@ -179,10 +188,13 @@ interface UseTransactionFormProps {
   defaultType?:      TransactionType
   defaultAccountId?: string
   onAfterSubmit?:    (id?: number) => Promise<void>
+  initialOverride?:  SharedFormOverride
+  onValuesChange?:   (values: SharedFormOverride) => void
 }
 
 export function useTransactionForm({
   open, onClose, transaction, defaultType = 'expense', defaultAccountId, onAfterSubmit,
+  initialOverride, onValuesChange,
 }: UseTransactionFormProps) {
   const { user } = useAuth()
   const { data: accounts = [] } = useSortedAccounts()
@@ -205,12 +217,14 @@ export function useTransactionForm({
       splitNDef,
       isSharedDef,
       editParticipants,
+      initialOverride,
     ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [transaction, editParticipants, defaultType, firstId, secondId, splitNDef, isSharedDef],
   )
 
   const form = useForm<TransactionFormValues>({
-    defaultValues: makeDefaults(defaultType, firstId, secondId, splitNDef, isSharedDef),
+    defaultValues: makeDefaults(defaultType, firstId, secondId, splitNDef, isSharedDef, initialOverride),
   })
   const { setValue, watch, reset, handleSubmit } = form
 
@@ -267,6 +281,17 @@ export function useTransactionForm({
     if (!open) return
     reset(resetValues)
   }, [open, reset, resetValues])
+
+  // Report description/amount/date to the parent modal so switching to the Group tab can carry them over
+  useEffect(() => {
+    if (!onValuesChange) return
+    const sub = watch(values => onValuesChange({
+      description: values.description ?? '',
+      amount:      values.amount ?? '',
+      date:        values.date ?? '',
+    }))
+    return () => sub.unsubscribe()
+  }, [watch, onValuesChange])
 
   const onSubmit = handleSubmit(async (values) => {
     const payload = buildPayload(values)

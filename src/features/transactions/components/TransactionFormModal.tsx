@@ -9,6 +9,7 @@ import TransactionTypeTabs from './TransactionTypeTabs'
 import StandardTransactionTab from './StandardTransactionTab'
 import GroupTransactionTab from './GroupTransactionTab'
 import { useLinkedGroupEntry } from './useLinkedGroupEntry'
+import type { SharedFormOverride } from './useTransactionForm'
 import type { SharedExpense, Transaction, TransactionType } from '@/domain/types'
 
 type ViewType = TransactionType | 'groups'
@@ -48,6 +49,8 @@ export default function TransactionFormModal({
   const isEditTx = transaction != null || sharedExpense != null
 
   const [viewType, setViewType] = useState<ViewType>('expense')
+  // Carries description/amount/date between the Personal and Group tabs while creating a new entry
+  const [carryOver, setCarryOver] = useState<SharedFormOverride>({})
   const linkedGroup = useLinkedGroupEntry({
     open,
     transactionId: transaction?.id,
@@ -57,6 +60,7 @@ export default function TransactionFormModal({
   useLayoutEffect(() => {
     if (!open) return
     setViewType(resolveInitialViewType({ transaction, sharedExpense, defaultType }))
+    setCarryOver({})
   }, [open, transaction, sharedExpense, defaultType])
 
   useLayoutEffect(() => {
@@ -99,6 +103,8 @@ export default function TransactionFormModal({
             accounts={accounts}
             groups={groups}
             currentUserId={user?.id}
+            initialOverride={isEditTx ? undefined : carryOver}
+            onValuesChange={isEditTx ? undefined : setCarryOver}
           />
         ) : (
           <StandardTransactionTab
@@ -110,6 +116,8 @@ export default function TransactionFormModal({
             defaultAccountId={defaultAccountId}
             isEditTx={isEditTx}
             currentUserId={user?.id}
+            initialOverride={isEditTx ? undefined : carryOver}
+            onValuesChange={isEditTx ? undefined : setCarryOver}
           />
         )}
       </DialogContent>

@@ -8,6 +8,7 @@ import { toCents, fromCents } from '@/domain/money'
 import { isoToday } from '@/shared/utils/format'
 import { EXPENSE_CATEGORIES } from '@/domain/categories'
 import { useT } from '@/shared/i18n'
+import type { SharedFormOverride } from './useTransactionForm'
 import type { Transaction, GroupMember, GroupEntry, GroupEntrySplit, SharedExpense, Account } from '@/domain/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -39,16 +40,18 @@ function makeSharedExpenseDefaults(sharedExpense: SharedExpense, fallbackAccount
   }
 }
 
-function makeTransactionDefaults(transaction: Transaction | undefined, fallbackAccountId: string): GrpFormValues {
+function makeTransactionDefaults(
+  transaction: Transaction | undefined, fallbackAccountId: string, override?: SharedFormOverride,
+): GrpFormValues {
   return {
     groupId: '',
     payerType: 'me',
     payerMemberId: '',
     accountId: transaction ? String(transaction.accountId) : fallbackAccountId,
-    description: transaction?.description ?? '',
-    date: transaction?.date ?? isoToday(),
+    description: transaction?.description ?? override?.description ?? '',
+    date: transaction?.date ?? override?.date ?? isoToday(),
     category: transaction?.category ?? 'food',
-    totalAmount: transaction ? fromCents(Math.abs(transaction.amount)).toFixed(2) : '',
+    totalAmount: transaction ? fromCents(Math.abs(transaction.amount)).toFixed(2) : (override?.amount ?? ''),
   }
 }
 
@@ -71,16 +74,21 @@ export interface GrpSplitRow {
 }
 
 interface Props {
-  open:           boolean
-  onClose:        () => void
-  transaction?:   Transaction
-  sharedExpense?: SharedExpense
-  accounts:       Account[]
+  open:             boolean
+  onClose:          () => void
+  transaction?:     Transaction
+  sharedExpense?:   SharedExpense
+  accounts:         Account[]
+  groups:           { id: number; name: string }[]
+  initialOverride?: SharedFormOverride
+  onValuesChange?:  (values: SharedFormOverride) => void
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-export function useGroupTransactionForm({ open, onClose, transaction, sharedExpense, accounts }: Props) {
+export function useGroupTransactionForm({
+  open, onClose, transaction, sharedExpense, accounts, groups, initialOverride, onValuesChange,
+}: Props) {
   const t        = useT()
   const { user } = useAuth()
   const fallbackAccountId = accounts[0]?.id ? String(accounts[0].id) : ''
@@ -160,7 +168,7 @@ export function useGroupTransactionForm({ open, onClose, transaction, sharedExpe
     if (sharedExpense) {
       reset(makeSharedExpenseDefaults(sharedExpense, fallbackAccountId))
     } else {
-      reset(makeTransactionDefaults(transaction, fallbackAccountId))
+      reset(makeTransactionDefaults(transaction, fallbackAccountId, initialOverride))
     }
     setMembers([])
     setSplits([])
@@ -169,7 +177,24 @@ export function useGroupTransactionForm({ open, onClose, transaction, sharedExpe
     setSplitError('')
     // Default to creating a real bank transaction when the user is the payer
     setCreateTx(!sharedExpense && !transaction)
-  }, [open, reset, transaction, sharedExpense, fallbackAccountId])
+  }, [open, reset, transaction, sharedExpense, fallbackAccountId, initialOverride])
+
+  // Report description/totalAmount/date to the parent modal so switching to the Personal tab can carry them over
+  useEffect(() => {
+    if (!onValuesChange) return
+    const sub = watch(values => onValuesChange({
+      description: values.description ?? '',
+      amount:      values.totalAmount ?? '',
+      date:        values.date ?? '',
+    }))
+    return () => sub.unsubscribe()
+  }, [watch, onValuesChange])
+
+  // ── Auto-select the only group when there's just one ─────────────────────
+  useEffect(() => {
+    if (!open || groups.length !== 1 || groupId !== '') return
+    setValue('groupId', String(groups[0].id))
+  }, [open, groups, groupId, setValue])
 
   // ── Load members when group changes ───────────────────────────────────────
   useEffect(() => {

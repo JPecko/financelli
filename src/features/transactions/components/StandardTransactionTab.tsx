@@ -1,6 +1,6 @@
 import { useHoldingsByAccount } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
-import { useTransactionForm } from './useTransactionForm'
+import { useTransactionForm, type SharedFormOverride } from './useTransactionForm'
 import StandardTransactionForm from './StandardTransactionForm'
 import type { Transaction, TransactionType } from '@/domain/types'
 
@@ -12,6 +12,8 @@ interface Props {
   defaultAccountId?: string
   isEditTx: boolean
   currentUserId?: string
+  initialOverride?: SharedFormOverride
+  onValuesChange?: (values: SharedFormOverride) => void
 }
 
 export default function StandardTransactionTab({
@@ -22,6 +24,8 @@ export default function StandardTransactionTab({
   defaultAccountId,
   isEditTx,
   currentUserId,
+  initialOverride,
+  onValuesChange,
 }: Props) {
   const txHook = useTransactionForm({
     open,
@@ -29,6 +33,8 @@ export default function StandardTransactionTab({
     transaction,
     defaultType,
     defaultAccountId,
+    initialOverride,
+    onValuesChange,
   })
 
   const { selectedAccount, isTransfer } = txHook
