@@ -253,6 +253,14 @@ When implementing PWA-related features:
 
 Whenever a UI decision works well on desktop but poorly on mobile, prioritize mobile.
 
+### Full-bleed layouts
+
+`Layout.tsx` scrolls internally on `<main>`, not on `<body>` — the app never uses document-level scroll, and a persistent desktop sidebar (`w-60`, `lg:flex`) takes real width out of the flex row. Because of this, the classic full-bleed CSS trick (`width: 100vw` + `margin-left: calc(50% - 50vw)`) is wrong here: `100vw` includes the sidebar's width and causes desktop-only horizontal scroll. For any full-bleed element, measure the actual scroll container (`el.closest('main')`) via `ResizeObserver`/`getBoundingClientRect()` and set width/margin in px imperatively instead of relying on `vw` units.
+
+### Heavy dependencies and the PWA precache budget
+
+`vite-plugin-pwa`'s `generateSW` precaches the whole build output at install time, capped by `workbox.maximumFileSizeToCacheInBytes` (default 2MB). Before adding a dependency that's large or used by only one feature (e.g. a PDF/export library), isolate it into its own chunk via `build.rollupOptions.output.manualChunks` and load it with a dynamic `import()` at the point of use, then add it to `workbox.globIgnores` (with a matching `runtimeCaching` entry so it still gets cached after first use) so the app-shell install doesn't have to download it upfront.
+
 ### Responsive dashboard and investment chart conventions
 
 For dashboard investment widgets and investment growth/forecast sections:

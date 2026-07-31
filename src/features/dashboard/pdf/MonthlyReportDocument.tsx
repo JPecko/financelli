@@ -108,7 +108,7 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone?:
 }
 
 function DeltaLabel({ delta, comparisonLabel, vsLabel }: { delta: number; comparisonLabel: string; vsLabel: string }) {
-  const tone = delta === 0 ? undefined : delta > 0 ? s.positive : s.negative
+  const tone = delta === 0 ? {} : delta > 0 ? s.positive : s.negative
   return (
     <Text style={[s.rowSublabel, tone]}>
       {delta >= 0 ? '+' : ''}{formatMoney(delta)} {vsLabel} {comparisonLabel}
