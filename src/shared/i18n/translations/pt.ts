@@ -82,11 +82,13 @@ export const pt: typeof en = {
   },
 
   sidebar: {
-    themeLight: 'Modo claro',
-    themeDark:  'Modo escuro',
-    language:   'Idioma',
-    settings:   'Definições',
-    signOut:    'Sair',
+    themeLight:   'Modo claro',
+    themeDark:    'Modo escuro',
+    language:     'Idioma',
+    settings:     'Definições',
+    signOut:      'Sair',
+    hideBalances: 'Ocultar saldos',
+    showBalances: 'Mostrar saldos',
   },
 
   groups: {

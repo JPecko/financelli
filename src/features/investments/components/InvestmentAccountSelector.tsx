@@ -3,6 +3,7 @@ import { formatMoney } from '@/domain/money'
 import { accountGradient } from '@/shared/utils/accountGradient'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import BankLogo from '@/shared/components/BankLogo'
+import BalanceValue from '@/shared/components/BalanceValue'
 import { cn } from '@/lib/utils'
 import type { Account } from '@/domain/types'
 import type { AccountStats } from '../hooks/useInvestmentsPageModel'
@@ -132,17 +133,21 @@ function AccountSelectorCard({ account, stats, selected, width, cardRef, onClick
 
       <div className="h-px bg-white/15 mb-3" />
 
-      <p className="text-lg font-bold tabular-nums text-white leading-none">
-        {formatMoney(stats.portfolioBalance, account.currency)}
-      </p>
+      <BalanceValue>
+        <p className="text-lg font-bold tabular-nums text-white leading-none">
+          {formatMoney(stats.portfolioBalance, account.currency)}
+        </p>
+      </BalanceValue>
 
-      <div className={cn('flex items-center gap-1.5 mt-1.5', isPos ? 'text-emerald-300' : 'text-rose-300')}>
-        <span className="text-xs tabular-nums font-medium">{sign}{stats.pnlPct.toFixed(1)}%</span>
-        <span className="text-xs text-white/40">·</span>
-        <span className="text-xs tabular-nums text-white/60">
-          {sign}{formatMoney(Math.abs(stats.pnl), account.currency)}
-        </span>
-      </div>
+      <BalanceValue>
+        <div className={cn('flex items-center gap-1.5 mt-1.5', isPos ? 'text-emerald-300' : 'text-rose-300')}>
+          <span className="text-xs tabular-nums font-medium">{sign}{stats.pnlPct.toFixed(1)}%</span>
+          <span className="text-xs text-white/40">·</span>
+          <span className="text-xs tabular-nums text-white/60">
+            {sign}{formatMoney(Math.abs(stats.pnl), account.currency)}
+          </span>
+        </div>
+      </BalanceValue>
     </button>
   )
 }

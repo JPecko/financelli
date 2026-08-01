@@ -80,11 +80,13 @@ export const en = {
   },
 
   sidebar: {
-    themeLight: 'Light mode',
-    themeDark:  'Dark mode',
-    language:   'Language',
-    settings:   'Settings',
-    signOut:    'Sign Out',
+    themeLight:    'Light mode',
+    themeDark:     'Dark mode',
+    language:      'Language',
+    settings:      'Settings',
+    signOut:       'Sign Out',
+    hideBalances:  'Hide balances',
+    showBalances:  'Show balances',
   },
 
   settings: {

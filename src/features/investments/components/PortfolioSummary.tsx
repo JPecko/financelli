@@ -2,6 +2,7 @@ import { TrendingDown, TrendingUp } from 'lucide-react'
 import { formatMoney } from '@/domain/money'
 import { accountGradient } from '@/shared/utils/accountGradient'
 import { useT } from '@/shared/i18n'
+import BalanceValue from '@/shared/components/BalanceValue'
 
 interface Props {
   title:              string
@@ -42,35 +43,37 @@ export default function PortfolioSummary({
       style={accentColor ? { background: accountGradient(accentColor), borderColor: 'transparent' } : undefined}
     >
       <p className={`mb-3 text-sm font-semibold uppercase tracking-wide ${titleCls}`}>{title}</p>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {totalInvestedBase > 0 && (
+      <BalanceValue>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {totalInvestedBase > 0 && (
+            <div>
+              <p className={`text-xs ${labelCls}`}>{t('investments.investedBase')}</p>
+              <p className={`text-lg font-bold tabular-nums ${valueCls}`}>{formatMoney(totalInvestedBase)}</p>
+            </div>
+          )}
           <div>
-            <p className={`text-xs ${labelCls}`}>{t('investments.investedBase')}</p>
-            <p className={`text-lg font-bold tabular-nums ${valueCls}`}>{formatMoney(totalInvestedBase)}</p>
+            <p className={`text-xs ${labelCls}`}>{t('investments.costBasis')}</p>
+            <p className={`text-lg font-bold tabular-nums ${valueCls}`}>{formatMoney(totalAdjustedCost)}</p>
+            {totalFees > 0 && <p className={`text-xs ${labelCls}`}>incl. {formatMoney(totalFees)} fees</p>}
           </div>
-        )}
-        <div>
-          <p className={`text-xs ${labelCls}`}>{t('investments.costBasis')}</p>
-          <p className={`text-lg font-bold tabular-nums ${valueCls}`}>{formatMoney(totalAdjustedCost)}</p>
-          {totalFees > 0 && <p className={`text-xs ${labelCls}`}>incl. {formatMoney(totalFees)} fees</p>}
-        </div>
-        <div>
-          <p className={`text-xs ${labelCls}`}>{t('investments.marketValue')}</p>
-          <p className={`text-lg font-bold tabular-nums ${valueCls}`}>{formatMoney(totalMarketValue)}</p>
-        </div>
-        <div>
-          <p className={`text-xs ${labelCls}`}>{t('investments.pnl')}</p>
-          <div className={`text-lg font-bold tabular-nums ${pnlCls}`}>
-            <p className="flex items-center gap-1">
-              {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-              {isPositive ? '+' : ''}{formatMoney(totalPnL)}
-            </p>
-            <p className="text-sm sm:mt-0">
-              {isPositive ? '+' : ''}{totalPnLPct.toFixed(1)}%
-            </p>
+          <div>
+            <p className={`text-xs ${labelCls}`}>{t('investments.marketValue')}</p>
+            <p className={`text-lg font-bold tabular-nums ${valueCls}`}>{formatMoney(totalMarketValue)}</p>
+          </div>
+          <div>
+            <p className={`text-xs ${labelCls}`}>{t('investments.pnl')}</p>
+            <div className={`text-lg font-bold tabular-nums ${pnlCls}`}>
+              <p className="flex items-center gap-1">
+                {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                {isPositive ? '+' : ''}{formatMoney(totalPnL)}
+              </p>
+              <p className="text-sm sm:mt-0">
+                {isPositive ? '+' : ''}{totalPnLPct.toFixed(1)}%
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </BalanceValue>
     </section>
   )
 }

@@ -31,6 +31,7 @@ import BankLogo from '@/shared/components/BankLogo'
 import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
+import BalanceValue from '@/shared/components/BalanceValue'
 import PageLoader from '@/shared/components/PageLoader'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '../components/AccountFormModal'
@@ -168,9 +169,11 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
               )}
             </div>
             <div className="text-right shrink-0">
-              <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
-                {formatMoney(account.balance, account.currency)}
-              </p>
+              <BalanceValue>
+                <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
+                  {formatMoney(account.balance, account.currency)}
+                </p>
+              </BalanceValue>
               <p className="text-[11px] text-white/60">{account.currency}</p>
             </div>
           </div>
@@ -387,7 +390,7 @@ export default function AccountsPage() {
         <div>
           <h1 className="text-2xl font-bold">{t('accounts.title')}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {t('accounts.totalBalance')}: <span className="font-semibold text-foreground">{formatMoney(totalBalance)}</span>
+            {t('accounts.totalBalance')}: <BalanceValue className="inline"><span className="font-semibold text-foreground">{formatMoney(totalBalance)}</span></BalanceValue>
           </p>
         </div>
         <div className="flex flex-col-reverse sm:flex-row items-end sm:items-center gap-2">
@@ -696,19 +699,23 @@ export default function AccountsPage() {
                               {/* Financial summary */}
                               {effectiveInvestedBase > 0 && (
                                 <p className="text-xs text-white/70">
-                                  {t('investments.investedBase')}: <span className="font-medium text-white">{formatMoney(effectiveInvestedBase, account.currency)}</span>
+                                  {t('investments.investedBase')}: <BalanceValue className="inline"><span className="font-medium text-white">{formatMoney(effectiveInvestedBase, account.currency)}</span></BalanceValue>
                                 </p>
                               )}
                               {pnl != null && (
-                                <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                                  {t('investments.pnl')}: {pnl >= 0 ? '+' : ''}{formatMoney(pnl, account.currency)}
-                                </p>
+                                <BalanceValue>
+                                  <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                    {t('investments.pnl')}: {pnl >= 0 ? '+' : ''}{formatMoney(pnl, account.currency)}
+                                  </p>
+                                </BalanceValue>
                               )}
                             </div>
                             <div className="text-right shrink-0">
-                              <p className={`text-lg font-bold tabular-nums ${balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
-                                {formatMoney(balance, account.currency)}
-                              </p>
+                              <BalanceValue>
+                                <p className={`text-lg font-bold tabular-nums ${balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
+                                  {formatMoney(balance, account.currency)}
+                                </p>
+                              </BalanceValue>
                               <p className="text-[11px] text-white/60">{account.currency}</p>
                             </div>
                           </div>

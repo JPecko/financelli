@@ -1,7 +1,8 @@
 import { useNavigate, NavLink } from 'react-router-dom'
-import { Sun, Moon, LogOut, Settings } from 'lucide-react'
+import { Sun, Moon, LogOut, Settings, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/shared/store/themeStore'
+import { usePrivacyStore } from '@/shared/store/privacyStore'
 import LanguageSelect from '@/shared/components/LanguageSelect'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
@@ -16,6 +17,7 @@ import { getUserInitials } from '@/shared/utils/userInitials'
 
 export default function Sidebar() {
   const { theme, toggle } = useThemeStore()
+  const { hideBalances, toggle: togglePrivacy } = usePrivacyStore()
   const { user } = useAuth()
   const navigate = useNavigate()
   const t = useT()
@@ -68,6 +70,13 @@ export default function Sidebar() {
             aria-label={t(theme === 'dark' ? 'sidebar.themeLight' : 'sidebar.themeDark')}
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={togglePrivacy}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+            aria-label={t(hideBalances ? 'sidebar.showBalances' : 'sidebar.hideBalances')}
+          >
+            {hideBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
           <LanguageSelect dropUp />
         </div>

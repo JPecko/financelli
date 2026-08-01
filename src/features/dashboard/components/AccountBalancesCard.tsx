@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import BankLogo from '@/shared/components/BankLogo'
+import BalanceValue from '@/shared/components/BalanceValue'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { BANK_OPTIONS } from '@/shared/config/banks'
@@ -70,9 +71,11 @@ function AccountGroup({ title, accounts, effectiveBalances }: Props & { title: s
               )}
               label={account.name}
               value={
-                <span className={`text-sm font-medium tabular-nums ${balance < 0 ? 'text-rose-600' : ''}`}>
-                  {formatMoney(balance)}
-                </span>
+                <BalanceValue>
+                  <span className={`text-sm font-medium tabular-nums ${balance < 0 ? 'text-rose-600' : ''}`}>
+                    {formatMoney(balance)}
+                  </span>
+                </BalanceValue>
               }
             />
           )

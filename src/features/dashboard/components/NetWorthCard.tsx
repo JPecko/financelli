@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { ACCOUNT_TYPE_META } from '../utils/dashboardHelpers'
+import BalanceValue from '@/shared/components/BalanceValue'
 import type { AccountType } from '@/domain/types'
 
 interface Props {
@@ -23,7 +24,7 @@ export default function NetWorthCard({ netWorthTotal, netWorthByType, positiveTo
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold mb-3">{formatMoney(netWorthTotal)}</div>
+        <BalanceValue><div className="text-2xl font-bold mb-3">{formatMoney(netWorthTotal)}</div></BalanceValue>
         {netWorthByType.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('dashboard.noAccounts')}</p>
         ) : (
@@ -41,9 +42,11 @@ export default function NetWorthCard({ netWorthTotal, netWorthByType, positiveTo
                       <span className="text-muted-foreground">{t(('accounts.types.' + type) as Parameters<typeof t>[0])}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className={`font-medium ${balance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}>
-                        {formatMoney(balance)}
-                      </span>
+                      <BalanceValue>
+                        <span className={`font-medium ${balance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}>
+                          {formatMoney(balance)}
+                        </span>
+                      </BalanceValue>
                       {pct != null && <span className="text-muted-foreground w-7 text-right">{pct}%</span>}
                     </div>
                   </div>

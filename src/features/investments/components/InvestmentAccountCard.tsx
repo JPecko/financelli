@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Pencil, Plus, Settings2, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import BankLogo from '@/shared/components/BankLogo'
+import BalanceValue from '@/shared/components/BalanceValue'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
@@ -92,13 +93,15 @@ function AccountHeader({ account, bank, isOpen, hideToggle, stats, onToggle, onE
         )}
         <StatCol label={t('investments.marketValue')} value={formatMoney(stats.totalMarketValue, account.currency)} />
         {stats.hasHoldings && (
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">{t('investments.pnl')}</p>
-            <p className={`font-semibold tabular-nums ${pnlCls(stats.totalPnL)}`}>
-              {sign(stats.totalPnL)}{formatMoney(stats.totalPnL, account.currency)}
-              <span className="text-xs ml-1">({sign(stats.pnlPct)}{stats.pnlPct.toFixed(1)}%)</span>
-            </p>
-          </div>
+          <BalanceValue>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">{t('investments.pnl')}</p>
+              <p className={`font-semibold tabular-nums ${pnlCls(stats.totalPnL)}`}>
+                {sign(stats.totalPnL)}{formatMoney(stats.totalPnL, account.currency)}
+                <span className="text-xs ml-1">({sign(stats.pnlPct)}{stats.pnlPct.toFixed(1)}%)</span>
+              </p>
+            </div>
+          </BalanceValue>
         )}
       </div>
 
@@ -117,7 +120,9 @@ function StatCol({ label, value, bold }: { label: string; value: string; bold?: 
   return (
     <div className="text-right">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`tabular-nums ${bold ? 'font-semibold' : 'font-medium'}`}>{value}</p>
+      <BalanceValue>
+        <p className={`tabular-nums ${bold ? 'font-semibold' : 'font-medium'}`}>{value}</p>
+      </BalanceValue>
     </div>
   )
 }
@@ -128,31 +133,33 @@ function MobileStats({ account, stats }: { account: Account; stats: HeaderStats 
   const t = useT()
   return (
     <div className="border-t bg-muted/10 px-5 py-3 lg:hidden">
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className={cx.statCard}>
-          <p className={cx.statLabel}>{t('dashboard.portfolioValue')}</p>
-          <p className="font-semibold tabular-nums">{formatMoney(stats.portfolioBalance, account.currency)}</p>
-        </div>
-        <div className={cx.statCard}>
-          <p className={cx.statLabel}>{t('investments.marketValue')}</p>
-          <p className="font-medium tabular-nums">{formatMoney(stats.totalMarketValue, account.currency)}</p>
-        </div>
-        <div className={cx.statCard}>
-          <p className={cx.statLabel}>{t('investments.investedBase')}</p>
-          <p className="font-medium tabular-nums">{formatMoney(stats.investedBase, account.currency)}</p>
-        </div>
-        <div className={cx.statCard}>
-          <p className={cx.statLabel}>{t('investments.pnl')}</p>
-          <p className={`font-semibold tabular-nums ${pnlCls(stats.totalPnL)}`}>
-            {sign(stats.totalPnL)}{formatMoney(stats.totalPnL, account.currency)}
-          </p>
-          {stats.hasHoldings && (
-            <p className={`text-[11px] ${pnlCls(stats.totalPnL)}`}>
-              {sign(stats.pnlPct)}{stats.pnlPct.toFixed(1)}%
+      <BalanceValue>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className={cx.statCard}>
+            <p className={cx.statLabel}>{t('dashboard.portfolioValue')}</p>
+            <p className="font-semibold tabular-nums">{formatMoney(stats.portfolioBalance, account.currency)}</p>
+          </div>
+          <div className={cx.statCard}>
+            <p className={cx.statLabel}>{t('investments.marketValue')}</p>
+            <p className="font-medium tabular-nums">{formatMoney(stats.totalMarketValue, account.currency)}</p>
+          </div>
+          <div className={cx.statCard}>
+            <p className={cx.statLabel}>{t('investments.investedBase')}</p>
+            <p className="font-medium tabular-nums">{formatMoney(stats.investedBase, account.currency)}</p>
+          </div>
+          <div className={cx.statCard}>
+            <p className={cx.statLabel}>{t('investments.pnl')}</p>
+            <p className={`font-semibold tabular-nums ${pnlCls(stats.totalPnL)}`}>
+              {sign(stats.totalPnL)}{formatMoney(stats.totalPnL, account.currency)}
             </p>
-          )}
+            {stats.hasHoldings && (
+              <p className={`text-[11px] ${pnlCls(stats.totalPnL)}`}>
+                {sign(stats.pnlPct)}{stats.pnlPct.toFixed(1)}%
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      </BalanceValue>
     </div>
   )
 }

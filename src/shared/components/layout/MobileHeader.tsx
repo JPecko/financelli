@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import { Sun, Moon, LogOut, Settings } from 'lucide-react'
+import { Sun, Moon, LogOut, Settings, Eye, EyeOff } from 'lucide-react'
 import { useThemeStore } from '@/shared/store/themeStore'
+import { usePrivacyStore } from '@/shared/store/privacyStore'
 import LanguageSelect from '@/shared/components/LanguageSelect'
 import { useAuth } from '@/features/auth/AuthContext'
 import { supabase } from '@/data/supabase'
@@ -14,6 +15,7 @@ import { getUserInitials } from '@/shared/utils/userInitials'
 
 export default function MobileHeader() {
   const { theme, toggle } = useThemeStore()
+  const { hideBalances, toggle: togglePrivacy } = usePrivacyStore()
   const { user } = useAuth()
   const t = useT()
   const initials = getUserInitials(user)
@@ -24,6 +26,13 @@ export default function MobileHeader() {
 
       <div className="relative flex items-center gap-2">
         <LanguageSelect />
+        <button
+          onClick={togglePrivacy}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent transition-colors"
+          aria-label={t(hideBalances ? 'sidebar.showBalances' : 'sidebar.hideBalances')}
+        >
+          {hideBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </button>
         <NavLink
           to="/settings"
           className={({ isActive }) =>
