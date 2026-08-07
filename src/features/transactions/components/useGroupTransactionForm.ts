@@ -176,7 +176,9 @@ export function useGroupTransactionForm({
     setSplitError('')
     // Default to creating a real bank transaction when the user is the payer
     setCreateTx(!sharedExpense && !transaction)
-  }, [open, reset, transaction, sharedExpense, fallbackAccountId, initialOverride])
+    // initialOverride excluded: it's rebuilt every keystroke and would loop the reset forever
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, reset, transaction, sharedExpense, fallbackAccountId])
 
   // Report description/totalAmount/date to the parent modal so switching to the Personal tab can carry them over
   useEffect(() => {
