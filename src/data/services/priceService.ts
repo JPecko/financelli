@@ -13,9 +13,9 @@ const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-prices`
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 /**
- * Fetches current prices via the Supabase Edge Function (Stooq backend).
- * Returns a map of UPPERCASE ticker → price in cents, plus tickers Stooq couldn't resolve.
- * Ticker format: SXR8.DE (Xetra), VUAA.DE, AAPL (US stocks, ".US" inferred server-side).
+ * Fetches current prices via the Supabase Edge Function (Twelve Data backend).
+ * Returns a map of UPPERCASE ticker → price in cents, plus tickers that couldn't be resolved.
+ * Ticker format: SXR8.DE (Xetra), VUAA.DE, AAPL (US stocks) — exchange suffix mapped server-side.
  */
 export async function fetchPricesCents(tickers: string[]): Promise<PriceSyncResult> {
   if (tickers.length === 0) return { prices: {}, failed: [] }

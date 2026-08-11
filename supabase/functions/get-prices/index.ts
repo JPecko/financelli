@@ -3,28 +3,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fetches close price from Stooq for one exact symbol. Ticker format: sxr8.de, vuaa.de, aapl.us
-async function fetchStooqQuote(symbol: string): Promise<number | null> {
-  const url = `https://stooq.com/q/l/?s=${encodeURIComponent(symbol.toLowerCase())}&f=sd2t2ohlcv&h&e=csv`
-  const res = await fetch(url)
+const TD_API_KEY = Deno.env.get('TWELVE_DATA_API_KEY')
+
+// Twelve Data's free tier only covers US exchanges — European tickers go through Yahoo instead.
+const EU_SUFFIXES = new Set(['DE', 'PA', 'AS', 'MI', 'L', 'SW'])
+const isEuTicker = (ticker: string) => EU_SUFFIXES.has(ticker.toUpperCase().split('.')[1] ?? '')
+
+// Unofficial, no key required. Ticker format: SXR8.DE, VUAA.DE (exact Yahoo symbol).
+async function fetchYahooPrice(ticker: string): Promise<number | null> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
   if (!res.ok) return null
-  const text = await res.text()
-  const lines = text.trim().split('\n')
-  // A real Stooq CSV always starts with this header; anything else is an error/blocked page
-  if (lines.length < 2 || !lines[0].startsWith('Symbol,Date,Time')) return null
-  // CSV columns: Symbol, Date, Time, Open, High, Low, Close, Volume
-  const cols = lines[1].split(',')
-  if (cols[6] === 'N/D') return null
-  const close = parseFloat(cols[6])
-  return isNaN(close) ? null : close
+  const data = await res.json()
+  const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice
+  return typeof price === 'number' ? price : null
 }
 
-// Stooq requires an exchange suffix (.us, .de, ...). Bare tickers (e.g. "AAPL") default to US stocks.
-async function fetchStooqPrice(ticker: string): Promise<number | null> {
-  const direct = await fetchStooqQuote(ticker)
-  if (direct !== null) return direct
-  if (ticker.includes('.')) return null
-  return fetchStooqQuote(`${ticker}.us`)
+type TdEntry = { price?: string; status?: string }
+
+// US tickers only. Batches all symbols in one request; throws on a request-level failure (bad key, rate limit).
+async function fetchTwelveDataPrices(tickers: string[]): Promise<{ prices: Record<string, number>; failed: string[] }> {
+  if (tickers.length === 0) return { prices: {}, failed: [] }
+  if (!TD_API_KEY) throw new Error('TWELVE_DATA_API_KEY is not configured')
+
+  const symbols = tickers.map(t => t.toUpperCase().split('.')[0]) // strip ".US" if present
+  const url = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbols.join(','))}&apikey=${TD_API_KEY}`
+  const res = await fetch(url)
+  const data = await res.json()
+
+  if (data.status === 'error') throw new Error(data.message ?? 'Twelve Data request failed')
+
+  // A single-symbol request returns the entry directly instead of { [symbol]: entry }
+  const entries: Record<string, TdEntry> = symbols.length === 1 ? { [symbols[0]]: data } : data
+
+  const prices: Record<string, number> = {}
+  const failed: string[] = []
+  tickers.forEach((ticker, i) => {
+    const entry = entries[symbols[i]]
+    const price = entry?.status === 'error' ? NaN : parseFloat(entry?.price ?? '')
+    if (isNaN(price)) failed.push(ticker.toUpperCase())
+    else prices[ticker.toUpperCase()] = price
+  })
+  return { prices, failed }
 }
 
 Deno.serve(async (req) => {
@@ -42,12 +62,21 @@ Deno.serve(async (req) => {
       })
     }
 
-    const tickers = symbolsParam.split(',').map(s => s.trim())
-    const entries = await Promise.all(
-      tickers.map(async (t) => [t.toUpperCase(), await fetchStooqPrice(t)] as const)
-    )
-    const prices = Object.fromEntries(entries.filter(([, p]) => p !== null))
-    const failed = entries.filter(([, p]) => p === null).map(([t]) => t)
+    const tickers = symbolsParam.split(',').map(s => s.trim()).filter(Boolean)
+    const euTickers = tickers.filter(isEuTicker)
+    const usTickers = tickers.filter(t => !isEuTicker(t))
+
+    const [usResult, euEntries] = await Promise.all([
+      fetchTwelveDataPrices(usTickers),
+      Promise.all(euTickers.map(async t => [t.toUpperCase(), await fetchYahooPrice(t)] as const)),
+    ])
+
+    const prices: Record<string, number> = { ...usResult.prices }
+    const failed: string[] = [...usResult.failed]
+    for (const [ticker, price] of euEntries) {
+      if (price === null) failed.push(ticker)
+      else prices[ticker] = price
+    }
 
     return new Response(JSON.stringify({ prices, failed }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

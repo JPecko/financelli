@@ -31,7 +31,16 @@
       "Bash(awk -F'\",\"' '{print $7, \"|\", $8}')",
       "Bash(npx vite *)",
       "Bash(npx eslint *)",
-      "Bash(supabase --version)"
+      "Bash(supabase --version)",
+      "Bash(curl -s \"https://stooq.com/q/l/?s=aapl.us&f=sd2t2ohlcv&h&e=csv\")",
+      "Bash(curl -sI \"https://stooq.com/q/l/?s=aapl.us&f=sd2t2ohlcv&h&e=csv\")",
+      "Bash(curl -s \"https://stooq.pl/q/l/?s=aapl.us&f=sd2t2ohlcv&h&e=csv\")",
+      "Bash(curl -s \"https://stooq.com/q/l/?s=aapl.us&f=sd2t2ohlcv&e=csv\")",
+      "Bash(curl -s \"https://stooq.com/q/d/l/?s=aapl.us&i=d\")",
+      "Bash(curl -sI \"https://stooq.com/q/d/l/?s=aapl.us&i=d\")",
+      "Bash(curl -s \"https://stooq.com/db/l/?s=aapl.us\")",
+      "Bash(curl -s \"https://api.twelvedata.com/symbol_search?symbol=SXR8\")",
+      "Bash(curl -s \"https://api.twelvedata.com/symbol_search?symbol=VUAA\")"
     ]
   }
 }
