@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { formatISO } from 'date-fns'
-import { recurringRepo, advanceDueDate } from '@/data/repositories/recurringRepo'
+import { recurringRepo } from '@/data/repositories/recurringRepo'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { groupsRepo } from '@/data/repositories/groupsRepo'
 import { addGroupEntry } from '@/shared/hooks/useGroups'
@@ -119,7 +119,7 @@ export async function applyRule(rule: RecurringRule, date?: string): Promise<voi
     })
   }
 
-  await recurringRepo.advance(rule.id!, rule.frequency, rule.nextDue)
+  await recurringRepo.advance(rule.id!, rule, rule.anchorDate ?? rule.nextDue)
   queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all() })
   queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all() })
   queryClient.invalidateQueries({ queryKey: queryKeys.rules.all() })
@@ -136,6 +136,7 @@ export async function autoApplyDueRules(): Promise<void> {
 
   for (const rule of due) {
     let currentDue = rule.nextDue
+    let currentAnchor = rule.anchorDate ?? rule.nextDue
     while (currentDue <= today) {
       if (rule.groupId != null) {
         await applyGroupRule(rule, currentDue)
@@ -153,8 +154,9 @@ export async function autoApplyDueRules(): Promise<void> {
           splitN:          rule.splitN ?? null,
         })
       }
-      await recurringRepo.advance(rule.id!, rule.frequency, currentDue)
-      currentDue = advanceDueDate(currentDue, rule.frequency)
+      const { anchorDate, nextDue } = await recurringRepo.advance(rule.id!, rule, currentAnchor)
+      currentAnchor = anchorDate
+      currentDue = nextDue
     }
   }
 

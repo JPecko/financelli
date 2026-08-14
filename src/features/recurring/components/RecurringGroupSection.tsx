@@ -106,7 +106,7 @@ export default function RecurringGroupSection({
                     value={accountId}
                     onChange={onAccountChange}
                     options={buildGroupedAccountSelectOptions(accounts, t)}
-                    placeholder="Select account..."
+                    placeholder={t('recurring.selectAccount')}
                   />
                 </div>
               )}

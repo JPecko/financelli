@@ -8,10 +8,12 @@ import { Label } from '@/shared/components/ui/label'
 import PlainSelect from '@/shared/components/PlainSelect'
 import DateInput from '@/shared/components/DateInput'
 import RecurringGroupSection from './RecurringGroupSection'
+import RecurringDateRuleSection from './RecurringDateRuleSection'
 import { useRecurringGroupSplit } from '../hooks/useRecurringGroupSplit'
 import { toCents, fromCents } from '@/domain/money'
 import { GROUP_EXPENSE_CATS } from '@/features/transactions/components/useGroupTransactionForm'
 import { tCategory } from '@/domain/categories'
+import { resolveInitialOccurrence, type DateRuleMode } from '@/domain/recurringDate'
 import { useGroups } from '@/shared/hooks/useGroups'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { useAuth } from '@/features/auth/AuthContext'
@@ -19,24 +21,28 @@ import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
 import type { RecurringRule, RecurringFrequency } from '@/domain/types'
 import { useT } from '@/shared/i18n'
 
-const FREQ_OPTIONS = [
-  { value: 'weekly',  label: 'Weekly'  },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly',  label: 'Yearly'  },
-]
+function freqOptions(t: ReturnType<typeof useT>) {
+  return [
+    { value: 'weekly',  label: t('recurring.frequencies.weekly') },
+    { value: 'monthly', label: t('recurring.frequencies.monthly') },
+    { value: 'yearly',  label: t('recurring.frequencies.yearly') },
+  ]
+}
 
 interface FormValues {
-  name:          string
-  groupId:       string
-  payerType:     'me' | 'member'
-  payerMemberId: string
-  accountId:     string
-  amount:        string
-  category:      string
-  description:   string
-  frequency:     RecurringFrequency
-  startDate:     string
-  createTx:      boolean
+  name:                string
+  groupId:             string
+  payerType:           'me' | 'member'
+  payerMemberId:       string
+  accountId:           string
+  amount:              string
+  category:            string
+  description:         string
+  frequency:           RecurringFrequency
+  startDate:           string
+  dateRule:            DateRuleMode
+  adjustToBusinessDay: boolean
+  createTx:            boolean
 }
 
 interface Props {
@@ -57,7 +63,8 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
     defaultValues: {
       name: '', groupId: '', payerType: 'me', payerMemberId: '', accountId: '', amount: '',
       category: 'food', description: '', frequency: 'monthly',
-      startDate: format(new Date(), 'yyyy-MM-dd'), createTx: true,
+      startDate: format(new Date(), 'yyyy-MM-dd'), dateRule: 'exact', adjustToBusinessDay: false,
+      createTx: true,
     },
   })
 
@@ -68,13 +75,15 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
   const accountId     = watch('accountId')
   const createTx      = watch('createTx')
   const selectedFreq  = watch('frequency')
+  const dateRule      = watch('dateRule')
+  const adjustToBusinessDay = watch('adjustToBusinessDay')
   const selectedCategory = watch('category')
 
   // Registered (not spread onto an input) purely so setValue(..., { shouldValidate: true })
   // below can validate the amount — it's rendered inside RecurringGroupSection as a controlled input.
   register('amount', {
-    required: 'Required',
-    validate: v => parseFloat(String(v).replace(',', '.')) >= 0.01 || 'Must be > 0',
+    required: t('recurring.amountRequired'),
+    validate: v => parseFloat(String(v).replace(',', '.')) >= 0.01 || t('recurring.amountMustBePositive'),
   })
 
   const categoryOptions = GROUP_EXPENSE_CATS.map(c => ({
@@ -102,7 +111,11 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
         category:      rule.category,
         description:   rule.description,
         frequency:     rule.frequency,
-        startDate:     rule.startDate,
+        // Default to the *next* occurrence, not the original start — saving unchanged must not
+        // reset nextDue back to the original date and re-trigger every past occurrence.
+        startDate:     rule.nextDue,
+        dateRule:      rule.dateRule ?? 'exact',
+        adjustToBusinessDay: rule.adjustToBusinessDay ?? false,
         createTx:      rule.createTx ?? true,
       })
     } else if (open) {
@@ -110,7 +123,8 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
         name: '', groupId: '', payerType: 'me', payerMemberId: '',
         accountId: accounts[0]?.id != null ? String(accounts[0].id) : '', amount: '',
         category: 'food', description: '', frequency: 'monthly',
-        startDate: format(new Date(), 'yyyy-MM-dd'), createTx: true,
+        startDate: format(new Date(), 'yyyy-MM-dd'), dateRule: 'exact', adjustToBusinessDay: false,
+        createTx: true,
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,9 +136,15 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
     setValue('groupId', String(groups[0].id))
   }, [open, groups, groupId, setValue])
 
+  const handleFrequencyChange = (v: RecurringFrequency) => {
+    setValue('frequency', v)
+    if (v === 'weekly') setValue('dateRule', 'exact')
+  }
+
   const onSubmit = async (values: FormValues) => {
     if (!values.groupId) return
     const amount = -toCents(parseFloat(values.amount.replace(',', '.')) || 0)
+    const { anchorDate, nextDue } = resolveInitialOccurrence(values.startDate, values.dateRule, values.adjustToBusinessDay)
 
     const payload: Omit<RecurringRule, 'id' | 'createdAt'> = {
       accountId:      parseInt(values.accountId) || 0,
@@ -135,7 +155,10 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
       description:    values.description.trim(),
       frequency:      values.frequency,
       startDate:      values.startDate,
-      nextDue:        values.startDate,
+      nextDue,
+      anchorDate,
+      dateRule:       values.dateRule,
+      adjustToBusinessDay: values.adjustToBusinessDay,
       active:         true,
       isPersonal:     false,
       splitN:         null,
@@ -162,11 +185,11 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
 
       {/* Name */}
       <div className="space-y-1.5">
-        <Label htmlFor="rec-grp-name">Rule Name</Label>
+        <Label htmlFor="rec-grp-name">{t('recurring.ruleName')}</Label>
         <Input
           id="rec-grp-name"
-          placeholder="e.g. Monthly Rent Split"
-          {...register('name', { required: 'Name is required' })}
+          placeholder={t('recurring.ruleNamePlaceholderGroup')}
+          {...register('name', { required: t('recurring.nameRequired') })}
         />
         {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
@@ -190,19 +213,33 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
         split={groupSplit}
       />
 
-      {/* Frequency */}
-      <div className="space-y-1.5">
-        <Label>Frequency</Label>
-        <PlainSelect
-          value={selectedFreq}
-          onChange={v => setValue('frequency', v as RecurringFrequency)}
-          options={FREQ_OPTIONS}
-        />
+      {/* Frequency + Start Date */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>{t('recurring.frequency')}</Label>
+          <PlainSelect
+            value={selectedFreq}
+            onChange={v => handleFrequencyChange(v as RecurringFrequency)}
+            options={freqOptions(t)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="rec-grp-start">{t('recurring.startDate')}</Label>
+          <DateInput id="rec-grp-start" value={watch('startDate') ?? ''} onChange={v => setValue('startDate', v)} />
+        </div>
       </div>
+
+      <RecurringDateRuleSection
+        frequency={selectedFreq}
+        dateRule={dateRule}
+        onDateRuleChange={v => setValue('dateRule', v)}
+        adjustToBusinessDay={adjustToBusinessDay}
+        onAdjustChange={v => setValue('adjustToBusinessDay', v)}
+      />
 
       {/* Category */}
       <div className="space-y-1.5">
-        <Label>Category</Label>
+        <Label>{t('transactions.category')}</Label>
         <PlainSelect
           value={selectedCategory}
           onChange={v => setValue('category', v)}
@@ -210,22 +247,16 @@ export default function RecurringGroupTab({ open, onClose, rule }: Props) {
         />
       </div>
 
-      {/* Description + Start Date */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="rec-grp-desc">Description</Label>
-          <Input id="rec-grp-desc" placeholder="Optional" {...register('description')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="rec-grp-start">Start Date</Label>
-          <DateInput id="rec-grp-start" value={watch('startDate') ?? ''} onChange={v => setValue('startDate', v)} />
-        </div>
+      {/* Description */}
+      <div className="space-y-1.5">
+        <Label htmlFor="rec-grp-desc">{t('transactions.colDescription')}</Label>
+        <Input id="rec-grp-desc" placeholder={t('common.optional')} {...register('description')} />
       </div>
 
       <DialogFooter>
-        <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>Cancel</Button>
+        <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>{t('common.cancel')}</Button>
         <Button type="submit" loading={isSubmitting} disabled={!groupId || (createTx && !accountId)}>
-          {isEdit ? 'Save Changes' : 'Add Rule'}
+          {isEdit ? t('recurring.saveChanges') : t('recurring.addRule')}
         </Button>
       </DialogFooter>
     </form>

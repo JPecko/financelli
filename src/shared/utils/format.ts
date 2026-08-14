@@ -1,11 +1,11 @@
-import { format, formatDistanceToNow, parseISO } from 'date-fns'
+import { format, formatDistanceToNow, parseISO, type Locale } from 'date-fns'
 
 export function formatDate(dateStr: string): string {
   return format(parseISO(dateStr), 'd MMM yyyy')
 }
 
-export function formatMonthYear(dateStr: string): string {
-  return format(parseISO(dateStr), 'MMMM yyyy')
+export function formatMonthYear(dateStr: string, locale?: Locale): string {
+  return format(parseISO(dateStr), 'MMMM yyyy', { locale })
 }
 
 export function formatShortDate(dateStr: string): string {

@@ -9,32 +9,38 @@ import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
 import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
+import RecurringDateRuleSection from './RecurringDateRuleSection'
 import { buildGroupedAccountSelectOptions } from '@/features/transactions/components/accountSelectOptions'
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES, tCategory } from '@/domain/categories'
+import { resolveInitialOccurrence, type DateRuleMode } from '@/domain/recurringDate'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
 import type { RecurringRule, TransactionType, RecurringFrequency } from '@/domain/types'
 import { useT } from '@/shared/i18n'
 
-const FREQ_OPTIONS = [
-  { value: 'weekly',  label: 'Weekly'  },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly',  label: 'Yearly'  },
-]
+function freqOptions(t: ReturnType<typeof useT>) {
+  return [
+    { value: 'weekly',  label: t('recurring.frequencies.weekly') },
+    { value: 'monthly', label: t('recurring.frequencies.monthly') },
+    { value: 'yearly',  label: t('recurring.frequencies.yearly') },
+  ]
+}
 
 interface FormValues {
-  accountId:      string
-  toAccountId:    string
-  name:           string
-  amount:         string
-  category:       string
-  description:    string
-  frequency:      RecurringFrequency
-  startDate:      string
-  isShared:       boolean
-  splitN:         number
-  isReimbursable: boolean
+  accountId:           string
+  toAccountId:         string
+  name:                string
+  amount:              string
+  category:            string
+  description:         string
+  frequency:           RecurringFrequency
+  startDate:           string
+  dateRule:            DateRuleMode
+  adjustToBusinessDay: boolean
+  isShared:            boolean
+  splitN:              number
+  isReimbursable:      boolean
 }
 
 interface Props {
@@ -54,6 +60,7 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
     defaultValues: {
       accountId: '', toAccountId: '', name: '', amount: '', category: 'other', description: '',
       frequency: 'monthly', startDate: format(new Date(), 'yyyy-MM-dd'),
+      dateRule: 'exact', adjustToBusinessDay: false,
       isShared: true, splitN: 2, isReimbursable: false,
     },
   })
@@ -62,6 +69,8 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
   const selectedTo       = watch('toAccountId')
   const selectedCategory = watch('category')
   const selectedFreq     = watch('frequency')
+  const dateRule         = watch('dateRule')
+  const adjustToBusinessDay = watch('adjustToBusinessDay')
   const isShared         = watch('isShared')
   const splitN           = watch('splitN')
   const isReimbursable   = watch('isReimbursable')
@@ -92,7 +101,11 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
         category:       rule.category,
         description:    rule.description,
         frequency:      rule.frequency,
-        startDate:      rule.startDate,
+        // Default to the *next* occurrence, not the original start — saving unchanged must not
+        // reset nextDue back to the original date and re-trigger every past occurrence.
+        startDate:      rule.nextDue,
+        dateRule:       rule.dateRule ?? 'exact',
+        adjustToBusinessDay: rule.adjustToBusinessDay ?? false,
         isShared:       !(rule.isPersonal ?? false),
         splitN:         rule.splitN ?? 2,
         isReimbursable: rule.isReimbursable ?? false,
@@ -106,15 +119,22 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
         accountId: firstId, toAccountId: secondId, name: '', amount: '',
         category: defaultType === 'transfer' ? 'transfer' : 'other', description: '',
         frequency: 'monthly', startDate: format(new Date(), 'yyyy-MM-dd'),
+        dateRule: 'exact', adjustToBusinessDay: false,
         isShared: firstShared, splitN: firstShared ? (firstAcct!.participants ?? 2) : 2,
         isReimbursable: false,
       })
     }
   }, [open, rule, isEdit, accounts, reset, defaultType])
 
+  const handleFrequencyChange = (v: RecurringFrequency) => {
+    setValue('frequency', v)
+    if (v === 'weekly') setValue('dateRule', 'exact')
+  }
+
   const onSubmit = async (values: FormValues) => {
     const abs    = toCents(parseFloat(values.amount.replace(',', '.')) || 0)
     const amount = defaultType === 'income' ? abs : -abs
+    const { anchorDate, nextDue } = resolveInitialOccurrence(values.startDate, values.dateRule, values.adjustToBusinessDay)
 
     const payload: Omit<RecurringRule, 'id' | 'createdAt'> = {
       accountId:      parseInt(values.accountId),
@@ -126,7 +146,10 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
       description:    values.description.trim(),
       frequency:      values.frequency,
       startDate:      values.startDate,
-      nextDue:        values.startDate,
+      nextDue,
+      anchorDate,
+      dateRule:       values.dateRule,
+      adjustToBusinessDay: values.adjustToBusinessDay,
       active:         true,
       isPersonal:     isTransfer ? false : !values.isShared,
       splitN:         (!isTransfer && values.isShared) ? Math.max(2, Math.round(values.splitN ?? 2)) : null,
@@ -151,11 +174,11 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
 
       {/* Name */}
       <div className="space-y-1.5">
-        <Label htmlFor="rec-name">Rule Name</Label>
+        <Label htmlFor="rec-name">{t('recurring.ruleName')}</Label>
         <Input
           id="rec-name"
-          placeholder="e.g. Monthly Rent"
-          {...register('name', { required: 'Name is required' })}
+          placeholder={t('recurring.ruleNamePlaceholder')}
+          {...register('name', { required: t('recurring.nameRequired') })}
         />
         {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
@@ -164,27 +187,27 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
       {isTransfer ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label>From</Label>
+            <Label>{t('recurring.from')}</Label>
             <PlainSelect
               value={selectedAccount}
               onChange={v => setValue('accountId', v)}
               options={buildGroupedAccountSelectOptions(accounts.filter(a => String(a.id) !== selectedTo), t)}
-              placeholder="Source"
+              placeholder={t('recurring.source')}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>To</Label>
+            <Label>{t('recurring.to')}</Label>
             <PlainSelect
               value={selectedTo}
               onChange={v => setValue('toAccountId', v)}
               options={buildGroupedAccountSelectOptions(accounts.filter(a => String(a.id) !== selectedAccount), t)}
-              placeholder="Destination"
+              placeholder={t('recurring.destination')}
             />
           </div>
         </div>
       ) : (
         <div className="space-y-1.5">
-          <Label>Account</Label>
+          <Label>{t('recurring.account')}</Label>
           <PlainSelect
             value={selectedAccount}
             onChange={v => {
@@ -197,38 +220,52 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
               }
             }}
             options={buildGroupedAccountSelectOptions(accounts, t)}
-            placeholder="Select account"
+            placeholder={t('recurring.selectAccount')}
           />
         </div>
       )}
 
-      {/* Amount + Frequency */}
+      {/* Amount */}
+      <div className="space-y-1.5">
+        <Label htmlFor="rec-amount">{t('recurring.amount')}</Label>
+        <AmountInput
+          id="rec-amount"
+          placeholder="0.00"
+          {...register('amount', {
+            required: t('recurring.amountRequired'),
+            validate: v => parseFloat(String(v).replace(',', '.')) >= 0.01 || t('recurring.amountMustBePositive'),
+          })}
+        />
+        {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+      </div>
+
+      {/* Frequency + Start Date */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="rec-amount">Amount</Label>
-          <AmountInput
-            id="rec-amount"
-            placeholder="0.00"
-            {...register('amount', {
-              required: 'Required',
-              validate: v => parseFloat(String(v).replace(',', '.')) >= 0.01 || 'Must be > 0',
-            })}
-          />
-          {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
-        </div>
-        <div className="space-y-1.5">
-          <Label>Frequency</Label>
+          <Label>{t('recurring.frequency')}</Label>
           <PlainSelect
             value={selectedFreq}
-            onChange={v => setValue('frequency', v as RecurringFrequency)}
-            options={FREQ_OPTIONS}
+            onChange={v => handleFrequencyChange(v as RecurringFrequency)}
+            options={freqOptions(t)}
           />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="rec-start">{t('recurring.startDate')}</Label>
+          <DateInput id="rec-start" value={watch('startDate') ?? ''} onChange={v => setValue('startDate', v)} />
         </div>
       </div>
 
+      <RecurringDateRuleSection
+        frequency={selectedFreq}
+        dateRule={dateRule}
+        onDateRuleChange={v => setValue('dateRule', v)}
+        adjustToBusinessDay={adjustToBusinessDay}
+        onAdjustChange={v => setValue('adjustToBusinessDay', v)}
+      />
+
       {/* Category */}
       <div className="space-y-1.5">
-        <Label>Category</Label>
+        <Label>{t('transactions.category')}</Label>
         <PlainSelect
           value={selectedCategory}
           onChange={v => setValue('category', v)}
@@ -236,16 +273,10 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
         />
       </div>
 
-      {/* Description + Start Date */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="rec-desc">Description</Label>
-          <Input id="rec-desc" placeholder="Optional" {...register('description')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="rec-start">Start Date</Label>
-          <DateInput id="rec-start" value={watch('startDate') ?? ''} onChange={v => setValue('startDate', v)} />
-        </div>
+      {/* Description */}
+      <div className="space-y-1.5">
+        <Label htmlFor="rec-desc">{t('transactions.colDescription')}</Label>
+        <Input id="rec-desc" placeholder={t('common.optional')} {...register('description')} />
       </div>
 
       {!isTransfer && (
@@ -297,7 +328,7 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
       )}
 
       <DialogFooter>
-        <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>Cancel</Button>
+        <Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>{t('common.cancel')}</Button>
         <Button
           type="submit"
           loading={isSubmitting}
@@ -306,7 +337,7 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
             (isTransfer && (!selectedAccount || !selectedTo || selectedAccount === selectedTo))
           }
         >
-          {isEdit ? 'Save Changes' : 'Add Rule'}
+          {isEdit ? t('recurring.saveChanges') : t('recurring.addRule')}
         </Button>
       </DialogFooter>
     </form>

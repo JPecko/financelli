@@ -1,6 +1,6 @@
 import { supabase } from '@/data/supabase'
 import type { RecurringRule } from '@/domain/types'
-import { addWeeks, addMonths, addYears, formatISO, parseISO } from 'date-fns'
+import { advanceOccurrence } from '@/domain/recurringDate'
 
 type RuleRow = {
   id: number
@@ -14,6 +14,9 @@ type RuleRow = {
   frequency: string
   start_date: string
   next_due: string
+  anchor_date: string | null
+  date_rule: string | null
+  adjust_to_business_day: boolean
   end_date: string | null
   active: boolean
   is_personal: boolean
@@ -40,6 +43,9 @@ function toRule(row: RuleRow): RecurringRule {
     frequency:       row.frequency as RecurringRule['frequency'],
     startDate:       row.start_date,
     nextDue:         row.next_due,
+    anchorDate:      row.anchor_date ?? row.next_due,
+    dateRule:        (row.date_rule as RecurringRule['dateRule']) ?? 'exact',
+    adjustToBusinessDay: row.adjust_to_business_day ?? false,
     endDate:         row.end_date ?? undefined,
     active:          row.active,
     isPersonal:      row.is_personal ?? false,
@@ -66,6 +72,9 @@ function toRow(rule: Partial<RecurringRule>): Record<string, unknown> {
   if (rule.frequency       !== undefined) row.frequency       = rule.frequency
   if (rule.startDate       !== undefined) row.start_date      = rule.startDate
   if (rule.nextDue         !== undefined) row.next_due        = rule.nextDue
+  if (rule.anchorDate      !== undefined) row.anchor_date     = rule.anchorDate
+  if (rule.dateRule        !== undefined) row.date_rule       = rule.dateRule ?? 'exact'
+  if (rule.adjustToBusinessDay !== undefined) row.adjust_to_business_day = rule.adjustToBusinessDay
   if (rule.endDate         !== undefined) row.end_date        = rule.endDate
   if (rule.active          !== undefined) row.active          = rule.active
   if (rule.isPersonal      !== undefined) row.is_personal     = rule.isPersonal
@@ -77,17 +86,6 @@ function toRow(rule: Partial<RecurringRule>): Record<string, unknown> {
   if (rule.payerMemberId   !== undefined) row.payer_member_id = rule.payerMemberId ?? null
   if (rule.createTx        !== undefined) row.create_tx       = rule.createTx
   return row
-}
-
-export function advanceDueDate(current: string, frequency: RecurringRule['frequency']): string {
-  const date = parseISO(current)
-  let next: Date
-  switch (frequency) {
-    case 'weekly':  next = addWeeks(date, 1);  break
-    case 'monthly': next = addMonths(date, 1); break
-    case 'yearly':  next = addYears(date, 1);  break
-  }
-  return formatISO(next, { representation: 'date' })
 }
 
 export const recurringRepo = {
@@ -133,12 +131,18 @@ export const recurringRepo = {
     if (error) throw error
   },
 
-  /** Advance nextDue to the next occurrence */
-  advance: async (id: number, frequency: RecurringRule['frequency'], currentNextDue: string): Promise<void> => {
+  /** Steps the rule's raw anchor by one period and persists the resulting anchor/nextDue pair. */
+  advance: async (
+    id: number,
+    rule: Pick<RecurringRule, 'frequency' | 'dateRule' | 'adjustToBusinessDay'>,
+    currentAnchor: string,
+  ): Promise<{ anchorDate: string; nextDue: string }> => {
+    const occurrence = advanceOccurrence(currentAnchor, rule.frequency, rule.dateRule ?? 'exact', rule.adjustToBusinessDay ?? false)
     const { error } = await supabase
       .from('recurring_rules')
-      .update({ next_due: advanceDueDate(currentNextDue, frequency) })
+      .update({ anchor_date: occurrence.anchorDate, next_due: occurrence.nextDue })
       .eq('id', id)
     if (error) throw error
+    return occurrence
   },
 }

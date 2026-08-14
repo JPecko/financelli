@@ -101,8 +101,11 @@ export interface RecurringRule {
   category: string
   description: string
   frequency: RecurringFrequency
-  startDate: string     // ISO 8601
-  nextDue: string       // ISO 8601
+  startDate: string     // ISO 8601 — last (re)anchor point, set whenever the rule is created/edited
+  nextDue: string       // ISO 8601 — actual date the rule next fires on (anchorDate + date rule policy)
+  anchorDate?: string   // ISO 8601 — raw, never-adjusted stepping date; falls back to nextDue for legacy rows
+  dateRule?: 'exact' | 'firstBusinessDay' | null // how nextDue is derived from the anchor each period
+  adjustToBusinessDay?: boolean // 'exact' only: roll forward to the next business day if it lands on a weekend
   endDate?: string      // ISO 8601
   active: boolean
   isPersonal?: boolean     // if true, generated transactions won't be split by participants

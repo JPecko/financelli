@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { format, parseISO, type Locale } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Plus, Pencil, Trash2, RefreshCw, Play, Pause, ArrowRight, CalendarDays, Zap, Loader2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
@@ -10,7 +11,9 @@ import { useRecurringRules, removeRule, updateRule, applyRule } from '@/shared/h
 import { useAccounts } from '@/shared/hooks/useAccounts'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById, tCategory } from '@/domain/categories'
-import { formatDate } from '@/shared/utils/format'
+import { formatDate, formatMonthYear } from '@/shared/utils/format'
+import { getDateFnsLocale } from '@/shared/utils/dateLocale'
+import { useLanguageStore } from '@/shared/store/languageStore'
 import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
@@ -24,8 +27,21 @@ const FREQ_BADGE: Record<string, string> = {
   yearly:  'bg-amber-500/10 text-amber-600 dark:text-amber-400',
 }
 
+// Rules already come sorted by nextDue — group consecutive rules sharing a month.
+function groupRulesByMonth(rules: RecurringRule[], locale: Locale): { key: string; label: string; rules: RecurringRule[] }[] {
+  const groups: { key: string; label: string; rules: RecurringRule[] }[] = []
+  for (const rule of rules) {
+    const key = format(parseISO(rule.nextDue), 'yyyy-MM')
+    const last = groups[groups.length - 1]
+    if (last?.key === key) last.rules.push(rule)
+    else groups.push({ key, label: formatMonthYear(rule.nextDue, locale), rules: [rule] })
+  }
+  return groups
+}
+
 export default function RecurringPage() {
   const t = useT()
+  const dateLocale = getDateFnsLocale(useLanguageStore(s => s.lang))
   const { data: rules    = [], isLoading } = useRecurringRules()
   const { data: accounts = [] } = useAccounts()
   const [modalOpen, setModalOpen]               = useState(false)
@@ -98,18 +114,24 @@ export default function RecurringPage() {
           }
         />
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <div className="divide-y divide-border">
-            {rules.map(rule => {
-              const cat        = getCategoryById(rule.category)
-              const isTransfer = rule.type === 'transfer' && rule.toAccountId != null
-              const amountColor = isTransfer
-                ? 'text-blue-600 dark:text-blue-400'
-                : rule.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'
+        <div className="space-y-6">
+          {groupRulesByMonth(rules, dateLocale).map(group => (
+            <div key={group.key}>
+              <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {group.label}
+              </p>
+              <div className="rounded-lg border overflow-hidden">
+                <div className="divide-y divide-border">
+                  {group.rules.map(rule => {
+                    const cat        = getCategoryById(rule.category)
+                    const isTransfer = rule.type === 'transfer' && rule.toAccountId != null
+                    const amountColor = isTransfer
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : rule.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'
 
-              return (
-                <div
-                  key={rule.id}
+                    return (
+                      <div
+                        key={rule.id}
                   className={cn(
                     'relative px-4 py-3 flex items-center gap-3 group transition-colors',
                     !rule.active && 'opacity-60',
@@ -222,10 +244,13 @@ export default function RecurringPage() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
