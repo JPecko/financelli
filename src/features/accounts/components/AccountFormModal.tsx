@@ -10,7 +10,7 @@ import { toCents, fromCents } from '@/domain/money'
 import { addAccount, updateAccount, useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { useT } from '@/shared/i18n'
 import { buildBankSelectOptions, buildAccountTypeSelectOptions } from './accountFormOptions'
-import { buildAccountSelectOption } from '@/features/transactions/components/accountSelectOptions'
+import { buildGroupedAccountSelectOptions } from '@/features/transactions/components/accountSelectOptions'
 import type { Account, AccountType } from '@/domain/types'
 import type { PlainSelectOption } from '@/shared/components/PlainSelect'
 
@@ -85,9 +85,7 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
   const { data: allAccounts = [] } = useSortedAccounts()
   const roundupToOptions: PlainSelectOption[] = [
     { value: 'none', label: t('accounts.form.roundupToExternal') },
-    ...allAccounts
-      .filter(a => a.id !== account?.id)
-      .map(buildAccountSelectOption),
+    ...buildGroupedAccountSelectOptions(allAccounts.filter(a => a.id !== account?.id), t),
   ]
 
   const accountTypes: { value: AccountType; label: string }[] = [

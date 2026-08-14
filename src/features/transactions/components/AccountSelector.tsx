@@ -2,8 +2,9 @@ import { ArrowRight } from 'lucide-react'
 import { Label } from '@/shared/components/ui/label'
 import type { Account, TransactionType } from '@/domain/types'
 import PlainSelect from '@/shared/components/PlainSelect'
-import { buildAccountSelectOption, buildExternalAccountOption } from './accountSelectOptions'
+import { buildGroupedAccountSelectOptions, buildExternalAccountOption } from './accountSelectOptions'
 import { EXTERNAL } from './useTransactionForm'
+import { useT } from '@/shared/i18n'
 
 interface Props {
   type:           TransactionType
@@ -33,10 +34,11 @@ function AccountSelect({
   allAccounts:  Account[]
   withExternal: boolean
 }) {
+  const t = useT()
   const visibleAccounts = ensureSelectedAccount(accounts, value, allAccounts)
   const options = [
     ...(withExternal ? [buildExternalAccountOption()] : []),
-    ...visibleAccounts.map(buildAccountSelectOption),
+    ...buildGroupedAccountSelectOptions(visibleAccounts, t),
   ]
 
   return (

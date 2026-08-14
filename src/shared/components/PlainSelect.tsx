@@ -8,6 +8,8 @@ export interface PlainSelectOption {
   content?: ReactNode
   selectedContent?: ReactNode
   disabled?: boolean
+  /** Renders a section heading with a divider above this option (e.g. "Savings", "Investment"). */
+  groupLabel?: string
 }
 
 interface Props {
@@ -95,24 +97,30 @@ export default function PlainSelect({
       {open && (
         <div className={panelClasses}>
           <div id={listId} role="listbox" className="max-h-72 overflow-y-auto p-1.5">
-            {options.map(option => {
+            {options.map((option, i) => {
               const isSelected = option.value === value
 
               return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  data-selected={isSelected}
-                  data-disabled={option.disabled || undefined}
-                  disabled={option.disabled}
-                  className={optionClasses}
-                  onClick={() => handleSelect(option.value)}
-                >
-                  <div className="min-w-0 flex-1">{option.content ?? option.label}</div>
-                  <Check className={cn('h-4 w-4 shrink-0 text-primary', !isSelected && 'invisible')} />
-                </button>
+                <div key={option.value}>
+                  {option.groupLabel && (
+                    <div className={cn('px-3.5 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground', i > 0 && 'mt-1 border-t border-border')}>
+                      {option.groupLabel}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    data-selected={isSelected}
+                    data-disabled={option.disabled || undefined}
+                    disabled={option.disabled}
+                    className={optionClasses}
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    <div className="min-w-0 flex-1">{option.content ?? option.label}</div>
+                    <Check className={cn('h-4 w-4 shrink-0 text-primary', !isSelected && 'invisible')} />
+                  </button>
+                </div>
               )
             })}
           </div>

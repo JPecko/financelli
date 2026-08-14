@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
-import { Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -10,47 +9,15 @@ import PlainSelect from '@/shared/components/PlainSelect'
 import AmountInput from '@/shared/components/AmountInput'
 import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
-import BankLogo from '@/shared/components/BankLogo'
-import { BANK_OPTIONS } from '@/shared/config/banks'
+import { buildGroupedAccountSelectOptions } from '@/features/transactions/components/accountSelectOptions'
 import { toCents, fromCents } from '@/domain/money'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORIES, tCategory } from '@/domain/categories'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { addRule, updateRule } from '@/shared/hooks/useRecurringRules'
-import type { RecurringRule, TransactionType, RecurringFrequency, Account } from '@/domain/types'
+import type { RecurringRule, TransactionType, RecurringFrequency } from '@/domain/types'
 import { useT } from '@/shared/i18n'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const TYPE_ICONS: Record<string, React.ElementType> = {
-  checking:   Banknote,
-  savings:    PiggyBank,
-  investment: BarChart2,
-  cash:       HandCoins,
-  credit:     CreditCard,
-}
-
-function AccountOptionContent({ account }: { account: Account }) {
-  const bank = account.bankCode ? BANK_OPTIONS.find(b => b.code === account.bankCode) : undefined
-  const Icon = TYPE_ICONS[account.type] ?? Wallet
-  return (
-    <span className="flex items-center gap-2 min-w-0">
-      {bank
-        ? <BankLogo domain={bank.logoDomain} name={bank.name} accountType={account.type} imgClassName="h-4 w-4 rounded-sm object-contain shrink-0" iconClassName="h-4 w-4 shrink-0 text-muted-foreground" />
-        : <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-      }
-      <span className="truncate">{account.name}</span>
-    </span>
-  )
-}
-
-function buildAccountOption(account: Account) {
-  return {
-    value: String(account.id),
-    label: account.name,
-    content: <AccountOptionContent account={account} />,
-    selectedContent: <AccountOptionContent account={account} />,
-  }
-}
 
 const FREQ_OPTIONS = [
   { value: 'weekly',  label: 'Weekly'  },
@@ -262,7 +229,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
                 <PlainSelect
                   value={selectedAccount}
                   onChange={v => setValue('accountId', v)}
-                  options={accounts.filter(a => String(a.id) !== selectedTo).map(buildAccountOption)}
+                  options={buildGroupedAccountSelectOptions(accounts.filter(a => String(a.id) !== selectedTo), t)}
                   placeholder="Source"
                 />
               </div>
@@ -271,7 +238,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
                 <PlainSelect
                   value={selectedTo}
                   onChange={v => setValue('toAccountId', v)}
-                  options={accounts.filter(a => String(a.id) !== selectedAccount).map(buildAccountOption)}
+                  options={buildGroupedAccountSelectOptions(accounts.filter(a => String(a.id) !== selectedAccount), t)}
                   placeholder="Destination"
                 />
               </div>
@@ -290,7 +257,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
                     setValue('splitN', shared ? (acct!.participants ?? 2) : 2)
                   }
                 }}
-                options={accounts.map(buildAccountOption)}
+                options={buildGroupedAccountSelectOptions(accounts, t)}
                 placeholder="Select account"
               />
             </div>

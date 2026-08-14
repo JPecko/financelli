@@ -5,6 +5,7 @@ import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { BANK_OPTIONS } from '@/shared/config/banks'
 import { ACCOUNT_TYPE_META, ListRow } from '../utils/dashboardHelpers'
+import { accountGroup } from '@/domain/accountGrouping'
 import type { Account } from '@/domain/types'
 
 interface Props {
@@ -15,9 +16,9 @@ interface Props {
 export default function AccountBalancesCard({ accounts, effectiveBalances }: Props) {
   const t = useT()
 
-  const currentAccounts    = accounts.filter(a => a.type !== 'investment' && a.type !== 'savings')
-  const savingsAccounts    = accounts.filter(a => a.type === 'savings')
-  const investmentAccounts = accounts.filter(a => a.type === 'investment')
+  const currentAccounts    = accounts.filter(a => accountGroup(a.type) === 'current')
+  const savingsAccounts    = accounts.filter(a => accountGroup(a.type) === 'savings')
+  const investmentAccounts = accounts.filter(a => accountGroup(a.type) === 'investment')
 
   return (
     <Card className="sm:col-span-2 xl:col-span-1">

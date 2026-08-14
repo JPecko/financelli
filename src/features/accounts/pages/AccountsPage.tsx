@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAccounts, sortAccounts, removeAccount } from '@/shared/hooks/useAccounts'
+import { accountGroup } from '@/domain/accountGrouping'
 import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
 import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
@@ -352,9 +353,9 @@ export default function AccountsPage() {
   const orderForSort = isManualEditing ? effectiveDraftOrder : manualOrder
   const sorted = sortAccounts(accounts, sort, orderForSort, colorOrder, effectiveBalance)
 
-  const currentAccounts = sorted.filter(a => a.type !== 'investment' && a.type !== 'savings')
-  const savingsAccounts = sorted.filter(a => a.type === 'savings')
-  const invAccounts     = sorted.filter(a => a.type === 'investment')
+  const currentAccounts = sorted.filter(a => accountGroup(a.type) === 'current')
+  const savingsAccounts = sorted.filter(a => accountGroup(a.type) === 'savings')
+  const invAccounts     = sorted.filter(a => accountGroup(a.type) === 'investment')
   const sortedIds       = currentAccounts.map(a => a.id!)
 
   const handleEdit = (account: Account) => {

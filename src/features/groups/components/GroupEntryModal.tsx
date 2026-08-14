@@ -16,7 +16,7 @@ import { GROUP_EXPENSE_CATS } from '@/features/transactions/components/useGroupT
 import { addGroupEntry, updateGroupEntry } from '@/shared/hooks/useGroups'
 import { addTransaction, updateTransaction, removeTransaction } from '@/shared/hooks/useTransactions'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
-import { buildAccountSelectOption } from '@/features/transactions/components/accountSelectOptions'
+import { buildGroupedAccountSelectOptions } from '@/features/transactions/components/accountSelectOptions'
 import { supabase } from '@/data/supabase'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useT } from '@/shared/i18n'
@@ -86,7 +86,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
   const memberOptions = members
     .filter(m => m.userId !== user?.id)
     .map(m => ({ value: String(m.id), label: m.name }))
-  const accountOptions = accounts.map(buildAccountSelectOption)
+  const accountOptions = buildGroupedAccountSelectOptions(accounts, t)
 
   // ── Derived summary ───────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ import AmountInput from '@/shared/components/AmountInput'
 import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
 import SplitSection from '@/features/groups/components/SplitSection'
-import { buildAccountSelectOption } from './accountSelectOptions'
+import { buildGroupedAccountSelectOptions } from './accountSelectOptions'
 import { GROUP_EXPENSE_CATS, type GrpSplitRow, type GrpFormValues } from './useGroupTransactionForm'
 import { fromCents } from '@/domain/money'
 import { useT } from '@/shared/i18n'
@@ -71,7 +71,7 @@ export default function GroupTransactionForm({
   const payerMemberId = watch('payerMemberId')
   const category      = watch('category')
   const groupOptions   = groups.map(group => ({ value: String(group.id), label: group.name }))
-  const accountOptions = accounts.map(buildAccountSelectOption)
+  const accountOptions = buildGroupedAccountSelectOptions(accounts, t)
   const memberOptions  = members
     .filter(member => member.userId !== currentUserId)
     .map(member => ({ value: String(member.id), label: member.name }))

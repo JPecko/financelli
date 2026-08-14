@@ -4,6 +4,7 @@ import { accountsRepo } from '@/data/repositories/accountsRepo'
 import { queryClient } from '@/app/queryClient'
 import { queryKeys } from '@/data/queryKeys'
 import { useAccountPrefsStore, type SortKey } from '@/shared/store/accountPrefsStore'
+import { groupAccounts } from '@/domain/accountGrouping'
 import type { Account } from '@/domain/types'
 
 // ─── Queries ────────────────────────────────────────────────────────────────
@@ -30,6 +31,9 @@ export function useNetWorth() {
 
 // ─── Sorting ─────────────────────────────────────────────────────────────────
 
+/** Applies the user's chosen sort, then groups current/savings/investment accounts together
+ *  (stable — preserves the sort order within each group). This is the canonical order used
+ *  everywhere accounts are listed, so the Accounts page and every account dropdown/select match. */
 export function sortAccounts(
   accounts: Account[],
   sort: SortKey,
@@ -37,21 +41,24 @@ export function sortAccounts(
   colorOrder: string[],
   balanceOf: (account: Account) => number = a => a.balance,
 ): Account[] {
+  let sorted = accounts
   if (sort === 'manual' && manualOrder.length > 0) {
     const idx = Object.fromEntries(manualOrder.map((id, i) => [id, i]))
-    return [...accounts].sort((a, b) => (idx[a.id!] ?? 999) - (idx[b.id!] ?? 999))
-  }
-  if (sort === 'name')    return [...accounts].sort((a, b) => a.name.localeCompare(b.name))
-  if (sort === 'type')    return [...accounts].sort((a, b) => a.type.localeCompare(b.type))
-  if (sort === 'color') {
-    return [...accounts].sort((a, b) => {
+    sorted = [...accounts].sort((a, b) => (idx[a.id!] ?? 999) - (idx[b.id!] ?? 999))
+  } else if (sort === 'name') {
+    sorted = [...accounts].sort((a, b) => a.name.localeCompare(b.name))
+  } else if (sort === 'type') {
+    sorted = [...accounts].sort((a, b) => a.type.localeCompare(b.type))
+  } else if (sort === 'color') {
+    sorted = [...accounts].sort((a, b) => {
       const ai = colorOrder.indexOf(a.color)
       const bi = colorOrder.indexOf(b.color)
       return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
     })
+  } else if (sort === 'balance') {
+    sorted = [...accounts].sort((a, b) => balanceOf(b) - balanceOf(a))
   }
-  if (sort === 'balance') return [...accounts].sort((a, b) => balanceOf(b) - balanceOf(a))
-  return accounts
+  return groupAccounts(sorted)
 }
 
 /** Returns the accounts list already sorted per user preferences. */

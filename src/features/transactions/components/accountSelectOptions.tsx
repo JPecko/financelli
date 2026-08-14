@@ -2,9 +2,11 @@ import type { ElementType } from 'react'
 import { Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard } from 'lucide-react'
 import BankLogo from '@/shared/components/BankLogo'
 import { BANK_OPTIONS } from '@/shared/config/banks'
+import { accountGroup, firstOfGroupIds, type AccountGroup } from '@/domain/accountGrouping'
 import { EXTERNAL } from './useTransactionForm'
 import type { Account } from '@/domain/types'
 import type { PlainSelectOption } from '@/shared/components/PlainSelect'
+import type { useT } from '@/shared/i18n'
 
 const TYPE_ICONS: Record<string, ElementType> = {
   checking: Banknote,
@@ -36,13 +38,33 @@ function AccountVisual({ account }: { account: Account }) {
   )
 }
 
-export function buildAccountSelectOption(account: Account): PlainSelectOption {
+export function buildAccountSelectOption(account: Account, groupLabel?: string): PlainSelectOption {
   return {
     value: String(account.id),
     label: account.name,
     content: <AccountVisual account={account} />,
     selectedContent: <AccountVisual account={account} />,
+    groupLabel,
   }
+}
+
+const GROUP_LABEL_KEYS: Record<AccountGroup, Parameters<ReturnType<typeof useT>>[0]> = {
+  current:    'accounts.sections.current',
+  savings:    'accounts.sections.savings',
+  investment: 'accounts.sections.investment',
+}
+
+/**
+ * Builds account options grouped current/savings/investment (matches the Accounts page order),
+ * with a section heading + divider before the first option of each group. `accounts` must
+ * already come from `useSortedAccounts` so the order within each group is correct.
+ */
+export function buildGroupedAccountSelectOptions(accounts: Account[], t: ReturnType<typeof useT>): PlainSelectOption[] {
+  const firstIds = firstOfGroupIds(accounts)
+  return accounts.map(account => {
+    const groupLabel = firstIds.has(account.id!) ? t(GROUP_LABEL_KEYS[accountGroup(account.type)]) : undefined
+    return buildAccountSelectOption(account, groupLabel)
+  })
 }
 
 export function buildExternalAccountOption(): PlainSelectOption {
