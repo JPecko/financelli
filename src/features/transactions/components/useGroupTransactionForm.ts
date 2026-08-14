@@ -4,6 +4,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { groupsRepo } from '@/data/repositories/groupsRepo'
 import { addTransaction } from '@/shared/hooks/useTransactions'
 import { addGroupEntry, updateGroupEntry } from '@/shared/hooks/useGroups'
+import { useSplitState } from '@/features/groups/hooks/useSplitState'
 import { toCents, fromCents } from '@/domain/money'
 import { isoToday } from '@/shared/utils/format'
 import { EXPENSE_CATEGORIES } from '@/domain/categories'
@@ -18,13 +19,6 @@ export const GROUP_EXPENSE_CATS = EXPENSE_CATEGORIES
 
 // Normalises European comma decimal separator before parsing
 const parseMoney = (v: string) => parseFloat(String(v).replace(',', '.')) || 0
-
-function distributeEvenly(totalCents: number, memberIds: number[]): Record<number, number> {
-  if (memberIds.length === 0) return {}
-  const base      = Math.floor(totalCents / memberIds.length)
-  const remainder = totalCents - base * memberIds.length
-  return Object.fromEntries(memberIds.map((id, i) => [id, i < remainder ? base + 1 : base]))
-}
 
 function makeSharedExpenseDefaults(sharedExpense: SharedExpense, fallbackAccountId: string): GrpFormValues {
   return {
@@ -67,11 +61,6 @@ export interface GrpFormValues {
   totalAmount:   string
 }
 
-export interface GrpSplitRow {
-  memberId: number
-  amount:   string
-}
-
 interface Props {
   open:             boolean
   onClose:          () => void
@@ -107,16 +96,16 @@ export function useGroupTransactionForm({
   const payerMemberId = watch('payerMemberId')
 
   const [members,    setMembers]    = useState<GroupMember[]>([])
-  const [splits,     setSplits]     = useState<GrpSplitRow[]>([])
-  const [splitMode,  setSplitMode]  = useState<'even' | 'percent' | 'custom'>('even')
-  const [percents,   setPercents]   = useState<Record<number, string>>({})
-  const [splitError, setSplitError] = useState('')
   const [createTx,   setCreateTx]   = useState(false)
 
   const [linkedEntry,  setLinkedEntry]  = useState<GroupEntry | null>(null)
   const [linkedSplits, setLinkedSplits] = useState<GroupEntrySplit[]>([])
 
   const myMember = members.find(m => m.userId === user?.id)
+  const {
+    splitMode, setSplitMode, splitError, setSplitError, splits, percents,
+    resetEven, applyCustomSplits, handlePercentChange, handleAmountChange, setMemberFull, setMemberEmpty,
+  } = useSplitState(members, toCents(parseMoney(total)))
 
   // ── Load linked group entry ────────────────────────────────────────────────
   useEffect(() => {
@@ -170,10 +159,7 @@ export function useGroupTransactionForm({
       reset(makeTransactionDefaults(transaction, fallbackAccountId, initialOverride))
     }
     setMembers([])
-    setSplits([])
-    setSplitMode('even')
-    setPercents({})
-    setSplitError('')
+    resetEven([], 0)
     // Default to creating a real bank transaction when the user is the payer
     setCreateTx(!sharedExpense && !transaction)
     // initialOverride excluded: it's rebuilt every keystroke and would loop the reset forever
@@ -201,7 +187,6 @@ export function useGroupTransactionForm({
   useEffect(() => {
     if (!groupId) {
       setMembers([])
-      setSplits([])
       return
     }
 
@@ -210,20 +195,17 @@ export function useGroupTransactionForm({
       .then(ms => {
         if (cancelled) return
         setMembers(ms)
-        setSplitError('')
         const myM      = ms.find(m => m.userId === user?.id)
         const isLinked = linkedEntry && linkedEntry.groupId === parseInt(groupId)
         if (isLinked && linkedSplits.length > 0) {
-          setSplits(linkedSplits.map(s => ({ memberId: s.memberId, amount: fromCents(s.amount).toFixed(2) })))
-          setSplitMode('custom')
+          applyCustomSplits(linkedSplits)
           if (myM && linkedEntry!.paidByMemberId === myM.id) {
             setValue('payerType', 'me'); setValue('payerMemberId', '')
           } else {
             setValue('payerType', 'member'); setValue('payerMemberId', String(linkedEntry!.paidByMemberId))
           }
         } else {
-          setSplits(ms.map(m => ({ memberId: m.id!, amount: '' })))
-          setSplitMode('even')
+          resetEven(ms.map(m => m.id!), toCents(parseMoney(total)))
           const firstOther = ms.find(m => m.userId !== user?.id)
           if (firstOther) setValue('payerMemberId', String(firstOther.id))
           else if (ms.length > 0) setValue('payerMemberId', String(ms[0].id))
@@ -235,48 +217,8 @@ export function useGroupTransactionForm({
       })
 
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, linkedEntry, linkedSplits, setValue, user?.id])
-
-  // ── Recompute even splits ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (splitMode !== 'even' || members.length === 0) return
-    const totalCents  = toCents(parseMoney(total))
-    const distributed = distributeEvenly(totalCents, members.map(m => m.id!))
-    setSplits(members.map(m => ({ memberId: m.id!, amount: fromCents(distributed[m.id!] ?? 0).toFixed(2) })))
-  }, [total, splitMode, members])
-
-  // ── Recompute percent splits ───────────────────────────────────────────────
-  useEffect(() => {
-    if (splitMode !== 'percent' || members.length === 0) return
-    const totalCents = toCents(parseMoney(total))
-    setSplits(members.map(m => {
-      const pct = parseFloat(percents[m.id!] || '0') / 100
-      return { memberId: m.id!, amount: fromCents(Math.round(totalCents * pct)).toFixed(2) }
-    }))
-  }, [total, splitMode, percents, members])
-
-  // ── Switch to percent mode ─────────────────────────────────────────────────
-  const handleSwitchToPercent = () => {
-    const totalCents  = toCents(parseMoney(total))
-    const newPercents: Record<number, string> = {}
-    if (splitMode === 'custom' && totalCents > 0) {
-      members.forEach(m => {
-        const split = splits.find(s => s.memberId === m.id)
-        const pct   = (toCents(parseFloat(split?.amount || '0')) / totalCents) * 100
-        newPercents[m.id!] = pct.toFixed(2)
-      })
-    } else {
-      const even = members.length > 0 ? 100 / members.length : 0
-      members.forEach((m, i) => {
-        newPercents[m.id!] = i < members.length - 1
-          ? even.toFixed(2)
-          : (100 - even * (members.length - 1)).toFixed(2)
-      })
-    }
-    setPercents(newPercents)
-    setSplitMode('percent')
-    setSplitError('')
-  }
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const onSubmit = handleSubmit(async (values) => {
@@ -335,13 +277,13 @@ export function useGroupTransactionForm({
   return {
     register, watch, setValue, errors, isSubmitting,
     groupId, payerType, total, accountId, payerMemberId,
-    members, splits, setSplits,
-    splitMode, setSplitMode, setSplitError,
-    percents, setPercents,
+    members, splits,
+    splitMode, setSplitMode,
+    percents,
     splitError, createTx, setCreateTx,
     linkedEntry, myMember,
     totalCents, myShareCents, othersOweCents,
     canSubmit, onSubmit,
-    handleSwitchToPercent,
+    handlePercentChange, handleAmountChange, setMemberFull, setMemberEmpty,
   }
 }

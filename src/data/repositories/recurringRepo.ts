@@ -19,6 +19,11 @@ type RuleRow = {
   is_personal: boolean
   split_n: number | null
   is_reimbursable: boolean
+  group_id: number | null
+  split_mode: string | null
+  split_percents: Record<number, number> | null
+  payer_member_id: number | null
+  create_tx: boolean
   created_at: string
 }
 
@@ -40,6 +45,11 @@ function toRule(row: RuleRow): RecurringRule {
     isPersonal:      row.is_personal ?? false,
     splitN:          row.split_n ?? null,
     isReimbursable:  row.is_reimbursable ?? false,
+    groupId:         row.group_id ?? null,
+    splitMode:       row.split_mode as RecurringRule['splitMode'] ?? null,
+    splitPercents:   row.split_percents ?? null,
+    payerMemberId:   row.payer_member_id ?? null,
+    createTx:        row.create_tx ?? true,
     createdAt:       row.created_at,
   }
 }
@@ -61,6 +71,11 @@ function toRow(rule: Partial<RecurringRule>): Record<string, unknown> {
   if (rule.isPersonal      !== undefined) row.is_personal     = rule.isPersonal
   if (rule.splitN          !== undefined) row.split_n         = rule.splitN ?? null
   if (rule.isReimbursable  !== undefined) row.is_reimbursable = rule.isReimbursable
+  if (rule.groupId         !== undefined) row.group_id        = rule.groupId ?? null
+  if (rule.splitMode       !== undefined) row.split_mode      = rule.splitMode ?? null
+  if (rule.splitPercents   !== undefined) row.split_percents  = rule.splitPercents ?? null
+  if (rule.payerMemberId   !== undefined) row.payer_member_id = rule.payerMemberId ?? null
+  if (rule.createTx        !== undefined) row.create_tx       = rule.createTx
   return row
 }
 

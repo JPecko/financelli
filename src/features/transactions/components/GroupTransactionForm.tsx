@@ -10,7 +10,8 @@ import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
 import SplitSection from '@/features/groups/components/SplitSection'
 import { buildGroupedAccountSelectOptions } from './accountSelectOptions'
-import { GROUP_EXPENSE_CATS, type GrpSplitRow, type GrpFormValues } from './useGroupTransactionForm'
+import { GROUP_EXPENSE_CATS, type GrpFormValues } from './useGroupTransactionForm'
+import type { SplitMode, SplitRow } from '@/features/groups/hooks/useSplitState'
 import { fromCents } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import type { UseFormRegister, UseFormSetValue } from 'react-hook-form'
@@ -31,13 +32,10 @@ interface Props {
   isSubmitting: boolean
   // state
   members:      GroupMember[]
-  splits:       GrpSplitRow[]
-  setSplits:    React.Dispatch<React.SetStateAction<GrpSplitRow[]>>
-  splitMode:    'even' | 'percent' | 'custom'
-  setSplitMode: (m: 'even' | 'percent' | 'custom') => void
-  setSplitError:(e: string) => void
+  splits:       SplitRow[]
+  splitMode:    SplitMode
+  setSplitMode: (m: SplitMode) => void
   percents:     Record<number, string>
-  setPercents:  React.Dispatch<React.SetStateAction<Record<number, string>>>
   splitError:   string
   createTx:     boolean
   setCreateTx:  (v: boolean) => void
@@ -48,7 +46,10 @@ interface Props {
   totalCents:   number
   canSubmit:    boolean
   currentUserId?: string
-  handleSwitchToPercent: () => void
+  handlePercentChange: (memberId: number, pct: number) => void
+  handleAmountChange:  (memberId: number, euros: string) => void
+  setMemberFull:       (memberId: number) => void
+  setMemberEmpty:      (memberId: number) => void
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -56,11 +57,11 @@ interface Props {
 export default function GroupTransactionForm({
   onClose, onSubmit, groups, accounts,
   register, watch, setValue, errors, isSubmitting,
-  members, splits, setSplits, splitMode, setSplitMode, setSplitError,
-  percents, setPercents, splitError,
-  createTx, setCreateTx, linkedEntry: _linkedEntry, myMember,
+  members, splits, splitMode, setSplitMode,
+  percents, splitError,
+  createTx, setCreateTx, myMember,
   myShareCents, othersOweCents, totalCents, canSubmit,
-  currentUserId, handleSwitchToPercent,
+  currentUserId, handlePercentChange, handleAmountChange, setMemberFull, setMemberEmpty,
 }: Props) {
   const t        = useT()
   const navigate = useNavigate()
@@ -203,15 +204,15 @@ export default function GroupTransactionForm({
           <SplitSection
             members={members}
             splits={splits}
-            setSplits={setSplits}
             splitMode={splitMode}
             setSplitMode={setSplitMode}
-            setSplitError={setSplitError}
             percents={percents}
-            setPercents={setPercents}
             splitError={splitError}
             currentUserId={currentUserId}
-            handleSwitchToPercent={handleSwitchToPercent}
+            onPercentChange={handlePercentChange}
+            onAmountChange={handleAmountChange}
+            onSetFull={setMemberFull}
+            onSetEmpty={setMemberEmpty}
           />
 
           {/* Summary */}

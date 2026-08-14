@@ -43,12 +43,9 @@ export default function GroupTransactionTab({
       isSubmitting={grpHook.isSubmitting}
       members={grpHook.members}
       splits={grpHook.splits}
-      setSplits={grpHook.setSplits}
       splitMode={grpHook.splitMode}
       setSplitMode={grpHook.setSplitMode}
-      setSplitError={grpHook.setSplitError}
       percents={grpHook.percents}
-      setPercents={grpHook.setPercents}
       splitError={grpHook.splitError}
       createTx={grpHook.createTx}
       setCreateTx={grpHook.setCreateTx}
@@ -59,7 +56,10 @@ export default function GroupTransactionTab({
       totalCents={grpHook.totalCents}
       canSubmit={grpHook.canSubmit}
       currentUserId={currentUserId}
-      handleSwitchToPercent={grpHook.handleSwitchToPercent}
+      handlePercentChange={grpHook.handlePercentChange}
+      handleAmountChange={grpHook.handleAmountChange}
+      setMemberFull={grpHook.setMemberFull}
+      setMemberEmpty={grpHook.setMemberEmpty}
     />
   )
 }

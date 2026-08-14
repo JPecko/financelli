@@ -10,7 +10,7 @@ import DateInput from '@/shared/components/DateInput'
 import FormToggle from '@/shared/components/FormToggle'
 import CategorySelect from '@/features/transactions/components/CategorySelect'
 import SplitSection from './SplitSection'
-import type { SplitRow } from './SplitSection'
+import { useSplitState } from '../hooks/useSplitState'
 import { toCents, fromCents } from '@/domain/money'
 import { GROUP_EXPENSE_CATS } from '@/features/transactions/components/useGroupTransactionForm'
 import { addGroupEntry, updateGroupEntry } from '@/shared/hooks/useGroups'
@@ -26,13 +26,6 @@ import type { GroupEntry, GroupEntrySplit, GroupMember } from '@/domain/types'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const parseMoney = (v: string) => parseFloat(String(v).replace(',', '.')) || 0
-
-function distributeEvenly(totalCents: number, memberIds: number[]): Record<number, number> {
-  if (memberIds.length === 0) return {}
-  const base      = Math.floor(totalCents / memberIds.length)
-  const remainder = totalCents - base * memberIds.length
-  return Object.fromEntries(memberIds.map((id, i) => [id, i < remainder ? base + 1 : base]))
-}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -70,10 +63,6 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
   })
 
   const { data: accounts = [] } = useSortedAccounts()
-  const [splits,     setSplits]     = useState<SplitRow[]>([])
-  const [splitMode,  setSplitMode]  = useState<'even' | 'percent' | 'custom'>('even')
-  const [percents,   setPercents]   = useState<Record<number, string>>({})
-  const [splitError, setSplitError] = useState('')
   const [createTx,   setCreateTx]   = useState(true)
   const [txAccountId, setTxAccountId] = useState('')
 
@@ -82,15 +71,20 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
   const payerMemberId = watch('payerMemberId')
   const totalStr    = watch('totalAmount')
   const iAmPayer    = payerType === 'me'
+  const totalCents  = toCents(parseMoney(totalStr))
 
   const memberOptions = members
     .filter(m => m.userId !== user?.id)
     .map(m => ({ value: String(m.id), label: m.name }))
   const accountOptions = buildGroupedAccountSelectOptions(accounts, t)
 
+  const {
+    splitMode, setSplitMode, splitError, setSplitError, splits, percents,
+    resetEven, applyCustomSplits, handlePercentChange, handleAmountChange, setMemberFull, setMemberEmpty,
+  } = useSplitState(members, totalCents)
+
   // ── Derived summary ───────────────────────────────────────────────────────
 
-  const totalCents    = toCents(parseMoney(totalStr))
   const myShareCents  = splits.find(s => s.memberId === myMember?.id)
     ? toCents(parseMoney(splits.find(s => s.memberId === myMember?.id)!.amount))
     : 0
@@ -102,6 +96,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
     if (!open) return
 
     const defaultPayerMemberId = memberOptions[0]?.value ?? ''
+    const memberIds = members.map(m => m.id!)
 
     if (isEdit && entry) {
       const entryPaidByMe = myMember != null && entry.paidByMemberId === myMember.id
@@ -115,11 +110,9 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
         notes:         entry.notes ?? '',
       })
       if (existingSplits && existingSplits.length > 0) {
-        setSplits(existingSplits.map(s => ({ memberId: s.memberId, amount: fromCents(s.amount).toFixed(2) })))
-        setSplitMode('custom')
+        applyCustomSplits(existingSplits)
       } else {
-        setSplits(members.map(m => ({ memberId: m.id!, amount: '' })))
-        setSplitMode('even')
+        resetEven(memberIds, entry.totalAmount)
       }
       const defaultAccountId = accounts[0]?.id ? String(accounts[0].id) : ''
       if (entry.transactionId) {
@@ -141,54 +134,12 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
         description: '', date: isoToday(), category: 'food',
         totalAmount: '', payerType: 'me', payerMemberId: defaultPayerMemberId, notes: '',
       })
-      setSplits(members.map(m => ({ memberId: m.id!, amount: '' })))
-      setSplitMode('even')
-      setPercents({})
+      resetEven(memberIds, 0)
       setCreateTx(true)
       setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
     }
-    setSplitError('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, entry, existingSplits, members, isEdit, reset, accounts, myMember])
-
-  // ── Recompute even splits ─────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (splitMode !== 'even' || members.length === 0) return
-    const distributed = distributeEvenly(toCents(parseMoney(totalStr)), members.map(m => m.id!))
-    setSplits(members.map(m => ({ memberId: m.id!, amount: fromCents(distributed[m.id!] ?? 0).toFixed(2) })))
-  }, [totalStr, splitMode, members])
-
-  // ── Recompute percent splits ──────────────────────────────────────────────
-
-  useEffect(() => {
-    if (splitMode !== 'percent' || members.length === 0) return
-    const cents = toCents(parseMoney(totalStr))
-    setSplits(members.map(m => {
-      const pct = parseFloat(percents[m.id!] || '0') / 100
-      return { memberId: m.id!, amount: fromCents(Math.round(cents * pct)).toFixed(2) }
-    }))
-  }, [totalStr, splitMode, percents, members])
-
-  // ── Switch to percent mode ────────────────────────────────────────────────
-
-  function handleSwitchToPercent() {
-    const cents = toCents(parseMoney(totalStr))
-    const newPcts: Record<number, string> = {}
-    if (splitMode === 'custom' && cents > 0) {
-      members.forEach(m => {
-        const split = splits.find(s => s.memberId === m.id)
-        newPcts[m.id!] = ((toCents(parseMoney(split?.amount || '0')) / cents) * 100).toFixed(2)
-      })
-    } else {
-      const even = members.length > 0 ? 100 / members.length : 0
-      members.forEach((m, i) => {
-        newPcts[m.id!] = i < members.length - 1 ? even.toFixed(2) : (100 - even * (members.length - 1)).toFixed(2)
-      })
-    }
-    setPercents(newPcts)
-    setSplitMode('percent')
-    setSplitError('')
-  }
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
@@ -373,15 +324,15 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
           <SplitSection
             members={members}
             splits={splits}
-            setSplits={setSplits}
             splitMode={splitMode}
             setSplitMode={setSplitMode}
-            setSplitError={setSplitError}
             percents={percents}
-            setPercents={setPercents}
             splitError={splitError}
             currentUserId={user?.id}
-            handleSwitchToPercent={handleSwitchToPercent}
+            onPercentChange={handlePercentChange}
+            onAmountChange={handleAmountChange}
+            onSetFull={setMemberFull}
+            onSetEmpty={setMemberEmpty}
           />
 
           {/* Summary */}

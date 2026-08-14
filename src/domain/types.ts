@@ -108,6 +108,12 @@ export interface RecurringRule {
   isPersonal?: boolean     // if true, generated transactions won't be split by participants
   splitN?: number | null   // override divisor for generated transactions
   isReimbursable?: boolean // if true, generated transactions excluded from personal stats
+  // Group entry generation — when groupId is set, each firing creates a GroupEntry (not a personal split)
+  groupId?: number | null
+  splitMode?: 'even' | 'percent' | null
+  splitPercents?: Record<number, number> | null // memberId -> percent (0-100), only used when splitMode = 'percent'
+  payerMemberId?: number | null                 // null = the rule owner ("me") is the payer
+  createTx?: boolean                            // when payer is "me": also create a linked bank transaction
   createdAt: string
 }
 
