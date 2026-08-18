@@ -16,6 +16,7 @@ export const queryKeys = {
     investmentHistory: (accountId: number, year: number, month: number, months: number) =>
       ['transactions', 'investmentHistory', accountId, year, month, months] as const,
     capitalAdjustments: (accountIdsKey: string) => ['transactions', 'capitalAdjustments', accountIdsKey] as const,
+    byAccount: (accountId: number) => ['transactions', 'byAccount', accountId] as const,
   },
   rules: {
     all: () => ['rules'] as const,

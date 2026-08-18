@@ -17,8 +17,10 @@ function priceAt(prices: AssetPrice[], dateStr: string, fallback: number): numbe
   return fallback
 }
 
+type PurchaseLike = Pick<PurchaseHistory, 'date' | 'assetId' | 'quantity' | 'priceCents'>
+
 export function buildHistoryChartData(
-  purchases: PurchaseHistory[],
+  purchases: PurchaseLike[],
   assetMap: Record<number, Asset>,
   allPrices: AssetPrice[],   // all prices for assets in this account, sorted asc by date
 ): HistoryChartPoint[] {

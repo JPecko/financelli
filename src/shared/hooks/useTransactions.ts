@@ -22,6 +22,14 @@ export function useTransactionsByMonth(year: number, month: number) {
   })
 }
 
+export function useTransactionsByAccount(accountId?: number) {
+  return useQuery({
+    queryKey: queryKeys.transactions.byAccount(accountId!),
+    queryFn:  () => transactionsRepo.getByAccount(accountId!),
+    enabled:  accountId != null,
+  })
+}
+
 export function useInvestmentCapitalAdjustments(accountIds: number[]) {
   const accountIdsKey = accountIds.slice().sort((a, b) => a - b).join(',')
 

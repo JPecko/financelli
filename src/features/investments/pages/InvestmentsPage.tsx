@@ -11,6 +11,7 @@ import InvestmentAccountSelector from '../components/InvestmentAccountSelector'
 import InvestmentForecastSection from '../components/InvestmentForecastSection'
 import InvestmentSimulatorSection from '../components/InvestmentSimulatorSection'
 import InvestmentHistoryChart from '../components/InvestmentHistoryChart'
+import InvestmentIncomeContributionChart from '../components/InvestmentIncomeContributionChart'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
 
@@ -88,6 +89,11 @@ export default function InvestmentsPage() {
               <InvestmentHistoryChart
                 accountId={m.selectedAccount.id!}
                 accountName={m.selectedAccount.name}
+                assetMap={m.assetMap}
+              />
+
+              <InvestmentIncomeContributionChart
+                accountId={m.selectedAccount.id!}
                 assetMap={m.assetMap}
               />
 
