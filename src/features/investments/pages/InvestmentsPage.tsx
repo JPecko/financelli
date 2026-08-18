@@ -95,6 +95,7 @@ export default function InvestmentsPage() {
                 currentValueCents={m.selMarketValue}
                 accountName={m.selectedAccount.name}
                 chartId={m.selectedAccount.id}
+                defaultMonthlyContribution={m.selDefaultMonthlyContribution}
               />
 
               {m.selectedHoldings.length > 0 && (

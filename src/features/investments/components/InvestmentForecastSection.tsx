@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as ReTooltip, ResponsiveContainer,
@@ -22,17 +22,33 @@ interface Props {
   currentValueCents: number
   accountName?: string
   chartId?: string | number   // unique suffix for SVG gradient IDs when multiple instances render
+  defaultMonthlyContribution?: number   // euros — pre-fills the contribution input from this account's deposit history
 }
 
-export default function InvestmentForecastSection({ currentValueCents, accountName, chartId = 'global' }: Props) {
+export default function InvestmentForecastSection({
+  currentValueCents, accountName, chartId = 'global', defaultMonthlyContribution = 0,
+}: Props) {
   const t = useT()
   const gNominal = `fg-nominal-${chartId}`
   const gReal    = `fg-real-${chartId}`
 
   const [returnStr,    setReturnStr]    = useState('7')
   const [inflationStr, setInflationStr] = useState('2')
-  const [contribStr,   setContribStr]   = useState('0')
+  const [contribStr,   setContribStr]   = useState(() => defaultMonthlyContribution.toFixed(2))
   const [horizon,      setHorizon]      = useState<Horizon>(20)
+
+  // Keep the contribution input synced to the computed default (it may still be loading on first render) until the user edits it, or the account changes
+  const lastChartId  = useRef(chartId)
+  const userEditedRef = useRef(false)
+  useEffect(() => {
+    if (lastChartId.current !== chartId) {
+      lastChartId.current = chartId
+      userEditedRef.current = false
+    }
+    if (!userEditedRef.current) setContribStr(defaultMonthlyContribution.toFixed(2))
+  }, [chartId, defaultMonthlyContribution])
+
+  const handleContribChange = (v: string) => { userEditedRef.current = true; setContribStr(v) }
 
   const returnPct      = parseFloat(returnStr.replace(',', '.'))    || 0
   const inflationPct   = parseFloat(inflationStr.replace(',', '.')) || 0
@@ -113,7 +129,7 @@ export default function InvestmentForecastSection({ currentValueCents, accountNa
                 type="text"
                 inputMode="decimal"
                 value={contribStr}
-                onChange={e => setContribStr(e.target.value)}
+                onChange={e => handleContribChange(e.target.value)}
                 className="pr-6"
               />
               <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>

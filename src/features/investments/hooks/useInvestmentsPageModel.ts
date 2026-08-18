@@ -4,11 +4,13 @@ import { useAccounts } from '@/shared/hooks/useAccounts'
 import { useHoldings, removeHolding } from '@/shared/hooks/useHoldings'
 import { useAssets, removeAsset } from '@/shared/hooks/useAssets'
 import { useInvestmentCapitalAdjustments } from '@/shared/hooks/useTransactions'
+import { usePurchaseHistoryByAccount } from '@/shared/hooks/usePurchaseHistory'
 import { usePriceSync } from '@/shared/hooks/usePriceSync'
 import { syncAssets } from '@/data/services/syncService'
 import { useAssetPriceEditor } from './useAssetPriceEditor'
 import { useAuth } from '@/features/auth/AuthContext'
 import { computeMarketValue, computeAccountBalance } from '../utils/investmentMetrics'
+import { computeDefaultMonthlyContribution } from '../utils/forecastHelpers'
 import type { Asset, Holding, Account } from '@/domain/types'
 
 export type AccountStats = {
@@ -52,6 +54,7 @@ export function useInvestmentsPageModel() {
   const investmentAccountIds = investmentAccounts.flatMap(a => a.id != null ? [a.id] : [])
 
   const { data: capitalAdjustments = {} } = useInvestmentCapitalAdjustments(investmentAccountIds)
+  const { data: selectedPurchases = [] }  = usePurchaseHistoryByAccount(selectedAccountId ?? undefined)
 
   // Auto-select first account when none is selected (e.g. direct navigation, no state)
   useEffect(() => {
@@ -95,6 +98,23 @@ export function useInvestmentsPageModel() {
   const selPnL          = selMarketValue - selAdjCost
   const selPnLPct       = selAdjCost > 0 ? (selPnL / selAdjCost) * 100 : 0
   const selInvestedBase = (selectedAccount?.investedBase ?? 0) + capitalAmount
+  // Same "Total Invested" the Portfolio History chart shows — cumulative buy cost from purchaseHistory
+  const selPurchasesInvestedCents = selectedPurchases
+    .filter(p => p.quantity > 0)
+    .reduce((sum, p) => sum + p.priceCents * p.quantity, 0)
+  const selFirstPurchaseDate = selectedPurchases.reduce<string | undefined>(
+    (earliest, p) => (!earliest || p.date < earliest ? p.date : earliest),
+    undefined,
+  )
+  const selFirstHoldingDate = selectedHoldings.reduce<string | undefined>(
+    (earliest, h) => (h.date && (!earliest || h.date < earliest) ? h.date : earliest),
+    undefined,
+  )
+  // Prefer purchaseHistory (matches the chart) over investedBase+capital, which only exists for CSV-imported accounts
+  const [selTotalInvestedForAvg, selFirstActivityDate] = selFirstPurchaseDate
+    ? [selPurchasesInvestedCents, selFirstPurchaseDate]
+    : [selInvestedBase, selFirstHoldingDate ?? selectedAccount?.createdAt]
+  const selDefaultMonthlyContribution = computeDefaultMonthlyContribution(selTotalInvestedForAvg, selFirstActivityDate)
 
   // Global totals
   const totalMarketValue  = holdings.reduce((s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0)
@@ -141,7 +161,7 @@ export function useInvestmentsPageModel() {
     handleSelectAccount: setSelectedAccountId,
     accountStatsMap,
     // selected account totals
-    selMarketValue, selAdjCost, selFees, selPnL, selPnLPct, selInvestedBase,
+    selMarketValue, selAdjCost, selFees, selPnL, selPnLPct, selInvestedBase, selDefaultMonthlyContribution,
     // global totals
     totalMarketValue, totalAdjustedCost, totalFees, totalPnL, totalPnLPct, totalInvestedBase,
     // price editor

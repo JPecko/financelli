@@ -1,3 +1,12 @@
+import { differenceInCalendarMonths, parseISO } from 'date-fns'
+
+// Total invested / calendar months from the first holding to now (inclusive) — pre-fills the contribution input
+export function computeDefaultMonthlyContribution(investedCents: number, firstDate?: string): number {
+  if (investedCents <= 0 || !firstDate) return 0
+  const months = Math.max(1, differenceInCalendarMonths(new Date(), parseISO(firstDate)) + 1)
+  return Math.round((investedCents / 100 / months) * 100) / 100
+}
+
 export interface ForecastPoint {
   year: number
   nominal: number   // euros — raw portfolio value
