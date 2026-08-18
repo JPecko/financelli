@@ -49,6 +49,9 @@ export default function GroupTransactionTab({
       splitError={grpHook.splitError}
       createTx={grpHook.createTx}
       setCreateTx={grpHook.setCreateTx}
+      roundupEnabled={grpHook.roundupEnabled}
+      setRoundupEnabled={grpHook.setRoundupEnabled}
+      txAccount={grpHook.txAccount}
       linkedEntry={grpHook.linkedEntry}
       myMember={grpHook.myMember}
       myShareCents={grpHook.myShareCents}

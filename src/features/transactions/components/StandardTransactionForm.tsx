@@ -47,8 +47,10 @@ export default function StandardTransactionForm({
     isReimbursable,
     personalUserId,
     holdingId,
+    roundupEnabled,
     isSharedAccount,
     sharedAccountParticipants,
+    selectedAccount,
     handleFromChange,
     onSubmit,
   } = txHook
@@ -126,6 +128,19 @@ export default function StandardTransactionForm({
             <p className="text-xs text-muted-foreground mt-1">{t('transactions.reimbursableDesc')}</p>
           </div>
           <FormToggle on={isReimbursable} color="bg-amber-500" />
+        </label>
+      )}
+
+      {selectedType === 'expense' && !isRoundupEdit && !!selectedAccount?.roundupMultiplier && (
+        <label
+          className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border cursor-pointer hover:bg-accent/60 transition-colors"
+          onClick={e => { e.preventDefault(); setValue('roundupEnabled', !roundupEnabled) }}
+        >
+          <div>
+            <p className="text-sm font-medium leading-none">{t('transactions.roundup')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('transactions.roundupDesc')}</p>
+          </div>
+          <FormToggle on={roundupEnabled} />
         </label>
       )}
 

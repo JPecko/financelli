@@ -31,6 +31,7 @@ export interface TransactionFormValues {
   personalUserId: string   // non-empty & !isShared → only this user owns the expense
   holdingId:      string   // '' = no link, '123' = holding ID (investment accounts)
   units:          string   // units bought/sold (investment accounts)
+  roundupEnabled: boolean  // false = skip roundup generation for this expense
 }
 
 // ── Payload builder ────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ function buildPayload(v: TransactionFormValues): Omit<Transaction, 'id' | 'creat
     personalUserId: !v.isShared && v.personalUserId ? v.personalUserId : undefined,
     holdingId:      v.holdingId ? parseInt(v.holdingId) : undefined,
     units:          v.holdingId && v.units ? parseFloat(v.units) : undefined,
+    skipRoundup:    v.type === 'expense' && !v.roundupEnabled,
   }
   if (v.type === 'transfer') {
     if (fromIsReal && toIsReal) return { ...base, accountId: parseInt(v.fromId), toAccountId: parseInt(v.toId), amount: -abs }
@@ -80,6 +82,7 @@ function makeDefaults(
     personalUserId: '',
     holdingId:      '',
     units:          '',
+    roundupEnabled: true,
   }
 }
 
@@ -110,6 +113,7 @@ function makeEditValues(tx: Transaction, participants?: number): TransactionForm
     personalUserId: tx.personalUserId ?? '',
     holdingId:      tx.holdingId != null ? String(tx.holdingId) : '',
     units:          tx.units     != null ? String(tx.units)     : '',
+    roundupEnabled: !tx.skipRoundup,
   }
 }
 
@@ -161,6 +165,7 @@ function makeResetValues(
       personalUserId: editValues.personalUserId,
       holdingId: editValues.holdingId,
       units: editValues.units,
+      roundupEnabled: editValues.roundupEnabled,
     }
   }
 
@@ -235,6 +240,7 @@ export function useTransactionForm({
   const isReimbursable = watch('isReimbursable')
   const personalUserId = watch('personalUserId')
   const holdingId      = watch('holdingId')
+  const roundupEnabled = watch('roundupEnabled')
 
   const selectedAccount         = accounts.find(a => String(a.id) === selectedFrom)
   const isSharedAccountSelected = (selectedAccount?.participants ?? 1) > 1
@@ -307,7 +313,7 @@ export function useTransactionForm({
 
   return {
     form, isTransfer, isValid, categories, accounts, accountOptions,
-    selectedType, selectedFrom, selectedTo, splitN, isReimbursable, personalUserId, holdingId,
+    selectedType, selectedFrom, selectedTo, splitN, isReimbursable, personalUserId, holdingId, roundupEnabled,
     isSharedAccount: isSharedAccountSelected, sharedAccountParticipants, selectedAccount,
     handleTypeChange, handleFromChange, onSubmit,
   }

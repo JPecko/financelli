@@ -97,6 +97,9 @@ export function useGroupTransactionForm({
 
   const [members,    setMembers]    = useState<GroupMember[]>([])
   const [createTx,   setCreateTx]   = useState(false)
+  const [roundupEnabled, setRoundupEnabled] = useState(true)
+
+  const txAccount = accounts.find(a => String(a.id) === accountId)
 
   const [linkedEntry,  setLinkedEntry]  = useState<GroupEntry | null>(null)
   const [linkedSplits, setLinkedSplits] = useState<GroupEntrySplit[]>([])
@@ -162,6 +165,7 @@ export function useGroupTransactionForm({
     resetEven([], 0)
     // Default to creating a real bank transaction when the user is the payer
     setCreateTx(!sharedExpense && !transaction)
+    setRoundupEnabled(true)
     // initialOverride excluded: it's rebuilt every keystroke and would loop the reset forever
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, reset, transaction, sharedExpense, fallbackAccountId])
@@ -251,7 +255,7 @@ export function useGroupTransactionForm({
         newTxId = await addTransaction({
           accountId: parseInt(values.accountId), amount: -totalCents, type: 'expense',
           category: values.category, description: values.description.trim() || values.category,
-          date: values.date, isReimbursable: true,
+          date: values.date, isReimbursable: true, skipRoundup: !roundupEnabled,
         })
       }
       await addGroupEntry(
@@ -281,6 +285,7 @@ export function useGroupTransactionForm({
     splitMode, setSplitMode,
     percents,
     splitError, createTx, setCreateTx,
+    roundupEnabled, setRoundupEnabled, txAccount,
     linkedEntry, myMember,
     totalCents, myShareCents, othersOweCents,
     canSubmit, onSubmit,

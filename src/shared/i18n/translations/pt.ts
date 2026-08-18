@@ -483,6 +483,8 @@ export const pt: typeof en = {
     myShare:  'minha parte',
     reimbursable:     'Reembolsável',
     reimbursableDesc: 'Pago em nome de outra pessoa — não contabilizado nas tuas despesas pessoais',
+    roundup:          'Arredondamento',
+    roundupDesc:      'Arredonda esta despesa e adiciona à poupança',
     personalFor:      'Despesa de',
     personalForDesc:  'Apenas as despesas pessoais deste participante incluirão este movimento',
     personalForMe:    'Só eu',

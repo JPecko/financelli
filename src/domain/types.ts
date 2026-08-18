@@ -86,6 +86,7 @@ export interface Transaction {
   personalUserId?: string  // if set, only this user counts it as a personal expense; others exclude it
   holdingId?: number       // linked holding (investment accounts only)
   units?: number           // units bought (income) or sold (expense) for linked holding
+  skipRoundup?: boolean    // if true, this expense is excluded from account roundup generation
   createdAt: string
 }
 

@@ -39,6 +39,9 @@ interface Props {
   splitError:   string
   createTx:     boolean
   setCreateTx:  (v: boolean) => void
+  roundupEnabled: boolean
+  setRoundupEnabled: (v: boolean) => void
+  txAccount?:   Account
   linkedEntry:  GroupEntry | null
   myMember:     GroupMember | undefined
   myShareCents: number
@@ -59,7 +62,7 @@ export default function GroupTransactionForm({
   register, watch, setValue, errors, isSubmitting,
   members, splits, splitMode, setSplitMode,
   percents, splitError,
-  createTx, setCreateTx, myMember,
+  createTx, setCreateTx, roundupEnabled, setRoundupEnabled, txAccount, myMember,
   myShareCents, othersOweCents, totalCents, canSubmit,
   currentUserId, handlePercentChange, handleAmountChange, setMemberFull, setMemberEmpty,
 }: Props) {
@@ -156,6 +159,18 @@ export default function GroupTransactionForm({
                     placeholder="Select account..."
                   />
                 </div>
+              )}
+              {createTx && !!txAccount?.roundupMultiplier && (
+                <label
+                  className="flex items-center justify-between gap-3 px-4 py-3 border-t cursor-pointer hover:bg-accent/60 transition-colors"
+                  onClick={e => { e.preventDefault(); setRoundupEnabled(!roundupEnabled) }}
+                >
+                  <div>
+                    <p className="text-sm font-medium leading-none">{t('transactions.roundup')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('transactions.roundupDesc')}</p>
+                  </div>
+                  <FormToggle on={roundupEnabled} />
+                </label>
               )}
             </div>
           )}

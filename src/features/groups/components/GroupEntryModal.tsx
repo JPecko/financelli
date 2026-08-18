@@ -65,6 +65,9 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
   const { data: accounts = [] } = useSortedAccounts()
   const [createTx,   setCreateTx]   = useState(true)
   const [txAccountId, setTxAccountId] = useState('')
+  const [roundupEnabled, setRoundupEnabled] = useState(true)
+
+  const txAccount = accounts.find(a => String(a.id) === txAccountId)
 
   const myMember    = members.find(m => m.userId === user?.id)
   const payerType   = watch('payerType')
@@ -116,17 +119,22 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       }
       const defaultAccountId = accounts[0]?.id ? String(accounts[0].id) : ''
       if (entry.transactionId) {
-        supabase.from('transactions').select('account_id').eq('id', entry.transactionId).single()
-          .then(({ data }) => {
+        supabase.from('transactions').select('account_id, skip_roundup').eq('id', entry.transactionId).single()
+          .then(({ data, error }) => {
+            if (error) console.error('Failed to load linked transaction', error)
             if (data) {
-              setTxAccountId(String((data as { account_id: number }).account_id))
+              const row = data as { account_id: number; skip_roundup: boolean }
+              setTxAccountId(String(row.account_id))
+              setRoundupEnabled(!row.skip_roundup)
             } else {
               setTxAccountId(defaultAccountId)
+              setRoundupEnabled(true)
             }
             setCreateTx(true)
           })
       } else {
         setTxAccountId(defaultAccountId)
+        setRoundupEnabled(true)
         setCreateTx(entryPaidByMe)
       }
     } else {
@@ -137,6 +145,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       resetEven(memberIds, 0)
       setCreateTx(true)
       setTxAccountId(accounts[0]?.id ? String(accounts[0].id) : '')
+      setRoundupEnabled(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, entry, existingSplits, members, isEdit, reset, accounts, myMember])
@@ -189,6 +198,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       description:    values.description.trim(),
       date:           values.date,
       isReimbursable: true,
+      skipRoundup:    !roundupEnabled,
     } : null
 
     if (isEdit && entry?.id != null) {
@@ -265,6 +275,18 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
                     placeholder="Select account..."
                   />
                 </div>
+              )}
+              {createTx && !!txAccount?.roundupMultiplier && (
+                <label
+                  className="flex items-center justify-between gap-3 px-4 py-3 border-t cursor-pointer hover:bg-accent/60 transition-colors"
+                  onClick={e => { e.preventDefault(); setRoundupEnabled(!roundupEnabled) }}
+                >
+                  <div>
+                    <p className="text-sm font-medium leading-none">{t('transactions.roundup')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('transactions.roundupDesc')}</p>
+                  </div>
+                  <FormToggle on={roundupEnabled} />
+                </label>
               )}
             </div>
           )}

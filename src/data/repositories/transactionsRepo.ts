@@ -19,6 +19,7 @@ type TransactionRow = {
   personal_user_id: string | null
   holding_id: number | null
   units: number | null
+  skip_roundup: boolean
   created_at: string
 }
 
@@ -39,6 +40,7 @@ function toTransaction(row: TransactionRow): Transaction {
     personalUserId:  row.personal_user_id ?? undefined,
     holdingId:       row.holding_id ?? undefined,
     units:           row.units != null ? Number(row.units) : undefined,
+    skipRoundup:     row.skip_roundup ?? false,
     createdAt:       row.created_at,
   }
 }
@@ -59,6 +61,7 @@ function toRow(tx: Omit<Transaction, 'id' | 'createdAt'>): Record<string, unknow
     personal_user_id:  tx.personalUserId ?? null,
     holding_id:        tx.holdingId ?? null,
     units:             tx.units ?? null,
+    skip_roundup:      tx.skipRoundup ?? false,
   }
 }
 
@@ -168,7 +171,7 @@ export const transactionsRepo = {
     await applyBalances(tx)
 
     // Auto-generate cashback/roundup for expenses (excluding auto-transactions themselves)
-    if (tx.type === 'expense' && tx.amount < 0 &&
+    if (tx.type === 'expense' && tx.amount < 0 && !tx.skipRoundup &&
         tx.category !== 'cashback' && tx.category !== 'roundup') {
       const account = await accountsRepo.getById(tx.accountId)
       await createAutoTransactions(tx, account)
@@ -202,7 +205,7 @@ export const transactionsRepo = {
 
     if (isSourceExpense(existingTx)) {
       await removeLinkedRoundup(existingTx)
-      if (isSourceExpense(updated)) {
+      if (isSourceExpense(updated) && !updated.skipRoundup) {
         const account = await accountsRepo.getById(updated.accountId)
         await createAutoTransactions(updated, account)
       }
@@ -241,6 +244,7 @@ export const transactionsRepo = {
       .lt('amount', 0)
       .neq('category', 'cashback')
       .neq('category', 'roundup')
+      .eq('skip_roundup', false)
     if (expErr) throw expErr
 
     let created = 0

@@ -308,6 +308,8 @@ export const en = {
     myShare:  'my share',
     reimbursable:     'Reimbursable',
     reimbursableDesc: 'Paid on behalf of someone else — not counted in your personal expenses',
+    roundup:          'Roundup',
+    roundupDesc:      'Round up this expense and add it to your savings',
     personalFor:      'Personal for',
     personalForDesc:  'Only this participant\'s personal expenses will include this transaction',
     personalForMe:    'Only me',
