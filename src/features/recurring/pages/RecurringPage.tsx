@@ -1,55 +1,50 @@
-import { useState } from 'react'
-import { format, parseISO, type Locale } from 'date-fns'
-import { cn } from '@/lib/utils'
-import { Plus, Pencil, Trash2, RefreshCw, Play, Pause, ArrowRight, CalendarDays, Zap, Loader2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
-import { Badge } from '@/shared/components/ui/badge'
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/shared/components/ui/dropdown-menu'
 import { useRecurringRules, removeRule, updateRule, applyRule } from '@/shared/hooks/useRecurringRules'
-import { useAccounts } from '@/shared/hooks/useAccounts'
-import { formatMoney } from '@/domain/money'
-import { getCategoryById, tCategory } from '@/domain/categories'
-import { formatDate, formatMonthYear } from '@/shared/utils/format'
+import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { getDateFnsLocale } from '@/shared/utils/dateLocale'
 import { useLanguageStore } from '@/shared/store/languageStore'
 import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import RecurringFormModal from '../components/RecurringFormModal'
+import RecurringFilterPopover from '../components/RecurringFilterPopover'
+import RecurringAccountTotals from '../components/RecurringAccountTotals'
+import RecurringTotalPill from '../components/RecurringTotalPill'
+import RecurringRuleRow from '../components/RecurringRuleRow'
+import { computeTotal, computeAccountTotals, groupRulesByMonth } from '../utils/recurringTotals'
 import type { RecurringRule } from '@/domain/types'
 import { useT } from '@/shared/i18n'
-
-const FREQ_BADGE: Record<string, string> = {
-  weekly:  'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  monthly: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-  yearly:  'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-}
-
-// Rules already come sorted by nextDue — group consecutive rules sharing a month.
-function groupRulesByMonth(rules: RecurringRule[], locale: Locale): { key: string; label: string; rules: RecurringRule[] }[] {
-  const groups: { key: string; label: string; rules: RecurringRule[] }[] = []
-  for (const rule of rules) {
-    const key = format(parseISO(rule.nextDue), 'yyyy-MM')
-    const last = groups[groups.length - 1]
-    if (last?.key === key) last.rules.push(rule)
-    else groups.push({ key, label: formatMonthYear(rule.nextDue, locale), rules: [rule] })
-  }
-  return groups
-}
 
 export default function RecurringPage() {
   const t = useT()
   const dateLocale = getDateFnsLocale(useLanguageStore(s => s.lang))
   const { data: rules    = [], isLoading } = useRecurringRules()
-  const { data: accounts = [] } = useAccounts()
-  const [modalOpen, setModalOpen]               = useState(false)
-  const [editing, setEditing]                   = useState<RecurringRule | undefined>()
-  const [applying, setApplying]                 = useState<number | null>(null)
-  const [confirmDeleteId, setConfirmDeleteId]   = useState<number | null>(null)
+  const { data: accounts = [] } = useSortedAccounts()
+  const [modalOpen, setModalOpen]             = useState(false)
+  const [editing, setEditing]                 = useState<RecurringRule | undefined>()
+  const [applying, setApplying]               = useState<number | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const [filterAccountId, setFilterAccountId] = useState<number | null>(null)
 
   const accountName = (id: number) => accounts.find(a => a.id === id)?.name ?? '?'
+
+  const filteredRules = useMemo(
+    () => filterAccountId == null
+      ? rules
+      : rules.filter(r => r.accountId === filterAccountId || r.toAccountId === filterAccountId),
+    [rules, filterAccountId],
+  )
+
+  const monthGroups = useMemo(() => groupRulesByMonth(filteredRules, dateLocale), [filteredRules, dateLocale])
+
+  // Transfers touch two accounts, so filteredRules can include rules belonging to the other
+  // side of a transfer — restrict the breakdown to the selected account when filtering.
+  const accountTotals = useMemo(() => {
+    const totals = computeAccountTotals(filteredRules, accounts)
+    return filterAccountId == null ? totals : totals.filter(t => t.account.id === filterAccountId)
+  }, [filteredRules, accounts, filterAccountId])
 
   const handleEdit = (rule: RecurringRule) => {
     setEditing(rule)
@@ -86,17 +81,43 @@ export default function RecurringPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t('recurring.title')}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {t('recurring.subtitle')}
-          </p>
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">{t('recurring.title')}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {t('recurring.subtitle')}
+            </p>
+          </div>
+          {/* Desktop: total + filters + add button all inline, right-aligned */}
+          <div className="hidden sm:flex items-center gap-2">
+            {rules.length > 0 && <RecurringTotalPill label={t('recurring.total')} amount={computeTotal(filteredRules)} />}
+            <RecurringFilterPopover
+              accounts={accounts}
+              filterAccountId={filterAccountId}
+              setFilterAccountId={setFilterAccountId}
+            />
+            <Button onClick={() => setModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t('recurring.addRule')}
+            </Button>
+          </div>
+          {/* Mobile: add button on its own row, next to the title */}
+          <Button onClick={() => setModalOpen(true)} className="sm:hidden">
+            <Plus className="h-4 w-4 mr-2" />
+            {t('recurring.addRule')}
+          </Button>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t('recurring.addRule')}
-        </Button>
+
+        {/* Mobile: total left, filters right, on their own row */}
+        <div className="flex items-center justify-between gap-2 mt-3 sm:hidden">
+          {rules.length > 0 && <RecurringTotalPill label={t('recurring.total')} amount={computeTotal(filteredRules)} />}
+          <RecurringFilterPopover
+            accounts={accounts}
+            filterAccountId={filterAccountId}
+            setFilterAccountId={setFilterAccountId}
+          />
+        </div>
       </div>
 
       {isLoading ? (
@@ -114,144 +135,46 @@ export default function RecurringPage() {
           }
         />
       ) : (
-        <div className="space-y-6">
-          {groupRulesByMonth(rules, dateLocale).map(group => (
-            <div key={group.key}>
-              <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {group.label}
-              </p>
-              <div className="rounded-lg border overflow-hidden">
-                <div className="divide-y divide-border">
-                  {group.rules.map(rule => {
-                    const cat        = getCategoryById(rule.category)
-                    const isTransfer = rule.type === 'transfer' && rule.toAccountId != null
-                    const amountColor = isTransfer
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : rule.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'
+        <>
+          <RecurringAccountTotals totals={accountTotals} />
 
-                    return (
-                      <div
-                        key={rule.id}
-                  className={cn(
-                    'relative px-4 py-3 flex items-center gap-3 group transition-colors',
-                    !rule.active && 'opacity-60',
-                  )}
-                  style={{ backgroundColor: `${cat.color}12` }}
-                >
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-foreground/[0.04] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-                  {/* Category icon */}
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                    style={{ backgroundColor: `${cat.color}20` }}
-                  >
-                    <RefreshCw className="h-4 w-4" style={{ color: cat.color }} />
+          {filteredRules.length === 0 ? (
+            <EmptyState
+              icon={RefreshCw}
+              title={t('recurring.noRules')}
+              description={t('recurring.noRulesDesc')}
+            />
+          ) : (
+            <div className="space-y-6">
+              {monthGroups.map(group => (
+                <div key={group.key}>
+                  <div className="mb-2 px-1 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </p>
+                    <RecurringTotalPill label={t('recurring.monthTotal')} amount={group.total} />
                   </div>
-
-                  {/* Main info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-semibold truncate">{rule.name}</p>
-                      {!rule.active && (
-                        <Badge variant="secondary" className="text-xs shrink-0">{t('recurring.paused')}</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      {/* Date — visible on mobile only (desktop has its own column) */}
-                      <span className="sm:hidden flex items-center gap-1 text-xs font-medium text-foreground/75 shrink-0">
-                        <CalendarDays className="h-3 w-3" />
-                        {formatDate(rule.nextDue)}
-                      </span>
-                      <span className="sm:hidden text-xs text-muted-foreground shrink-0">·</span>
-                      {/* Secondary meta */}
-                      {isTransfer ? (
-                        <span className="flex items-center gap-0.5 text-xs text-muted-foreground min-w-0">
-                          <span className="truncate">{accountName(rule.accountId)}</span>
-                          <ArrowRight className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{accountName(rule.toAccountId!)}</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground truncate">
-                          {accountName(rule.accountId)}
-                        </span>
-                      )}
-                      <span className="text-xs text-muted-foreground shrink-0">·</span>
-                      <Badge
-                        variant="secondary"
-                        className="text-xs px-1.5 py-0 h-5 shrink-0"
-                        style={{ borderLeft: `2px solid ${cat.color}` }}
-                      >
-                        {tCategory(cat.id, t)}
-                      </Badge>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${FREQ_BADGE[rule.frequency]}`}>
-                        {t(('recurring.frequencies.' + rule.frequency) as Parameters<typeof t>[0])}
-                      </span>
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="divide-y divide-border">
+                      {group.rules.map(rule => (
+                        <RecurringRuleRow
+                          key={rule.id}
+                          rule={rule}
+                          accountName={accountName}
+                          applying={applying === rule.id}
+                          onApply={() => handleApply(rule)}
+                          onEdit={() => handleEdit(rule)}
+                          onToggle={() => handleToggle(rule)}
+                          onDelete={() => handleDelete(rule.id)}
+                        />
+                      ))}
                     </div>
                   </div>
-
-                  {/* Date column — desktop only */}
-                  <div className="hidden sm:flex flex-col items-end shrink-0">
-                    <span className="text-xs text-muted-foreground">{t('recurring.nextDue')}</span>
-                    <span className="text-sm font-medium tabular-nums">{formatDate(rule.nextDue)}</span>
-                  </div>
-
-                  {/* Amount */}
-                  <span className={`text-sm font-semibold shrink-0 whitespace-nowrap tabular-nums ${amountColor}`}>
-                    {isTransfer
-                      ? formatMoney(Math.abs(rule.amount))
-                      : `${rule.amount >= 0 ? '+' : ''}${formatMoney(rule.amount)}`
-                    }
-                  </span>
-
-                  {/* Actions */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                        <span className="sr-only">Actions</span>
-                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                          <circle cx="12" cy="5"  r="1.5" />
-                          <circle cx="12" cy="12" r="1.5" />
-                          <circle cx="12" cy="19" r="1.5" />
-                        </svg>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleApply(rule)}
-                        disabled={applying === rule.id}
-                      >
-                        {applying === rule.id
-                          ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          : <Zap className="h-4 w-4 mr-2" />
-                        }
-                        {t('recurring.applyNow')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEdit(rule)}>
-                        <Pencil className="h-4 w-4 mr-2" /> {t('common.edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleToggle(rule)}>
-                        {rule.active
-                          ? <><Pause className="h-4 w-4 mr-2" /> {t('recurring.pause')}</>
-                          : <><Play  className="h-4 w-4 mr-2" /> {t('recurring.resume')}</>
-                        }
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => handleDelete(rule.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" /> {t('common.delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                      </div>
-                    )
-                  })}
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       <RecurringFormModal open={modalOpen} onClose={handleClose} rule={editing} />
