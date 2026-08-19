@@ -400,33 +400,39 @@ export default function GroupDetailPage() {
           {debts.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-1">{t('groups.noDebts')}</p>
           ) : (
-            <>
-              <div className="space-y-1.5">
-                {debts.map((d, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm rounded-lg bg-muted/30 px-3 py-2">
-                    <span className={`font-medium truncate ${myMember && d.fromMemberId === myMember.id ? 'text-rose-600' : ''}`}>
-                      {d.fromMemberName}
-                    </span>
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className={`font-medium truncate ${myMember && d.toMemberId === myMember.id ? 'text-emerald-600' : ''}`}>
-                      {d.toMemberName}
-                    </span>
-                    <span className="ml-auto font-semibold tabular-nums text-rose-600 shrink-0">
-                      {formatMoney(d.amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-1.5">
+              {debts.map((d, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm rounded-lg bg-muted/30 px-3 py-2">
+                  <span className={`font-medium truncate ${myMember && d.fromMemberId === myMember.id ? 'text-rose-600' : ''}`}>
+                    {d.fromMemberName}
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className={`font-medium truncate ${myMember && d.toMemberId === myMember.id ? 'text-emerald-600' : ''}`}>
+                    {d.toMemberName}
+                  </span>
+                  <span className="ml-auto font-semibold tabular-nums text-rose-600 shrink-0">
+                    {formatMoney(d.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
-              {/* Prominent settle-up button */}
-              <Button
-                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"
-                onClick={() => { setSettleUpAccounts({}); setSettleUpOpen(true) }}
-              >
-                <CheckCheck className="h-4 w-4 mr-2" />
-                {t('groups.settleUp')}
-              </Button>
-            </>
+          {/* Add expense — the common action, kept above and more prominent than settle-up */}
+          <Button className="w-full h-10 font-semibold shadow-sm" onClick={openAddEntry}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            {t('groups.addEntry')}
+          </Button>
+
+          {debts.length > 0 && (
+            <Button
+              variant="outline"
+              className="w-full h-9 border-orange-500/40 text-orange-600 hover:bg-orange-500/10 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-medium text-xs"
+              onClick={() => { setSettleUpAccounts({}); setSettleUpOpen(true) }}
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+              {t('groups.settleUp')}
+            </Button>
           )}
         </CardContent>
       </Card>
@@ -530,7 +536,7 @@ export default function GroupDetailPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('groups.entries')}</h2>
-          <Button size="sm" onClick={openAddEntry}>
+          <Button onClick={openAddEntry} className="h-10 font-semibold shadow-sm">
             <Plus className="h-4 w-4 mr-1.5" />
             {t('groups.addEntry')}
           </Button>
