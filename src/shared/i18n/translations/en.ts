@@ -330,7 +330,7 @@ export const en = {
     nextDue:       'Next due',
     total:         'Total',
     monthTotal:    'Total',
-    byAccount:     'By account',
+    byAccount:     'Balance by Account',
     frequency:     'Frequency',
     active:        'Active',
     inactive:      'Inactive',

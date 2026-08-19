@@ -505,7 +505,7 @@ export const pt: typeof en = {
     nextDue:       'Próximo vencimento',
     total:         'Total',
     monthTotal:    'Total',
-    byAccount:     'Por conta',
+    byAccount:     'Balanço por Conta',
     frequency:     'Frequência',
     active:        'Ativo',
     inactive:      'Inativo',
