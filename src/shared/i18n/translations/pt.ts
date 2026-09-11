@@ -11,7 +11,7 @@ export const pt: typeof en = {
     shopping:      'Shopping',
     utilities:     'Serviços',
     education:     'Educação',
-    travel:        'Viagem',
+    travel:        'Viagem / Férias',
     investing:     'Investimento',
     sport:         'Desporto',
     wellness:      'Wellness',

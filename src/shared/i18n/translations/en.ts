@@ -9,7 +9,7 @@ export const en = {
     shopping:      'Shopping',
     utilities:     'Utilities',
     education:     'Education',
-    travel:        'Travel',
+    travel:        'Trip / Vacations',
     investing:     'Investing',
     sport:         'Sport',
     wellness:      'Wellness',

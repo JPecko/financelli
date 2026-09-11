@@ -7,3 +7,9 @@
     bottom: 0 !important;
   }
 }
+
+// Legend wrapper renders after the tooltip wrapper in the DOM, so it stacks on top and
+// shows through the tooltip's background when they overlap — force the tooltip above it.
+.chartWrap :global(.recharts-tooltip-wrapper) {
+  z-index: 10;
+}

@@ -44,7 +44,7 @@ export const CATEGORIES: Category[] = [
   { id: 'utilities',     label: 'Utilities',        icon: Zap,            color: '#eab308', type: 'expense' },
   { id: 'health',        label: 'Health',           icon: Heart,          color: '#ef4444', type: 'expense' },
   { id: 'education',     label: 'Education',        icon: GraduationCap,  color: '#06b6d4', type: 'expense' },
-  { id: 'travel',        label: 'Travel',           icon: Plane,          color: '#14b8a6', type: 'expense' },
+  { id: 'travel',        label: 'Trip / Vacations', icon: Plane,          color: '#14b8a6', type: 'expense' },
   { id: 'investing',     label: 'Investing',        icon: Landmark,       color: '#7c3aed', type: 'expense' },
   { id: 'wellness',      label: 'Wellness',         icon: Sparkles,       color: '#c026d3', type: 'expense' },
   { id: 'roundup',       label: 'Roundup',          icon: Coins,          color: '#78716c', type: 'expense' },
