@@ -33,6 +33,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { formatMoney } from '@/domain/money'
 import EmptyState from '@/shared/components/EmptyState'
 import BalanceValue from '@/shared/components/BalanceValue'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import PageLoader from '@/shared/components/PageLoader'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AccountFormModal from '../components/AccountFormModal'
@@ -389,7 +390,10 @@ export default function AccountsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{t('accounts.title')}</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold">{t('accounts.title')}</h1>
+            <PageHelpInfo title={t('accounts.help.title')} body={t('accounts.help.body')} />
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             {t('accounts.totalBalance')}: <BalanceValue className="inline"><span className="font-semibold text-foreground">{formatMoney(totalBalance)}</span></BalanceValue>
           </p>

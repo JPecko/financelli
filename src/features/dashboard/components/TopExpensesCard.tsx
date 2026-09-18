@@ -3,6 +3,7 @@ import { formatMoney } from '@/domain/money'
 import { formatDate } from '@/shared/utils/format'
 import { getCategoryById, tCategory } from '@/domain/categories'
 import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { ListRow } from '../utils/dashboardHelpers'
 import type { TopExpenseItem } from '../hooks/useDashboardModel'
 
@@ -17,7 +18,10 @@ export default function TopExpensesCard({ topExpenses, hasBenefits }: Props) {
   return (
     <Card className={!hasBenefits ? 'lg:col-span-2' : ''}>
       <CardHeader>
-        <CardTitle className="text-sm font-medium">{t('dashboard.topExpenses')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{t('dashboard.topExpenses')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.topExpenses.title')} body={t('dashboard.sections.topExpenses.body')} />
+        </div>
       </CardHeader>
       <CardContent>
         {topExpenses.length === 0 ? (

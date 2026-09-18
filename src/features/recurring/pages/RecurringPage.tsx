@@ -7,6 +7,7 @@ import { getDateFnsLocale } from '@/shared/utils/dateLocale'
 import { useLanguageStore } from '@/shared/store/languageStore'
 import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import RecurringFormModal from '../components/RecurringFormModal'
 import RecurringFilterPopover from '../components/RecurringFilterPopover'
@@ -84,7 +85,10 @@ export default function RecurringPage() {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{t('recurring.title')}</h1>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-2xl font-bold">{t('recurring.title')}</h1>
+              <PageHelpInfo title={t('recurring.help.title')} body={t('recurring.help.body')} />
+            </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {t('recurring.subtitle')}
             </p>

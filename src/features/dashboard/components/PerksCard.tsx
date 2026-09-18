@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { formatTooltipValue } from '../utils/dashboardHelpers'
 import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
 
@@ -24,7 +25,10 @@ export default function PerksCard({ cashbackMonth, roundupMonth, interestMonth, 
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{t('dashboard.perks')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.perks.title')} body={t('dashboard.sections.perks.body')} />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

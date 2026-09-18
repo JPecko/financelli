@@ -12,6 +12,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Separator } from '@/shared/components/ui/separator'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { supabase } from '@/data/supabase'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useAccounts } from '@/shared/hooks/useAccounts'
@@ -192,7 +193,10 @@ export default function SettingsPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
+        <div className="flex items-center gap-1.5">
+          <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
+          <PageHelpInfo title={t('settings.help.title')} body={t('settings.help.body')} />
+        </div>
         <p className="text-sm text-muted-foreground mt-0.5">{t('settings.subtitle')}</p>
       </div>
 

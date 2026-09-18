@@ -8,6 +8,7 @@ import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { formatTooltipValue } from '../utils/dashboardHelpers'
 import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import styles from './CashFlowChart.module.scss'
 
 interface Props {
@@ -30,7 +31,10 @@ export default function CashFlowChart({ barData }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-medium">{t('dashboard.incomeVsOutcome')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{t('dashboard.incomeVsOutcome')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.cashFlow.title')} body={t('dashboard.sections.cashFlow.body')} />
+        </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-sm text-muted-foreground">
           <span>{t('dashboard.avgIncome')}: <span className="font-medium text-emerald-600">{formatMoney(avgIncome)}</span></span>
           <span>{t('dashboard.avgOutcome')}: <span className="font-medium text-rose-500">{formatMoney(avgOutcome)}</span></span>

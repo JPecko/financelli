@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import EmptyState from '@/shared/components/EmptyState'
 import PageLoader from '@/shared/components/PageLoader'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { useGroups } from '@/shared/hooks/useGroups'
 import { useT } from '@/shared/i18n'
 import GroupFormModal from '../components/GroupFormModal'
@@ -28,7 +29,10 @@ export default function GroupsPage() {
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t('groups.title')}</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold">{t('groups.title')}</h1>
+            <PageHelpInfo title={t('groups.help.title')} body={t('groups.help.body')} />
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">{t('groups.subtitle')}</p>
         </div>
         <Button onClick={() => setModalOpen(true)} size="sm" className="shrink-0">

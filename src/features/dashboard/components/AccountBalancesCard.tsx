@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import BankLogo from '@/shared/components/BankLogo'
 import BalanceValue from '@/shared/components/BalanceValue'
 import { formatMoney } from '@/domain/money'
@@ -29,7 +30,10 @@ export default function AccountBalancesCard({ accounts, effectiveBalances, class
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.accountBalances')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.accountBalances')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.accountBalances.title')} body={t('dashboard.sections.accountBalances.body')} />
+        </div>
       </CardHeader>
       <CardContent
         className="lg:grid lg:gap-4 lg:items-start"

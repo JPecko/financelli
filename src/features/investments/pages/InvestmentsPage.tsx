@@ -13,6 +13,7 @@ import InvestmentSimulatorSection from '../components/InvestmentSimulatorSection
 import InvestmentHistoryChart from '../components/InvestmentHistoryChart'
 import InvestmentIncomeContributionChart from '../components/InvestmentIncomeContributionChart'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import AccountFormModal from '@/features/accounts/components/AccountFormModal'
 
 export default function InvestmentsPage() {
@@ -30,7 +31,10 @@ export default function InvestmentsPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">{t('investments.title')}</h1>
+        <div className="flex items-center gap-1.5">
+          <h1 className="text-2xl font-bold">{t('investments.title')}</h1>
+          <PageHelpInfo title={t('investments.help.title')} body={t('investments.help.body')} />
+        </div>
         <p className="text-muted-foreground text-sm mt-1">{t('investments.subtitle')}</p>
       </div>
 

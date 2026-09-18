@@ -3,6 +3,7 @@ import { useDashboardInvestmentsSection } from '../hooks/useDashboardInvestments
 import InvestmentAccountSelector from '@/features/investments/components/InvestmentAccountSelector'
 import InvestmentHistoryChart from '@/features/investments/components/InvestmentHistoryChart'
 import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 
 export default function DashboardInvestmentsSection() {
   const t = useT()
@@ -12,9 +13,10 @@ export default function DashboardInvestmentsSection() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
         <TrendingUp className="h-4 w-4" />
         <p className="text-sm font-medium uppercase tracking-wide">{t('investments.title')}</p>
+        <PageHelpInfo title={t('dashboard.sections.investments.title')} body={t('dashboard.sections.investments.body')} />
       </div>
 
       <InvestmentAccountSelector

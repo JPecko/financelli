@@ -9,6 +9,7 @@ import TransactionFormModal from '../components/TransactionFormModal'
 import TransactionFilterPopover from '../components/TransactionFilterPopover'
 import TransactionTotalsBar from '../components/TransactionTotalsBar'
 import TransactionList from '../components/TransactionList'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 
 export default function TransactionsPage() {
   const t = useT()
@@ -21,7 +22,10 @@ export default function TransactionsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold">{t('transactions.title')}</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold">{t('transactions.title')}</h1>
+            <PageHelpInfo title={t('transactions.help.title')} body={t('transactions.help.body')} />
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">{format(m.currentDate, 'MMMM yyyy')}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">

@@ -19,6 +19,7 @@ import {
 } from '@/shared/components/ui/dialog'
 import { Label } from '@/shared/components/ui/label'
 import PageLoader from '@/shared/components/PageLoader'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import {
   useGroupDetail, useGroupMembers, useGroupEntries, useGroupSplits, useGroupBalances,
   removeGroup, addGroupMember, updateGroupMember, removeGroupMember, removeGroupEntry, addGroupEntry,
@@ -350,7 +351,10 @@ export default function GroupDetailPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold truncate">{group.name}</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold truncate">{group.name}</h1>
+            <PageHelpInfo title={t('groups.helpDetail.title')} body={t('groups.helpDetail.body')} />
+          </div>
           <p className="text-sm text-muted-foreground">{group.currency} · {members.length} {t('groups.members').toLowerCase()}</p>
         </div>
         <DropdownMenu>

@@ -94,6 +94,8 @@ export const pt: typeof en = {
   },
 
   groups: {
+    help: { title: 'O que é esta página?', body: 'Os grupos servem para dividir despesas com outras pessoas, como uma viagem ou uma casa partilhada. Cria um grupo, adiciona as pessoas e regista as despesas — a app calcula quem deve o quê a quem.' },
+    helpDetail: { title: 'Como funciona isto?', body: 'Adiciona uma despesa e diz quem pagou. A app divide o valor pelos membros do grupo e mostra o saldo de cada pessoa: verde significa que têm a receber, vermelho significa que devem.' },
     title:            'Grupos',
     subtitle:         'Divide despesas com amigos e família',
     addGroup:         'Novo Grupo',
@@ -163,6 +165,7 @@ export const pt: typeof en = {
   },
 
   investments: {
+    help: { title: 'O que é esta página?', body: 'Aqui acompanhas o que tens investido em ações, ETFs ou outros ativos. Adiciona o que compraste e a quanto, e a app vai buscar os preços atuais para mostrar quanto vale a tua carteira e se está a subir ou a descer.' },
     title:                'Investimentos',
     subtitle:             'Acompanha a tua carteira e ativos',
     noHoldings:           'Sem posições',
@@ -268,6 +271,7 @@ export const pt: typeof en = {
   },
 
   settings: {
+    help: { title: 'O que é esta página?', body: 'Aqui podes mudar o teu nome, o idioma e a moeda da app, gerir cópias de segurança e terminar sessão. As alterações feitas aqui afetam a app toda, não só uma página.' },
     title:    'Definições',
     subtitle: 'Gere os teus dados, cópias de segurança e preferências',
 
@@ -339,6 +343,18 @@ export const pt: typeof en = {
   },
 
   dashboard: {
+    help: { title: 'O que é esta página?', body: 'Este é o teu resumo financeiro: saldo total, despesas vs. rendimentos do mês e gráficos. Não dá para adicionar ou editar nada aqui — só mostra o que já registaste em Contas e Transações.' },
+    sections: {
+      netWorth:            { title: 'O que é isto?', body: 'A soma de todas as tuas contas: banco, poupanças, dinheiro e investimentos. É uma fotografia de tudo o que tens neste momento.' },
+      monthSummary:        { title: 'O que é isto?', body: 'Quanto ganhaste e gastaste este mês, e a diferença entre os dois. Verde significa que gastaste menos do que ganhaste; vermelho é o contrário.' },
+      accountBalances:     { title: 'O que é isto?', body: 'O saldo atual de cada uma das tuas contas, agrupado por tipo (corrente, poupança, investimento). Toca numa conta para ver as suas transações.' },
+      perks:               { title: 'O que é isto?', body: 'Dinheiro extra que recebeste este mês através de cashback, arredondamentos de compras ou juros — além do teu rendimento normal.' },
+      cashFlow:            { title: 'O que é isto?', body: 'Quanto dinheiro entrou vs. saiu em cada mês. Compara as barras para ver se estás a poupar mais ou a gastar mais ao longo do tempo.' },
+      spendingByCategory:  { title: 'O que é isto?', body: 'Para onde foi o teu dinheiro este mês, dividido por categoria (comida, transporte, habitação, etc). Toca numa categoria para ver essas transações.' },
+      topExpenses:         { title: 'O que é isto?', body: 'As tuas maiores despesas individuais deste mês, da mais alta para a mais baixa.' },
+      groupsWidget:        { title: 'O que é isto?', body: 'Um resumo rápido dos teus grupos de despesas partilhadas e quem deve o quê. Toca em "Open" para ver o grupo completo.' },
+      investments:         { title: 'O que é isto?', body: 'Como as tuas contas de investimento evoluíram ao longo do tempo. Escolhe uma conta acima para ver o gráfico.' },
+    },
     netWorth:           'Património',
     monthSummary:       'Resumo do Mês',
     accountBalances:    'Saldos das Contas',
@@ -392,6 +408,7 @@ export const pt: typeof en = {
   },
 
   accounts: {
+    help: { title: 'O que é esta página?', body: 'Uma "conta" é qualquer sítio onde o teu dinheiro está: conta bancária, poupanças, dinheiro, cartão de crédito ou conta de investimento. Toca em "Add Account" para criar uma e indicar o saldo atual — a partir daí a app atualiza-o sozinha à medida que adicionas transações.' },
     title:          'Contas',
     totalBalance:   'Saldo total',
     addAccount:     'Adicionar Conta',
@@ -459,6 +476,7 @@ export const pt: typeof en = {
   },
 
   transactions: {
+    help: { title: 'O que é esta página?', body: 'Aqui registas tudo o que gastas ou recebes: compras, salário, uma transferência entre contas, etc. Toca em "Add Transaction", escolhe a conta, uma categoria e o valor. Usa as setas no topo para ver outros meses.' },
     title:              'Movimentos',
     addTransaction:     'Adicionar',
     noTransactions:     'Sem movimentos este mês',
@@ -502,6 +520,7 @@ export const pt: typeof en = {
   },
 
   recurring: {
+    help: { title: 'O que é esta página?', body: 'Para pagamentos que se repetem todos os meses, como a renda ou uma subscrição. Configuras uma vez aqui e a app cria a transação automaticamente sempre que for devida — não precisas de a adicionar à mão todos os meses.' },
     title:         'Recorrências',
     subtitle:      'Gere os teus rendimentos e despesas fixas',
     addRule:       'Adicionar Regra',

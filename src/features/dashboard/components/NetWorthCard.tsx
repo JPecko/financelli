@@ -2,6 +2,7 @@ import { Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { ACCOUNT_TYPE_META } from '../utils/dashboardHelpers'
 import BalanceValue from '@/shared/components/BalanceValue'
 import type { AccountType } from '@/domain/types'
@@ -18,7 +19,10 @@ export default function NetWorthCard({ netWorthTotal, netWorthByType, positiveTo
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.netWorth')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.netWorth')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.netWorth.title')} body={t('dashboard.sections.netWorth.body')} />
+        </div>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
           <Wallet className="h-4 w-4 text-muted-foreground" />
         </div>

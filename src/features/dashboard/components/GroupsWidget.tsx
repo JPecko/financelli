@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { useGroups, useGroupMembers, useGroupEntries, useGroupBalances } from '@/shared/hooks/useGroups'
 import { formatMoney } from '@/domain/money'
 import { getCategoryById } from '@/domain/categories'
@@ -100,7 +101,10 @@ export default function GroupsWidget({ className }: { className?: string }) {
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{t('groups.widgetTitle')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium text-muted-foreground">{t('groups.widgetTitle')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.groupsWidget.title')} body={t('dashboard.sections.groupsWidget.body')} />
+        </div>
         <Button
           variant="ghost"
           size="sm"

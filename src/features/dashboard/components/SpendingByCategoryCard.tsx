@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import type { CategoryDataItem } from '../hooks/useDashboardModel'
 
 interface Props {
@@ -16,7 +17,10 @@ export default function SpendingByCategoryCard({ categoryData, categoryTotal, on
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-medium">{t('dashboard.spendingByCategory')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{t('dashboard.spendingByCategory')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.spendingByCategory.title')} body={t('dashboard.sections.spendingByCategory.body')} />
+        </div>
       </CardHeader>
       <CardContent>
         {categoryData.length === 0 ? (

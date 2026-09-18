@@ -92,6 +92,7 @@ export const en = {
   },
 
   settings: {
+    help: { title: 'What is this page?', body: 'Here you can update your name, change the app language and currency, manage backups, and log out. Changes here affect the whole app, not just one page.' },
     title:    'Settings',
     subtitle: 'Manage your data, backups, and preferences',
 
@@ -164,6 +165,18 @@ export const en = {
   },
 
   dashboard: {
+    help: { title: 'What is this page?', body: 'This is your overview: total balance, spending vs income this month, and charts. You can’t add or edit anything here — it just shows what you already added in Accounts and Transactions.' },
+    sections: {
+      netWorth:            { title: 'What is this?', body: 'The total of all your accounts added together: bank, savings, cash and investments. It’s a snapshot of everything you own right now.' },
+      monthSummary:        { title: 'What is this?', body: 'How much you earned and spent this month, and the difference between the two. Green means you spent less than you earned; red means the opposite.' },
+      accountBalances:     { title: 'What is this?', body: 'The current balance of each of your accounts, grouped by type (current, savings, investment). Tap an account to see its transactions.' },
+      perks:               { title: 'What is this?', body: 'Extra money you got this month from cashback, round-ups on purchases, or interest — on top of your normal income.' },
+      cashFlow:            { title: 'What is this?', body: 'How much money came in vs. went out each month. Compare the bars to see if you’re saving more or spending more over time.' },
+      spendingByCategory:  { title: 'What is this?', body: 'Where your money went this month, split by category (food, transport, housing, etc). Tap a category to see those transactions.' },
+      topExpenses:         { title: 'What is this?', body: 'Your biggest individual expenses this month, from highest to lowest.' },
+      groupsWidget:        { title: 'What is this?', body: 'A quick look at your shared expense groups and who owes what. Tap "Open" to see the full group.' },
+      investments:         { title: 'What is this?', body: 'How your investment accounts have grown over time. Pick an account above to see its chart.' },
+    },
     netWorth:           'Net Worth',
     monthSummary:       'Month Summary',
     accountBalances:    'Account Balances',
@@ -217,6 +230,7 @@ export const en = {
   },
 
   accounts: {
+    help: { title: 'What is this page?', body: 'An "account" is any place your money sits: a bank account, savings, cash, a credit card, or an investment account. Tap "Add Account" to create one and enter its current balance — from then on, the app updates it automatically as you add transactions.' },
     title:         'Accounts',
     totalBalance:  'Total balance',
     addAccount:    'Add Account',
@@ -284,6 +298,7 @@ export const en = {
   },
 
   transactions: {
+    help: { title: 'What is this page?', body: 'This is where you log every payment or deposit: groceries, salary, a transfer between accounts, etc. Tap "Add Transaction", choose the account, a category, and the amount. Use the arrows at the top to look at other months.' },
     title:              'Transactions',
     addTransaction:     'Add Transaction',
     noTransactions:     'No transactions this month',
@@ -327,6 +342,7 @@ export const en = {
   },
 
   recurring: {
+    help: { title: 'What is this page?', body: 'For payments that repeat every month, like rent or a subscription. Set it up once here and the app creates the transaction automatically each time it’s due, so you don’t have to add it by hand every month.' },
     title:       'Recurring',
     subtitle:    'Manage your fixed income and expenses',
     addRule:     'Add Rule',
@@ -381,6 +397,8 @@ export const en = {
   },
 
   groups: {
+    help: { title: 'What is this page?', body: 'Groups are for splitting shared costs with other people, like a trip or living together. Create a group, add the people in it, and log expenses — the app works out who owes what to whom.' },
+    helpDetail: { title: 'How does this work?', body: 'Add an expense and say who paid for it. The app splits the cost between the group members and shows each person’s balance: green means they’re owed money, red means they owe money.' },
     title:            'Groups',
     subtitle:         'Split expenses with friends and family',
     addGroup:         'New Group',
@@ -450,6 +468,7 @@ export const en = {
   },
 
   investments: {
+    help: { title: 'What is this page?', body: 'Track what you own in stocks, ETFs or other assets. Add what you hold and how much you paid for it; the app fetches current prices and shows how much your portfolio is worth and whether it’s up or down.' },
     title:                'Investments',
     subtitle:             'Track your portfolio and holdings',
     noHoldings:           'No holdings yet',

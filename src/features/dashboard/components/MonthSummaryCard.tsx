@@ -2,6 +2,7 @@ import { DollarSign, TrendingUp, TrendingDown, Landmark, Coins } from 'lucide-re
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import type { useMonthSummary } from '@/shared/hooks/useTransactions'
 
 type Summary = ReturnType<typeof useMonthSummary>
@@ -18,7 +19,10 @@ export default function MonthSummaryCard({ summary, savingsRate }: Props) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.monthSummary')}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.monthSummary')}</CardTitle>
+          <PageHelpInfo title={t('dashboard.sections.monthSummary.title')} body={t('dashboard.sections.monthSummary.body')} />
+        </div>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </div>

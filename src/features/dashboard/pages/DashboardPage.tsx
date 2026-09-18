@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { FileDown } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import PageLoader from '@/shared/components/PageLoader'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import GroupsWidget from '../components/GroupsWidget'
 import NetWorthCard from '../components/NetWorthCard'
 import MonthSummaryCard from '../components/MonthSummaryCard'
@@ -39,7 +40,10 @@ export default function DashboardPage() {
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <PageHelpInfo title={t('dashboard.help.title')} body={t('dashboard.help.body')} />
+          </div>
           <p className="mt-0.5 text-sm text-muted-foreground">{format(now, 'MMMM yyyy')}</p>
         </div>
         <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setExportOpen(true)}>
