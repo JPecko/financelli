@@ -1,4 +1,5 @@
 import FormToggle from '@/shared/components/FormToggle'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { useT } from '@/shared/i18n'
 import type { DateRuleMode } from '@/domain/recurringDate'
 import type { RecurringFrequency } from '@/domain/types'
@@ -21,21 +22,24 @@ export default function RecurringDateRuleSection({
   return (
     <div className="space-y-2">
       {showFirstBusinessDay && (
-        <div className="flex rounded-md border overflow-hidden text-xs w-fit">
-          <button
-            type="button"
-            onClick={() => onDateRuleChange('exact')}
-            className={`px-3 py-1.5 transition-colors ${dateRule === 'exact' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-          >
-            {t('recurring.dateRuleExact')}
-          </button>
-          <button
-            type="button"
-            onClick={() => onDateRuleChange('firstBusinessDay')}
-            className={`px-3 py-1.5 transition-colors border-l ${dateRule === 'firstBusinessDay' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-          >
-            {t('recurring.dateRuleFirstBusinessDay')}
-          </button>
+        <div className="flex items-center gap-1.5">
+          <div className="flex rounded-md border overflow-hidden text-xs w-fit">
+            <button
+              type="button"
+              onClick={() => onDateRuleChange('exact')}
+              className={`px-3 py-1.5 transition-colors ${dateRule === 'exact' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+            >
+              {t('recurring.dateRuleExact')}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateRuleChange('firstBusinessDay')}
+              className={`px-3 py-1.5 transition-colors border-l ${dateRule === 'firstBusinessDay' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+            >
+              {t('recurring.dateRuleFirstBusinessDay')}
+            </button>
+          </div>
+          <PageHelpInfo title={t('recurring.sections.dateRule.title')} body={t('recurring.sections.dateRule.body')} />
         </div>
       )}
 

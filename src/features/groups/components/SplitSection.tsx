@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
 import AmountInput from '@/shared/components/AmountInput'
 import { Label } from '@/shared/components/ui/label'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { useT } from '@/shared/i18n'
 import type { SplitMode, SplitRow } from '../hooks/useSplitState'
 import type { GroupMember } from '@/domain/types'
@@ -30,7 +31,10 @@ export default function SplitSection({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Label>{t('groups.splitAmong')}</Label>
+        <div className="flex items-center gap-1.5">
+          <Label>{t('groups.splitAmong')}</Label>
+          <PageHelpInfo title={t('groups.sections.split.title')} body={t('groups.sections.split.body')} />
+        </div>
         <div className="flex rounded-md border overflow-hidden ml-auto text-xs">
           {modes.includes('even') && (
             <button

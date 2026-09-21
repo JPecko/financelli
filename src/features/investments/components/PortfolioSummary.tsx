@@ -3,6 +3,7 @@ import { formatMoney } from '@/domain/money'
 import { accountGradient } from '@/shared/utils/accountGradient'
 import { useT } from '@/shared/i18n'
 import BalanceValue from '@/shared/components/BalanceValue'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 
 interface Props {
   title:              string
@@ -42,7 +43,10 @@ export default function PortfolioSummary({
       className="rounded-xl border bg-card p-5 shadow-sm"
       style={accentColor ? { background: accountGradient(accentColor), borderColor: 'transparent' } : undefined}
     >
-      <p className={`mb-3 text-sm font-semibold uppercase tracking-wide ${titleCls}`}>{title}</p>
+      <div className="mb-3 flex items-center gap-1.5">
+        <p className={`text-sm font-semibold uppercase tracking-wide ${titleCls}`}>{title}</p>
+        <PageHelpInfo title={t('investments.sections.portfolioSummary.title')} body={t('investments.sections.portfolioSummary.body')} />
+      </div>
       <BalanceValue>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {totalInvestedBase > 0 && (

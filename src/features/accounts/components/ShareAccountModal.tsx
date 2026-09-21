@@ -8,6 +8,8 @@ import { accountSharesRepo } from '@/data/repositories/accountSharesRepo'
 import { queryClient } from '@/app/queryClient'
 import { queryKeys } from '@/data/queryKeys'
 import { useAuth } from '@/features/auth/AuthContext'
+import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import type { Account, AccountShare } from '@/domain/types'
 import type { ProfileResult } from '@/data/repositories/profilesRepo'
 
@@ -18,6 +20,7 @@ interface Props {
 }
 
 export default function ShareAccountModal({ open, onClose, account }: Props) {
+  const t = useT()
   const { user } = useAuth()
   const isOwner = user?.id === account.ownerId
 
@@ -94,7 +97,10 @@ export default function ShareAccountModal({ open, onClose, account }: Props) {
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose() }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Share "{account.name}"</DialogTitle>
+          <div className="flex items-center gap-1.5">
+            <DialogTitle>Share "{account.name}"</DialogTitle>
+            <PageHelpInfo title={t('accounts.shareHelp.title')} body={t('accounts.shareHelp.body')} />
+          </div>
         </DialogHeader>
 
         {/* Search — only for owner */}

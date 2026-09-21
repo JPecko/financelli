@@ -167,9 +167,9 @@ export const en = {
   dashboard: {
     help: { title: 'What is this page?', body: 'This is your overview: total balance, spending vs income this month, and charts. You can’t add or edit anything here — it just shows what you already added in Accounts and Transactions.' },
     sections: {
-      netWorth:            { title: 'What is this?', body: 'The total of all your accounts added together: bank, savings, cash and investments. It’s a snapshot of everything you own right now.' },
+      netWorth:            { title: 'How is this calculated?', body: 'It adds up the current balance of every account: bank, savings and cash accounts use the balance you set (updated automatically as you add transactions); credit cards subtract what you owe; investment accounts use today’s market value — how many units you hold multiplied by their current price, not what you originally paid. The bars below show each account type as a % of your total positive balances; money you owe (like a negative credit card) is subtracted from the total but isn’t shown as a bar.' },
       monthSummary:        { title: 'What is this?', body: 'How much you earned and spent this month, and the difference between the two. Green means you spent less than you earned; red means the opposite.' },
-      accountBalances:     { title: 'What is this?', body: 'The current balance of each of your accounts, grouped by type (current, savings, investment). Tap an account to see its transactions.' },
+      accountBalances:     { title: 'How is this calculated?', body: 'Each account is grouped by type (Current, Savings, Investment) with a subtotal at the top of each group. For regular accounts, the balance is whatever you set it to plus every transaction added or subtracted since. For investment accounts, the balance is the live market value of what you hold — quantity of each asset multiplied by its latest synced price — not how much you invested.' },
       perks:               { title: 'What is this?', body: 'Extra money you got this month from cashback, round-ups on purchases, or interest — on top of your normal income.' },
       cashFlow:            { title: 'What is this?', body: 'How much money came in vs. went out each month. Compare the bars to see if you’re saving more or spending more over time.' },
       spendingByCategory:  { title: 'What is this?', body: 'Where your money went this month, split by category (food, transport, housing, etc). Tap a category to see those transactions.' },
@@ -231,6 +231,7 @@ export const en = {
 
   accounts: {
     help: { title: 'What is this page?', body: 'An "account" is any place your money sits: a bank account, savings, cash, a credit card, or an investment account. Tap "Add Account" to create one and enter its current balance — from then on, the app updates it automatically as you add transactions.' },
+    shareHelp: { title: 'What does sharing do?', body: 'Sharing an account gives another person access to see it and its transactions in their own app. You stay the owner — only you can edit or delete the account itself.' },
     title:         'Accounts',
     totalBalance:  'Total balance',
     addAccount:    'Add Account',
@@ -290,6 +291,7 @@ export const en = {
       cashback:         'Cashback %',
       cashbackDisabled: 'Disabled',
       roundup:          'Roundup',
+      roundupHelp:      { title: 'What is round-up?', body: 'Round-up rounds each purchase up to the next euro (or a multiple of it) and saves the difference automatically — e.g. a €4.30 coffee becomes €5.00, with €0.70 set aside.' },
       roundupTo:        'Roundup destination',
       roundupToDesc:    'Choose an account to transfer the roundup into, or leave it external (deducted from the source account, not tracked anywhere)',
       roundupToExternal:'External (not tracked)',
@@ -343,6 +345,9 @@ export const en = {
 
   recurring: {
     help: { title: 'What is this page?', body: 'For payments that repeat every month, like rent or a subscription. Set it up once here and the app creates the transaction automatically each time it’s due, so you don’t have to add it by hand every month.' },
+    sections: {
+      dateRule: { title: 'What is this?', body: '"On the day" creates the transaction on the exact date each time. "First business day" moves it to the first weekday of the month instead — useful for rules like salary or rent that always land on a working day.' },
+    },
     title:       'Recurring',
     subtitle:    'Manage your fixed income and expenses',
     addRule:     'Add Rule',
@@ -399,6 +404,9 @@ export const en = {
   groups: {
     help: { title: 'What is this page?', body: 'Groups are for splitting shared costs with other people, like a trip or living together. Create a group, add the people in it, and log expenses — the app works out who owes what to whom.' },
     helpDetail: { title: 'How does this work?', body: 'Add an expense and say who paid for it. The app splits the cost between the group members and shows each person’s balance: green means they’re owed money, red means they owe money.' },
+    sections: {
+      split: { title: 'What do these options mean?', body: '"Evenly" splits the cost the same for everyone. "By %" lets you set a percentage per person — use the slider or the 0%/100% buttons. "Custom" lets you type an exact amount for each person instead.' },
+    },
     title:            'Groups',
     subtitle:         'Split expenses with friends and family',
     addGroup:         'New Group',
@@ -469,6 +477,10 @@ export const en = {
 
   investments: {
     help: { title: 'What is this page?', body: 'Track what you own in stocks, ETFs or other assets. Add what you hold and how much you paid for it; the app fetches current prices and shows how much your portfolio is worth and whether it’s up or down.' },
+    sections: {
+      portfolioSummary: { title: 'What do these numbers mean?', body: '"Cost Basis" is what you paid to buy what you currently hold. "Market Value" is what it’s worth today. "P&L" is the difference between the two — your profit or loss so far.' },
+      forecast:         { title: 'What is this?', body: 'A projection of how your investment could grow, based on the assumptions you enter above (expected yearly return, inflation, monthly contribution). "Nominal" is the raw projected value; "Real" is that value adjusted for inflation — what it would actually be worth in today’s money. This is just an estimate, not a guarantee.' },
+    },
     title:                'Investments',
     subtitle:             'Track your portfolio and holdings',
     noHoldings:           'No holdings yet',

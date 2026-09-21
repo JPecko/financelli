@@ -96,6 +96,9 @@ export const pt: typeof en = {
   groups: {
     help: { title: 'O que é esta página?', body: 'Os grupos servem para dividir despesas com outras pessoas, como uma viagem ou uma casa partilhada. Cria um grupo, adiciona as pessoas e regista as despesas — a app calcula quem deve o quê a quem.' },
     helpDetail: { title: 'Como funciona isto?', body: 'Adiciona uma despesa e diz quem pagou. A app divide o valor pelos membros do grupo e mostra o saldo de cada pessoa: verde significa que têm a receber, vermelho significa que devem.' },
+    sections: {
+      split: { title: 'O que significam estas opções?', body: '"Igualmente" divide o custo da mesma forma por todos. "Por %" permite definir uma percentagem por pessoa — usa o slider ou os botões 0%/100%. "Personalizado" permite escrever um valor exato para cada pessoa.' },
+    },
     title:            'Grupos',
     subtitle:         'Divide despesas com amigos e família',
     addGroup:         'Novo Grupo',
@@ -166,6 +169,10 @@ export const pt: typeof en = {
 
   investments: {
     help: { title: 'O que é esta página?', body: 'Aqui acompanhas o que tens investido em ações, ETFs ou outros ativos. Adiciona o que compraste e a quanto, e a app vai buscar os preços atuais para mostrar quanto vale a tua carteira e se está a subir ou a descer.' },
+    sections: {
+      portfolioSummary: { title: 'O que significam estes números?', body: '"Cost Basis" é o que pagaste para comprar o que tens atualmente. "Market Value" é quanto vale hoje. "P&L" é a diferença entre os dois — o teu lucro ou prejuízo até agora.' },
+      forecast:         { title: 'O que é isto?', body: 'Uma projeção de como o teu investimento pode crescer, com base nas condições que defines em cima (rendimento anual esperado, inflação, contribuição mensal). "Nominal" é o valor projetado em bruto; "Real" é esse valor ajustado à inflação — o que valeria de facto em dinheiro de hoje. É apenas uma estimativa, não uma garantia.' },
+    },
     title:                'Investimentos',
     subtitle:             'Acompanha a tua carteira e ativos',
     noHoldings:           'Sem posições',
@@ -345,9 +352,9 @@ export const pt: typeof en = {
   dashboard: {
     help: { title: 'O que é esta página?', body: 'Este é o teu resumo financeiro: saldo total, despesas vs. rendimentos do mês e gráficos. Não dá para adicionar ou editar nada aqui — só mostra o que já registaste em Contas e Transações.' },
     sections: {
-      netWorth:            { title: 'O que é isto?', body: 'A soma de todas as tuas contas: banco, poupanças, dinheiro e investimentos. É uma fotografia de tudo o que tens neste momento.' },
+      netWorth:            { title: 'Como é calculado isto?', body: 'Soma o saldo atual de cada conta: contas correntes, poupanças e dinheiro usam o saldo que definiste (atualizado automaticamente à medida que adicionas transações); cartões de crédito subtraem o que deves; contas de investimento usam o valor de mercado de hoje — quantas unidades tens multiplicado pelo preço atual, não o que pagaste originalmente. As barras abaixo mostram cada tipo de conta como % do total dos teus saldos positivos; dinheiro que deves (como um cartão de crédito negativo) é subtraído do total mas não aparece como barra.' },
       monthSummary:        { title: 'O que é isto?', body: 'Quanto ganhaste e gastaste este mês, e a diferença entre os dois. Verde significa que gastaste menos do que ganhaste; vermelho é o contrário.' },
-      accountBalances:     { title: 'O que é isto?', body: 'O saldo atual de cada uma das tuas contas, agrupado por tipo (corrente, poupança, investimento). Toca numa conta para ver as suas transações.' },
+      accountBalances:     { title: 'Como é calculado isto?', body: 'Cada conta está agrupada por tipo (Corrente, Poupança, Investimento) com um subtotal no topo de cada grupo. Nas contas normais, o saldo é o que definiste mais cada transação adicionada ou subtraída desde então. Nas contas de investimento, o saldo é o valor de mercado ao vivo do que tens — quantidade de cada ativo multiplicada pelo último preço sincronizado — não quanto investiste.' },
       perks:               { title: 'O que é isto?', body: 'Dinheiro extra que recebeste este mês através de cashback, arredondamentos de compras ou juros — além do teu rendimento normal.' },
       cashFlow:            { title: 'O que é isto?', body: 'Quanto dinheiro entrou vs. saiu em cada mês. Compara as barras para ver se estás a poupar mais ou a gastar mais ao longo do tempo.' },
       spendingByCategory:  { title: 'O que é isto?', body: 'Para onde foi o teu dinheiro este mês, dividido por categoria (comida, transporte, habitação, etc). Toca numa categoria para ver essas transações.' },
@@ -409,6 +416,7 @@ export const pt: typeof en = {
 
   accounts: {
     help: { title: 'O que é esta página?', body: 'Uma "conta" é qualquer sítio onde o teu dinheiro está: conta bancária, poupanças, dinheiro, cartão de crédito ou conta de investimento. Toca em "Add Account" para criar uma e indicar o saldo atual — a partir daí a app atualiza-o sozinha à medida que adicionas transações.' },
+    shareHelp: { title: 'O que faz a partilha?', body: 'Partilhar uma conta dá a outra pessoa acesso para a ver, e às suas transações, na app dela. Tu continuas a ser o dono — só tu podes editar ou apagar a conta em si.' },
     title:          'Contas',
     totalBalance:   'Saldo total',
     addAccount:     'Adicionar Conta',
@@ -468,6 +476,7 @@ export const pt: typeof en = {
       cashback:         'Cashback %',
       cashbackDisabled: 'Desativado',
       roundup:          'Arredondamento',
+      roundupHelp:      { title: 'O que é o arredondamento?', body: 'O arredondamento arredonda cada compra para o euro seguinte (ou um múltiplo dele) e poupa a diferença automaticamente — ex.: um café de 4,30€ passa a 5,00€, com 0,70€ colocados de parte.' },
       roundupTo:        'Destino do arredondamento',
       roundupToDesc:    'Escolhe uma conta para transferir o arredondamento, ou deixa como externo (é descontado da conta de origem, sem ser registado em lado nenhum)',
       roundupToExternal:'Externo (não registado)',
@@ -521,6 +530,9 @@ export const pt: typeof en = {
 
   recurring: {
     help: { title: 'O que é esta página?', body: 'Para pagamentos que se repetem todos os meses, como a renda ou uma subscrição. Configuras uma vez aqui e a app cria a transação automaticamente sempre que for devida — não precisas de a adicionar à mão todos os meses.' },
+    sections: {
+      dateRule: { title: 'O que é isto?', body: '"No dia" cria a transação exatamente na data indicada, sempre. "Primeiro dia útil" muda-a para o primeiro dia útil do mês — útil para regras como salário ou renda que caem sempre num dia de semana.' },
+    },
     title:         'Recorrências',
     subtitle:      'Gere os teus rendimentos e despesas fixas',
     addRule:       'Adicionar Regra',

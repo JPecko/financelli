@@ -9,6 +9,7 @@ import PlainSelect from '@/shared/components/PlainSelect'
 import { toCents, fromCents } from '@/domain/money'
 import { addAccount, updateAccount, useSortedAccounts } from '@/shared/hooks/useAccounts'
 import { useT } from '@/shared/i18n'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 import { buildBankSelectOptions, buildAccountTypeSelectOptions } from './accountFormOptions'
 import { buildGroupedAccountSelectOptions } from '@/features/transactions/components/accountSelectOptions'
 import type { Account, AccountType } from '@/domain/types'
@@ -305,7 +306,10 @@ export default function AccountFormModal({ open, onClose, account }: Props) {
               {errors.cashbackPct && <p className="text-xs text-destructive">{errors.cashbackPct.message}</p>}
             </div>
             <div className="space-y-1">
-              <Label>{t('accounts.form.roundup')}</Label>
+              <div className="flex items-center gap-1.5">
+                <Label>{t('accounts.form.roundup')}</Label>
+                <PageHelpInfo title={t('accounts.form.roundupHelp.title')} body={t('accounts.form.roundupHelp.body')} />
+              </div>
               <Select value={selectedRoundup} onValueChange={v => setValue('roundupMultiplier', v)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={t('accounts.form.cashbackDisabled')} />

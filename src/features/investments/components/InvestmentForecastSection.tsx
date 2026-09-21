@@ -8,6 +8,7 @@ import { formatDecimal } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { buildForecastData } from '../utils/forecastHelpers'
 import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
+import PageHelpInfo from '@/shared/components/PageHelpInfo'
 
 const HORIZONS = [10, 20, 30] as const
 type Horizon = typeof HORIZONS[number]
@@ -86,9 +87,12 @@ export default function InvestmentForecastSection({
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-base font-semibold">
-          {t('investments.forecastTitle')}{accountName ? ` — ${accountName}` : ''}
-        </h2>
+        <div className="flex items-center gap-1.5">
+          <h2 className="text-base font-semibold">
+            {t('investments.forecastTitle')}{accountName ? ` — ${accountName}` : ''}
+          </h2>
+          <PageHelpInfo title={t('investments.sections.forecast.title')} body={t('investments.sections.forecast.body')} />
+        </div>
         <p className="text-sm text-muted-foreground">{t('investments.forecastSubtitle')}</p>
       </div>
 
