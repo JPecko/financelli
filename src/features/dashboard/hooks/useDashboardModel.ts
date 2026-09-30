@@ -139,7 +139,7 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
       map[se.category] = (map[se.category] ?? 0) + se.myShare
     }
     for (const g of summary.groupExpenses) {
-      if (!INVESTING_CATS.has(g.category)) map[g.category] = (map[g.category] ?? 0) + g.myShare
+      if (g.myShare > 0 && !INVESTING_CATS.has(g.category)) map[g.category] = (map[g.category] ?? 0) + g.myShare
     }
     for (const tx of transactions.filter(tx => tx.type === 'transfer' && tx.category === 'invest-move' && tx.amount < 0)) {
       const divisor = personalDivisorFor(tx, user?.id, accounts)
@@ -177,7 +177,7 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
         amount: Math.round(tx.amount / personalDivisorFor(tx, user?.id, accounts)),
       })),
     ...summary.groupExpenses
-      .filter(g => !INVESTING_CATS.has(g.category))
+      .filter(g => g.myShare > 0 && !INVESTING_CATS.has(g.category))
       .map(g => ({
         key: `grp-${g.entryId}`,
         description: g.description,

@@ -377,7 +377,7 @@ export const groupsRepo = {
     const toMonth = month === 12 ? 1 : month + 1
     const to = `${toYear}-${String(toMonth).padStart(2, '0')}-01`
 
-    // Fetch splits for the user in entries of that month — all entries, including ones they paid
+    // Fetch the user's splits in entries of that month — including zero-share ones, kept below only if they paid
     const { data, error } = await supabase
       .from('group_entry_splits')
       .select(`
@@ -390,7 +390,6 @@ export const groupsRepo = {
         )
       `)
       .in('member_id', memberIds)
-      .gt('amount', 0)
       .gte('group_entries.date', from)
       .lt('group_entries.date', to)
     if (error || !data) return []
@@ -406,27 +405,29 @@ export const groupsRepo = {
       }
     }
 
-    const items = (data as unknown as Row[]).map(row => ({
-      entryId:     row.group_entries.id,
-      groupId:     row.group_entries.group_id,
-      groupName:   row.group_entries.groups.name,
-      description: row.group_entries.description,
-      date:        row.group_entries.date,
-      category:    row.group_entries.category,
-      myShare:     row.amount,
-      totalAmount: row.group_entries.total_amount,
-      paidByName:  row.group_entries.payer?.name ?? '—',
-      paidByMe:    memberIds.includes(row.group_entries.paid_by_member_id),
-      _transactionId: row.group_entries.transaction_id,
-      createdAt:   row.group_entries.created_at,
-    }))
+    const items = (data as unknown as Row[])
+      .filter(row => row.amount > 0 || memberIds.includes(row.group_entries.paid_by_member_id))
+      .map(row => ({
+        entryId:     row.group_entries.id,
+        groupId:     row.group_entries.group_id,
+        groupName:   row.group_entries.groups.name,
+        description: row.group_entries.description,
+        date:        row.group_entries.date,
+        category:    row.group_entries.category,
+        myShare:     row.amount,
+        totalAmount: row.group_entries.total_amount,
+        paidByName:  row.group_entries.payer?.name ?? '—',
+        paidByMe:    memberIds.includes(row.group_entries.paid_by_member_id),
+        _transactionId: row.group_entries.transaction_id,
+        createdAt:   row.group_entries.created_at,
+      }))
 
     // Enrich paidByMe items with the payment account id
     const txIds = items
       .filter(i => i.paidByMe && i._transactionId != null)
       .map(i => i._transactionId!)
 
-    let txToAccountId: Record<number, number> = {}
+    const txToAccountId: Record<number, number> = {}
     if (txIds.length > 0) {
       const { data: txData } = await supabase
         .from('transactions')
