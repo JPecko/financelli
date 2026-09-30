@@ -7,9 +7,9 @@ interface Props {
 
 export default function RecurringTotalPill({ label, amount }: Props) {
   return (
-    <div className="flex items-center gap-2 rounded-full bg-zinc-900 px-3 py-1">
-      <span className="text-xs font-medium text-white">{label}</span>
-      <span className="text-xs font-semibold tabular-nums text-rose-400">
+    <div className="flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1">
+      <span className="text-xs font-medium text-foreground">{label}</span>
+      <span className="text-xs font-semibold tabular-nums text-rose-600 dark:text-rose-400">
         {amount >= 0 ? '+' : ''}{formatMoney(amount)}
       </span>
     </div>

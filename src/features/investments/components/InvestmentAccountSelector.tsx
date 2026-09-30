@@ -32,7 +32,9 @@ export default function InvestmentAccountSelector({ accounts, statsMap, selected
           // width/marginLeft/paddingLeft/paddingRight are set imperatively by useCarouselScroll,
           // measured against the actual scroll container instead of a `100vw` CSS breakout
           paddingTop:    '0.375rem',
-          paddingBottom: '0.375rem',
+          // Room for the light-mode card shadow (the scroller clips it); the negative margin keeps the layout height
+          paddingBottom: '1.25rem',
+          marginBottom:  '-0.875rem',
           display:       'flex',
           gap:           `${CAROUSEL_GAP}px`,
           cursor:        'grab',
@@ -100,50 +102,52 @@ function AccountSelectorCard({ account, stats, selected, width, cardRef, onClick
       ref={cardRef}
       type="button"
       onClick={onClick}
-      style={{ background: accountGradient(account.color), width: `${width}px`, flexShrink: 0, scrollSnapAlign: 'center' }}
+      style={{ background: accountGradient(account.color), '--card-accent': account.color, width: `${width}px`, flexShrink: 0, scrollSnapAlign: 'center' } as React.CSSProperties}
       className={cn(
         'relative rounded-2xl p-4 text-left',
         'transition-[box-shadow,opacity] duration-200 ease-out',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
-        selected ? 'shadow-xl ring-[2.5px] ring-white/80' : 'opacity-60 hover:opacity-85',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-on-accent/60',
+        selected
+          ? 'shadow-xl ring-[2.5px] ring-(--card-accent) light:ring-2 light:shadow-[0_6px_16px_-4px_rgb(0_0_0/0.2)]'
+          : 'opacity-60 hover:opacity-85 light:shadow-[0_2px_8px_rgb(0_0_0/0.08)]',
       )}
     >
       <div className={cn(
         'absolute top-3 right-3 h-5 w-5 rounded-full flex items-center justify-center transition-opacity duration-200',
-        selected ? 'bg-white/25 opacity-100' : 'opacity-0',
+        selected ? 'bg-on-accent/25 opacity-100' : 'opacity-0',
       )}>
-        <Check className="h-3 w-3 text-white" strokeWidth={2.5} />
+        <Check className="h-3 w-3 text-on-accent" strokeWidth={2.5} />
       </div>
 
       <div className="flex items-center gap-2 mb-3 pr-6">
-        <div className="h-7 w-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+        <div className="h-7 w-7 rounded-lg bg-on-accent/15 flex items-center justify-center shrink-0">
           {bank ? (
             <BankLogo
               domain={bank.logoDomain} name={bank.name} accountType={account.type}
-              imgClassName="h-4 w-4 object-contain" iconClassName="h-3.5 w-3.5 text-white/80"
+              imgClassName="h-4 w-4 object-contain" iconClassName="h-3.5 w-3.5 text-on-accent/80"
             />
           ) : (
-            <div className="h-2.5 w-2.5 rounded-full bg-white/70" />
+            <div className="h-2.5 w-2.5 rounded-full bg-on-accent/70" />
           )}
         </div>
-        <p className="text-xs text-white/70 truncate leading-tight">{bank?.name ?? account.currency}</p>
+        <p className="text-xs text-on-accent/70 truncate leading-tight">{bank?.name ?? account.currency}</p>
       </div>
 
-      <p className="text-sm font-semibold text-white truncate leading-snug mb-3">{account.name}</p>
+      <p className="text-sm font-semibold text-on-accent truncate leading-snug mb-3">{account.name}</p>
 
-      <div className="h-px bg-white/15 mb-3" />
+      <div className="h-px bg-on-accent/15 mb-3" />
 
       <BalanceValue>
-        <p className="text-lg font-bold tabular-nums text-white leading-none">
+        <p className="text-lg font-bold tabular-nums text-on-accent leading-none">
           {formatMoney(stats.portfolioBalance, account.currency)}
         </p>
       </BalanceValue>
 
       <BalanceValue>
-        <div className={cn('flex items-center gap-1.5 mt-1.5', isPos ? 'text-emerald-300' : 'text-rose-300')}>
+        <div className={cn('flex items-center gap-1.5 mt-1.5', isPos ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300')}>
           <span className="text-xs tabular-nums font-medium">{sign}{stats.pnlPct.toFixed(1)}%</span>
-          <span className="text-xs text-white/40">·</span>
-          <span className="text-xs tabular-nums text-white/60">
+          <span className="text-xs text-on-accent/40">·</span>
+          <span className="text-xs tabular-nums text-on-accent/60">
             {sign}{formatMoney(Math.abs(stats.pnl), account.currency)}
           </span>
         </div>

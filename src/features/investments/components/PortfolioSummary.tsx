@@ -30,12 +30,12 @@ export default function PortfolioSummary({
   const isPositive = totalPnL >= 0
   const colored    = !!accentColor
 
-  const labelCls  = colored ? 'text-white/60'    : 'text-muted-foreground'
-  const valueCls  = colored ? 'text-white'        : ''
-  const titleCls  = colored ? 'text-white/70'     : 'text-muted-foreground'
+  const labelCls  = colored ? 'text-on-accent/60'    : 'text-muted-foreground'
+  const valueCls  = colored ? 'text-on-accent'        : ''
+  const titleCls  = colored ? 'text-on-accent/70'     : 'text-muted-foreground'
   const pnlCls    = isPositive
-    ? (colored ? 'text-emerald-300' : 'text-emerald-600')
-    : (colored ? 'text-rose-300'    : 'text-red-500')
+    ? (colored ? 'text-emerald-700 dark:text-emerald-300' : 'text-emerald-600')
+    : (colored ? 'text-rose-600 dark:text-rose-300'    : 'text-red-500')
 
   return (
     <section

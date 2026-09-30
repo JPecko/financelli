@@ -4,6 +4,7 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant light (&:not(:is(.dark *)));
 
 /* ─── Design tokens ───────────────────────────────────────────── */
 
@@ -38,6 +39,7 @@
   --color-chart-3:                      var(--chart-3);
   --color-chart-4:                      var(--chart-4);
   --color-chart-5:                      var(--chart-5);
+  --color-on-accent:                    var(--on-accent);
   --color-sidebar:                      var(--sidebar);
   --color-sidebar-foreground:           var(--sidebar-foreground);
   --color-sidebar-primary:              var(--sidebar-primary);
@@ -48,39 +50,39 @@
   --color-sidebar-ring:                 var(--sidebar-ring);
 }
 
-/* ─── Light mode — Sage Forest ────────────────────────────────── */
+/* ─── Light mode — Clean White ────────────────────────────────── */
 
 :root {
   --radius: 0.5rem;
 
-  /* Page surfaces */
-  --background:           #e8f0ea;  /* sage-green tint, not flat gray */
-  --foreground:           #0a1a0d;  /* near-black, green-warmed */
+  /* Page surfaces — neutral, green is reserved for brand accents */
+  --background:           #ffffff;
+  --foreground:           #111113;
   --card:                 #ffffff;
-  --card-foreground:      #0a1a0d;
+  --card-foreground:      #111113;
   --popover:              #ffffff;
-  --popover-foreground:   #0a1a0d;
+  --popover-foreground:   #111113;
 
   /* Brand */
-  --primary:              #1db954;
-  --primary-foreground:   #000000;
-  --primary-hover:        #1ed760;
+  --primary:              #16a34a;  /* darker than dark-mode green so white text reads */
+  --primary-foreground:   #ffffff;
+  --primary-hover:        #15803d;
 
   /* Muted surfaces */
-  --secondary:            #d4e8d7;
-  --secondary-foreground: #0a1a0d;
-  --secondary-hover:      #c5dcc8;
+  --secondary:            #f4f4f5;
+  --secondary-foreground: #111113;
+  --secondary-hover:      #ececee;
 
-  --muted:                #d4e8d7;
-  --muted-foreground:     #496b4d;  /* dark sage — readable on white + sage bg */
-  --accent:               #dceedd;
-  --accent-foreground:    #0a1a0d;
+  --muted:                #f6f6f7;
+  --muted-foreground:     #6b6b73;  /* AA on white and on muted */
+  --accent:               #f4f4f5;
+  --accent-foreground:    #111113;
   --destructive:          #d93025;
 
   /* Strokes */
-  --border:               #bad2bc;
-  --input:                #f4faf5;
-  --ring:                 #1db954;
+  --border:               #e7e7ea;
+  --input:                #ffffff;
+  --ring:                 #16a34a;
 
   /* Charts unchanged */
   --chart-1:              #1db954;
@@ -89,18 +91,24 @@
   --chart-4:              #f59e0b;
   --chart-5:              #ef4444;
 
-  /* Sidebar — dark forest green: mirrors dark mode's bold black sidebar */
-  --sidebar:                      #131d15;
-  --sidebar-foreground:           #94b898;
-  --sidebar-primary:              rgb(255 255 255 / 0.10);
-  --sidebar-primary-foreground:   #ffffff;
-  --sidebar-accent:               rgb(255 255 255 / 0.07);
-  --sidebar-accent-foreground:    #ffffff;
-  --sidebar-border:               #1c2b1e;
-  --sidebar-ring:                 #1db954;
+  /* Sidebar, mobile header, bottom nav — light chrome; active item gets the green accent */
+  --sidebar:                      #ffffff;
+  --sidebar-foreground:           #52525b;
+  --sidebar-primary:              #f0fdf4;
+  --sidebar-primary-foreground:   #15803d;
+  --sidebar-accent:               #f4f4f5;
+  --sidebar-accent-foreground:    #111113;
+  --sidebar-border:               #e7e7ea;
+  --sidebar-ring:                 #16a34a;
+
+  /* Account-colored cards (see accountGradient.ts): white → soft color, dark text */
+  --on-accent:                    #111113;
+  --account-gradient-from:        0%;
+  --account-gradient-from-base:   #ffffff;
+  --account-gradient-to:          55%;
 
   /* Card hover shadow — softer in light mode */
-  --shadow-card-hover:            0 8px 24px rgb(0 0 0 / 0.12);
+  --shadow-card-hover:            0 8px 24px rgb(0 0 0 / 0.08);
 }
 
 /* ─── Dark mode — Spotify palette ────────────────────────────── */
@@ -146,6 +154,12 @@
   --sidebar-accent-foreground:    #ffffff;
   --sidebar-border:               #282828;
   --sidebar-ring:                 #1db954;
+
+  /* Account-colored cards: near-black → full color, white text */
+  --on-accent:                    #ffffff;
+  --account-gradient-from:        18%;
+  --account-gradient-from-base:   #000000;
+  --account-gradient-to:          100%;
 
   --shadow-card-hover:            0 8px 24px rgb(0 0 0 / 0.30);
 }

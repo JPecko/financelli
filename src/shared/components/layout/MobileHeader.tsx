@@ -22,7 +22,7 @@ export default function MobileHeader() {
 
   return (
     <header className="relative z-20 overflow-visible lg:hidden flex items-center justify-between gap-3 border-b border-border px-4 py-2 safe-area-top-pad-3 bg-sidebar">
-      <AppLogoButton height="h-8" showVersion forceDark />
+      <AppLogoButton height="h-8" showVersion />
 
       <div className="relative flex items-center gap-2">
         <LanguageSelect />

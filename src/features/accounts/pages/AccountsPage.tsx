@@ -91,20 +91,20 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
                   name={bank.name}
                   accountType={account.type}
                   imgClassName="h-10 w-10 object-contain shrink-0"
-                  iconClassName="h-8 w-8 text-white/60 shrink-0"
+                  iconClassName="h-8 w-8 text-on-accent/60 shrink-0"
                 />
               ) : (
-                (() => { const Icon = TYPE_ICONS[account.type] ?? Wallet; return <Icon className="h-8 w-8 text-white/60 shrink-0" /> })()
+                (() => { const Icon = TYPE_ICONS[account.type] ?? Wallet; return <Icon className="h-8 w-8 text-on-accent/60 shrink-0" /> })()
               )}
               <div className="min-w-0">
-                <p className="text-base sm:text-lg font-semibold leading-tight truncate text-white">{account.name}</p>
-                {bank && <p className="text-xs text-white/70 truncate">{bank.name}</p>}
+                <p className="text-base sm:text-lg font-semibold leading-tight truncate text-on-accent">{account.name}</p>
+                {bank && <p className="text-xs text-on-accent/70 truncate">{bank.name}</p>}
               </div>
             </div>
             <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/15 hover:text-white">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-on-accent hover:bg-on-accent/15 hover:text-on-accent">
                     <span className="sr-only">Actions</span>
                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                       <circle cx="12" cy="5"  r="1.5" />
@@ -142,13 +142,13 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
           {/* Bottom row: badges + balance */}
           <div className="flex items-end justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Badge className="text-xs bg-white/20 text-white border-transparent hover:bg-white/20">
+              <Badge className="text-xs bg-on-accent/20 text-on-accent border-transparent hover:bg-on-accent/20">
                 {t(('accounts.types.' + account.type) as Parameters<typeof t>[0])}
               </Badge>
               {(account.participants ?? 1) > 1 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge className="text-xs gap-1 cursor-default bg-transparent border-white/40 text-white hover:bg-white/10">
+                    <Badge className="text-xs gap-1 cursor-default bg-transparent border-on-accent/40 text-on-accent hover:bg-on-accent/10">
                       <Users className="h-3 w-3" />
                       {account.participants}
                     </Badge>
@@ -172,11 +172,11 @@ function AccountCard({ account, bank, isManualEditing, user, t, onEdit, onDelete
             </div>
             <div className="text-right shrink-0">
               <BalanceValue>
-                <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
+                <p className={`text-lg font-bold tabular-nums ${account.balance >= 0 ? 'text-on-accent' : 'text-rose-600 dark:text-rose-300'}`}>
                   {formatMoney(account.balance, account.currency)}
                 </p>
               </BalanceValue>
-              <p className="text-[11px] text-white/60">{account.currency}</p>
+              <p className="text-[11px] text-on-accent/60">{account.currency}</p>
             </div>
           </div>
         </div>
@@ -602,20 +602,20 @@ export default function AccountsPage() {
                                   name={bank.name}
                                   accountType={account.type}
                                   imgClassName="h-10 w-10 object-contain shrink-0"
-                                  iconClassName="h-8 w-8 text-white/60 shrink-0"
+                                  iconClassName="h-8 w-8 text-on-accent/60 shrink-0"
                                 />
                               ) : (
-                                <BarChart2 className="h-8 w-8 text-white/60 shrink-0" />
+                                <BarChart2 className="h-8 w-8 text-on-accent/60 shrink-0" />
                               )}
                               <div className="min-w-0">
-                                <p className="text-base sm:text-lg font-semibold leading-tight truncate text-white">{account.name}</p>
-                                {bank && <p className="text-xs text-white/70 truncate">{bank.name}</p>}
+                                <p className="text-base sm:text-lg font-semibold leading-tight truncate text-on-accent">{account.name}</p>
+                                {bank && <p className="text-xs text-on-accent/70 truncate">{bank.name}</p>}
                               </div>
                             </div>
                             <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/15 hover:text-white">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-on-accent hover:bg-on-accent/15 hover:text-on-accent">
                                     <span className="sr-only">Actions</span>
                                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                                       <circle cx="12" cy="5"  r="1.5" />
@@ -654,7 +654,7 @@ export default function AccountsPage() {
                                 <div className="flex items-center gap-1.5">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Badge className="text-xs gap-1 cursor-default bg-transparent border-white/40 text-white hover:bg-white/10">
+                                      <Badge className="text-xs gap-1 cursor-default bg-transparent border-on-accent/40 text-on-accent hover:bg-on-accent/10">
                                         <Users className="h-3 w-3" />
                                         {account.participants}
                                       </Badge>
@@ -679,7 +679,7 @@ export default function AccountsPage() {
 
                               {/* Holdings per asset */}
                               {accountHoldings.length === 0 ? (
-                                <p className="text-xs text-white/60">No holdings</p>
+                                <p className="text-xs text-on-accent/60">No holdings</p>
                               ) : (
                                 <div className="space-y-0.5">
                                   {accountHoldings.slice(0, 3).map(h => {
@@ -689,27 +689,27 @@ export default function AccountsPage() {
                                       ? h.quantity.toFixed(0)
                                       : parseFloat(h.quantity.toFixed(4)).toString()
                                     return (
-                                      <p key={h.id} className="text-xs text-white/70 tabular-nums">
-                                        <span className="font-medium text-white/90">{label}</span>
+                                      <p key={h.id} className="text-xs text-on-accent/70 tabular-nums">
+                                        <span className="font-medium text-on-accent/90">{label}</span>
                                         {' '}{qty}
                                       </p>
                                     )
                                   })}
                                   {accountHoldings.length > 3 && (
-                                    <p className="text-xs text-white/50">+{accountHoldings.length - 3} more</p>
+                                    <p className="text-xs text-on-accent/50">+{accountHoldings.length - 3} more</p>
                                   )}
                                 </div>
                               )}
 
                               {/* Financial summary */}
                               {effectiveInvestedBase > 0 && (
-                                <p className="text-xs text-white/70">
-                                  {t('investments.investedBase')}: <BalanceValue className="inline"><span className="font-medium text-white">{formatMoney(effectiveInvestedBase, account.currency)}</span></BalanceValue>
+                                <p className="text-xs text-on-accent/70">
+                                  {t('investments.investedBase')}: <BalanceValue className="inline"><span className="font-medium text-on-accent">{formatMoney(effectiveInvestedBase, account.currency)}</span></BalanceValue>
                                 </p>
                               )}
                               {pnl != null && (
                                 <BalanceValue>
-                                  <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                  <p className={`text-xs font-medium ${pnl >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'}`}>
                                     {t('investments.pnl')}: {pnl >= 0 ? '+' : ''}{formatMoney(pnl, account.currency)}
                                   </p>
                                 </BalanceValue>
@@ -717,11 +717,11 @@ export default function AccountsPage() {
                             </div>
                             <div className="text-right shrink-0">
                               <BalanceValue>
-                                <p className={`text-lg font-bold tabular-nums ${balance >= 0 ? 'text-white' : 'text-rose-300'}`}>
+                                <p className={`text-lg font-bold tabular-nums ${balance >= 0 ? 'text-on-accent' : 'text-rose-600 dark:text-rose-300'}`}>
                                   {formatMoney(balance, account.currency)}
                                 </p>
                               </BalanceValue>
-                              <p className="text-[11px] text-white/60">{account.currency}</p>
+                              <p className="text-[11px] text-on-accent/60">{account.currency}</p>
                             </div>
                           </div>
                         </div>

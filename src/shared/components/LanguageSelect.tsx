@@ -57,7 +57,7 @@ export default function LanguageSelect({ size = 'sm', dropUp = false, align = 'l
         className={cn(
           'flex items-center gap-1.5 rounded-md font-medium transition-colors',
           isDefault
-            ? 'h-9 px-3 text-sm border border-input bg-background text-foreground shadow-xs hover:bg-accent/40 focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20'
+            ? 'h-9 px-3 text-sm border border-border bg-background text-foreground shadow-xs hover:bg-accent/40 focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20'
             : 'h-7 px-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
         )}
       >

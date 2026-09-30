@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { SlidersHorizontal, Check, FilterX, Building2 } from 'lucide-react'
+import { Check, FilterX, Building2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
+import FilterTriggerButton from '@/shared/components/FilterTriggerButton'
 import { Separator } from '@/shared/components/ui/separator'
 import BankLogo from '@/shared/components/BankLogo'
 import { useT } from '@/shared/i18n'
@@ -22,19 +23,7 @@ export default function RecurringFilterPopover({ accounts, filterAccountId, setF
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant={activeFilterCount > 0 ? 'secondary' : 'outline'}
-          size="sm"
-          className="gap-2 h-9 px-3"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          <span className="text-sm">{t('transactions.filters')}</span>
-          {activeFilterCount > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
+        <FilterTriggerButton activeCount={activeFilterCount} />
       </PopoverTrigger>
 
       <PopoverContent

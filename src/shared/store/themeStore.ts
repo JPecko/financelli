@@ -9,8 +9,12 @@ interface ThemeStore {
   setTheme: (t: Theme) => void
 }
 
+const THEME_COLOR: Record<Theme, string> = { light: '#ffffff', dark: '#000000' }
+
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle('dark', theme === 'dark')
+  // Keeps the browser/Android system bar matching the app chrome
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[theme])
 }
 
 export const useThemeStore = create<ThemeStore>()(

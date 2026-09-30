@@ -85,7 +85,7 @@ export default function HoldingFormModal({ open, onClose, accountId, holding, as
             ) : (
               <select
                 id="h-asset"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/20 focus:border-ring"
+                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-base shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/20 focus:border-ring"
                 {...register('assetId', { required: true })}
               >
                 {assets.map(a => (
