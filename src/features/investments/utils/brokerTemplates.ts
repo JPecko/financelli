@@ -54,7 +54,8 @@ export const BROKER_TEMPLATES: Record<BrokerKey, BrokerTemplate> = {
       quantity:     '',            // derived from comment
       price:        '',            // derived from comment
       commentCol:   'Comment',
-      commentRegex: 'OPEN BUY ([\\d.]+)(?:/[\\d.]+)? @ ([\\d.]+)',
+      // ticker is optional: newer exports write "OPEN BUY VUAA.DE 0.7363 @ 134.44"
+      commentRegex: 'OPEN BUY (?:\\S+ )?([\\d.]+)(?:/[\\d.]+)? @ ([\\d.]+)',
       typeCol:      'Type',
       buyValue:     'Stock purchase',
     },
