@@ -1,4 +1,4 @@
-import { Pencil, Trash2, ArrowRight, RotateCcw, Users } from 'lucide-react'
+import { Pencil, Copy, Trash2, ArrowRight, RotateCcw, Users } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import {
@@ -21,6 +21,7 @@ interface TransactionRowProps {
   accountsById: Record<number, Account>
   runningBalances: Record<number, number>
   onEdit: (tx: Transaction) => void
+  onDuplicate: (tx: Transaction) => void
   onDelete: (id: number) => Promise<void>
   linkedSE?:    SharedExpense
   onReopenSE?:  (id: number) => Promise<void>
@@ -154,6 +155,7 @@ export default function TransactionRow({
   accountsById,
   runningBalances,
   onEdit,
+  onDuplicate,
   onDelete,
   linkedSE,
   onReopenSE,
@@ -172,6 +174,8 @@ export default function TransactionRow({
   const groupAmount = groupDisplayAmount(tx, linkedGroup)
   const amountColor = amountClassName(tx)
   const accountCell = accountLabel(tx, accountsById)
+  // Auto-generated roundups and group-linked rows can't be copied as a plain transaction
+  const canDuplicate = tx.category !== 'roundup' && !linkedGroup
 
   return (
     <div
@@ -259,8 +263,13 @@ export default function TransactionRow({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setTimeout(() => onEdit(tx), 0)}>
-            <Pencil className="h-4 w-4 mr-2" /> Edit
+            <Pencil className="h-4 w-4 mr-2" /> {t('common.edit')}
           </DropdownMenuItem>
+          {canDuplicate && (
+            <DropdownMenuItem onClick={() => setTimeout(() => onDuplicate(tx), 0)}>
+              <Copy className="h-4 w-4 mr-2" /> {t('common.duplicate')}
+            </DropdownMenuItem>
+          )}
           {linkedSE && onReopenSE && linkedSE.status === 'settled' && (
             <DropdownMenuItem onClick={() => linkedSE.id != null && onReopenSE(linkedSE.id)}>
               <RotateCcw className="h-4 w-4 mr-2" /> {t('sharedExpenses.markOpen')}
@@ -271,7 +280,7 @@ export default function TransactionRow({
             disabled={tx.id == null}
             onClick={() => tx.id != null && onDelete(tx.id)}
           >
-            <Trash2 className="h-4 w-4 mr-2" /> Delete
+            <Trash2 className="h-4 w-4 mr-2" /> {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

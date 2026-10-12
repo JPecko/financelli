@@ -19,6 +19,7 @@ interface Props {
   seGroupMap:      Record<number, { groupId: number; groupName: string }>
   currentUserId?:  string
   onEditTx:        (tx: Transaction) => void
+  onDuplicateTx:   (tx: Transaction) => void
   onDeleteTx:      (id: number) => Promise<void>
   onEditSE:        (se: SharedExpense) => void
   onDeleteSE:      (id: number) => Promise<void>
@@ -36,6 +37,7 @@ export default function TransactionList({
   seGroupMap,
   currentUserId,
   onEditTx,
+  onDuplicateTx,
   onDeleteTx,
   onEditSE,
   onDeleteSE,
@@ -82,6 +84,7 @@ export default function TransactionList({
               accountsById={accountsById}
               runningBalances={runningBalances}
               onEdit={onEditTx}
+              onDuplicate={onDuplicateTx}
               onDelete={onDeleteTx}
               linkedSE={item.data.id != null ? txSeMap[item.data.id] : undefined}
               linkedGroup={item.data.id != null ? txGroupMap[item.data.id] : undefined}

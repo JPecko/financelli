@@ -190,6 +190,7 @@ interface UseTransactionFormProps {
   open:              boolean
   onClose:           () => void
   transaction?:      Transaction
+  duplicate?:        boolean  // transaction is only a template — submit creates a new one
   defaultType?:      TransactionType
   defaultAccountId?: string
   onAfterSubmit?:    (id?: number) => Promise<void>
@@ -198,7 +199,7 @@ interface UseTransactionFormProps {
 }
 
 export function useTransactionForm({
-  open, onClose, transaction, defaultType = 'expense', defaultAccountId, onAfterSubmit,
+  open, onClose, transaction, duplicate = false, defaultType = 'expense', defaultAccountId, onAfterSubmit,
   initialOverride, onValuesChange,
 }: UseTransactionFormProps) {
   const { user } = useAuth()
@@ -301,7 +302,7 @@ export function useTransactionForm({
 
   const onSubmit = handleSubmit(async (values) => {
     const payload = buildPayload(values)
-    if (transaction?.id != null) {
+    if (transaction?.id != null && !duplicate) {
       await updateTransaction(transaction.id, payload)
       await onAfterSubmit?.()
     } else {

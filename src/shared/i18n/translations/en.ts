@@ -67,6 +67,7 @@ export const en = {
     confirm:    'Confirm',
     delete:     'Delete',
     edit:       'Edit',
+    duplicate:  'Duplicate',
     add:        'Add',
     close:      'Close',
     export:     'Export',
@@ -340,6 +341,7 @@ export const en = {
     personalForOther: 'Not counted for you',
     newTitle:         'New Transaction',
     editTitle:        'Edit Transaction',
+    duplicateTitle:   'Duplicate Transaction',
     category:         'Category',
   },
 

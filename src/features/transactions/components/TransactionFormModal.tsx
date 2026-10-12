@@ -10,6 +10,7 @@ import StandardTransactionTab from './StandardTransactionTab'
 import GroupTransactionTab from './GroupTransactionTab'
 import { useLinkedGroupEntry } from './useLinkedGroupEntry'
 import type { SharedFormOverride } from './useTransactionForm'
+import { fromCents } from '@/domain/money'
 import type { SharedExpense, Transaction, TransactionType } from '@/domain/types'
 
 type ViewType = TransactionType | 'groups'
@@ -19,6 +20,7 @@ interface Props {
   onClose: () => void
   transaction?: Transaction
   sharedExpense?: SharedExpense
+  duplicate?: boolean
   defaultType?: ViewType
   defaultAccountId?: string
 }
@@ -33,11 +35,16 @@ function resolveInitialViewType({
   return defaultType ?? 'expense'
 }
 
+function carryOverFrom(tx: Transaction): SharedFormOverride {
+  return { description: tx.description, amount: Math.abs(fromCents(tx.amount)).toFixed(2), date: tx.date }
+}
+
 export default function TransactionFormModal({
   open,
   onClose,
   transaction,
   sharedExpense,
+  duplicate = false,
   defaultType,
   defaultAccountId,
 }: Props) {
@@ -46,22 +53,24 @@ export default function TransactionFormModal({
   const { data: accounts = [] } = useSortedAccounts()
   const { data: rawGroups = [] } = useGroups()
   const groups = rawGroups.filter((group): group is typeof group & { id: number } => group.id != null)
-  const isEditTx = transaction != null || sharedExpense != null
+  // Duplicating reuses the transaction as a template only — the form behaves as a new entry
+  const isEditTx = !duplicate && (transaction != null || sharedExpense != null)
+  const editedTx = duplicate ? undefined : transaction
 
   const [viewType, setViewType] = useState<ViewType>('expense')
   // Carries description/amount/date between the Personal and Group tabs while creating a new entry
   const [carryOver, setCarryOver] = useState<SharedFormOverride>({})
   const linkedGroup = useLinkedGroupEntry({
     open,
-    transactionId: transaction?.id,
+    transactionId: editedTx?.id,
     sharedExpenseId: sharedExpense?.id,
   })
 
   useLayoutEffect(() => {
     if (!open) return
     setViewType(resolveInitialViewType({ transaction, sharedExpense, defaultType }))
-    setCarryOver({})
-  }, [open, transaction, sharedExpense, defaultType])
+    setCarryOver(duplicate && transaction ? carryOverFrom(transaction) : {})
+  }, [open, transaction, sharedExpense, defaultType, duplicate])
 
   useLayoutEffect(() => {
     if (!open || !linkedGroup.entry) return
@@ -83,7 +92,7 @@ export default function TransactionFormModal({
       >
         <DialogHeader>
           <DialogTitle>
-            {isEditTx ? t('transactions.editTitle') : t('transactions.newTitle')}
+            {isEditTx ? t('transactions.editTitle') : duplicate ? t('transactions.duplicateTitle') : t('transactions.newTitle')}
           </DialogTitle>
         </DialogHeader>
 
@@ -95,10 +104,10 @@ export default function TransactionFormModal({
 
         {viewType === 'groups' ? (
           <GroupTransactionTab
-            key={`groups-${transaction?.id ?? sharedExpense?.id ?? 'new'}`}
+            key={`groups-${editedTx?.id ?? sharedExpense?.id ?? 'new'}`}
             open={open}
             onClose={onClose}
-            transaction={transaction}
+            transaction={editedTx}
             sharedExpense={sharedExpense}
             accounts={accounts}
             groups={groups}
@@ -112,6 +121,7 @@ export default function TransactionFormModal({
             open={open}
             onClose={onClose}
             transaction={transaction}
+            duplicate={duplicate}
             defaultType={viewType}
             defaultAccountId={defaultAccountId}
             isEditTx={isEditTx}

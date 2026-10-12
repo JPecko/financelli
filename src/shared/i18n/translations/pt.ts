@@ -69,6 +69,7 @@ export const pt: typeof en = {
     confirm:    'Confirmar',
     delete:     'Eliminar',
     edit:       'Editar',
+    duplicate:  'Duplicar',
     add:        'Adicionar',
     close:      'Fechar',
     export:     'Exportar',
@@ -525,6 +526,7 @@ export const pt: typeof en = {
     personalForOther: 'Não contabilizado',
     newTitle:         'Novo Movimento',
     editTitle:        'Editar Movimento',
+    duplicateTitle:   'Duplicar Movimento',
     category:         'Categoria',
   },
 

@@ -20,6 +20,7 @@ export function useTransactionsPageModel() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTx, setEditingTx] = useState<Transaction | undefined>()
   const [editingSE, setEditingSE] = useState<SharedExpense | undefined>()
+  const [isDuplicate, setIsDuplicate] = useState(false)
 
   const { filterAccountId, filterCategory, filterSource, setFilterAccountId, setFilterCategory, setFilterSource } =
     useTransactionsFilterStore()
@@ -163,18 +164,29 @@ export function useTransactionsPageModel() {
   const openCreateModal = () => {
     setEditingTx(undefined)
     setEditingSE(undefined)
+    setIsDuplicate(false)
     setModalOpen(true)
   }
 
   const handleEdit = (tx: Transaction) => {
     setEditingTx(tx)
     setEditingSE(undefined)
+    setIsDuplicate(false)
+    setModalOpen(true)
+  }
+
+  // Opens the form pre-filled from tx; saving creates a new transaction
+  const handleDuplicate = (tx: Transaction) => {
+    setEditingTx(tx)
+    setEditingSE(undefined)
+    setIsDuplicate(true)
     setModalOpen(true)
   }
 
   const handleEditSE = (se: SharedExpense) => {
     setEditingSE(se)
     setEditingTx(undefined)
+    setIsDuplicate(false)
     setModalOpen(true)
   }
 
@@ -182,6 +194,7 @@ export function useTransactionsPageModel() {
     setModalOpen(false)
     setEditingTx(undefined)
     setEditingSE(undefined)
+    setIsDuplicate(false)
   }
 
   const handleDelete = async (id: number) => {
@@ -207,6 +220,7 @@ export function useTransactionsPageModel() {
     modalOpen,
     editingTx,
     editingSE,
+    isDuplicate,
     listItems,
     filteredTotals,
     txSeMap,
@@ -229,6 +243,7 @@ export function useTransactionsPageModel() {
     nextMonth,
     openCreateModal,
     handleEdit,
+    handleDuplicate,
     handleEditSE,
     handleClose,
     handleDelete,

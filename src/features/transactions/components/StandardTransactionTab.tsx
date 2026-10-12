@@ -8,6 +8,7 @@ interface Props {
   open: boolean
   onClose: () => void
   transaction?: Transaction
+  duplicate?: boolean
   defaultType: TransactionType
   defaultAccountId?: string
   isEditTx: boolean
@@ -20,6 +21,7 @@ export default function StandardTransactionTab({
   open,
   onClose,
   transaction,
+  duplicate,
   defaultType,
   defaultAccountId,
   isEditTx,
@@ -31,6 +33,7 @@ export default function StandardTransactionTab({
     open,
     onClose,
     transaction,
+    duplicate,
     defaultType,
     defaultAccountId,
     initialOverride,

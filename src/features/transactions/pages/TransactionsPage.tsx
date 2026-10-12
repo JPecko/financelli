@@ -84,6 +84,7 @@ export default function TransactionsPage() {
         seGroupMap={m.seGroupMap}
         currentUserId={user?.id}
         onEditTx={m.handleEdit}
+        onDuplicateTx={m.handleDuplicate}
         onDeleteTx={m.handleDelete}
         onEditSE={m.handleEditSE}
         onDeleteSE={m.handleDeleteSE}
@@ -96,6 +97,7 @@ export default function TransactionsPage() {
         onClose={m.handleClose}
         transaction={m.editingTx}
         sharedExpense={m.editingSE}
+        duplicate={m.isDuplicate}
         defaultAccountId={!m.editingTx && !m.editingSE && m.filterAccountId != null ? String(m.filterAccountId) : undefined}
       />
     </div>

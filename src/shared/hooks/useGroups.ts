@@ -74,12 +74,15 @@ function invalidateGroup(groupId?: number) {
   }
 }
 
-function invalidateGroupData(groupId: number) {
+// Queries the Transactions list uses to swap a linked bank transaction for its group-expense row
+const LINKED_VIEW_KEYS = [['txLinkedGroups'], ['seLinkedGroups'], ['myGroupExpenses']] as const
+
+async function invalidateGroupData(groupId: number) {
   void queryClient.invalidateQueries({ queryKey: queryKeys.groups.members(groupId) })
   void queryClient.invalidateQueries({ queryKey: queryKeys.groups.entries(groupId) })
-  void queryClient.invalidateQueries({ queryKey: ['txLinkedGroups'] })
-  void queryClient.invalidateQueries({ queryKey: ['seLinkedGroups'] })
-  void queryClient.invalidateQueries({ queryKey: ['myGroupExpenses'] })
+  // Cancel first: a first-time fetch started before this write can't be superseded by invalidation alone
+  await Promise.all(LINKED_VIEW_KEYS.map(queryKey => queryClient.cancelQueries({ queryKey })))
+  await Promise.all(LINKED_VIEW_KEYS.map(queryKey => queryClient.invalidateQueries({ queryKey })))
 }
 
 export async function createGroup(group: Omit<Group, 'id' | 'createdAt'>): Promise<number> {
@@ -102,18 +105,18 @@ export async function removeGroup(id: number): Promise<void> {
 
 export async function addGroupMember(member: Omit<GroupMember, 'id' | 'createdAt'>): Promise<number> {
   const id = await groupsRepo.addMember(member)
-  invalidateGroupData(member.groupId)
+  await invalidateGroupData(member.groupId)
   return id
 }
 
 export async function updateGroupMember(id: number, groupId: number, changes: Partial<Pick<GroupMember, 'name' | 'email'>>): Promise<void> {
   await groupsRepo.updateMember(id, changes)
-  invalidateGroupData(groupId)
+  await invalidateGroupData(groupId)
 }
 
 export async function removeGroupMember(id: number, groupId: number): Promise<void> {
   await groupsRepo.removeMember(id)
-  invalidateGroupData(groupId)
+  await invalidateGroupData(groupId)
 }
 
 // ---- Entry mutations -------------------------------------------
@@ -124,7 +127,7 @@ export async function addGroupEntry(
 ): Promise<void> {
   const entryId = await groupsRepo.addEntry(entry)
   await groupsRepo.setSplitsForEntry(entryId, splits.map(s => ({ ...s, entryId })))
-  invalidateGroupData(entry.groupId)
+  await invalidateGroupData(entry.groupId)
 }
 
 export async function updateGroupEntry(
@@ -137,10 +140,10 @@ export async function updateGroupEntry(
   if (splits != null) {
     await groupsRepo.setSplitsForEntry(id, splits.map(s => ({ ...s, entryId: id })))
   }
-  invalidateGroupData(groupId)
+  await invalidateGroupData(groupId)
 }
 
 export async function removeGroupEntry(id: number, groupId: number): Promise<void> {
   await groupsRepo.removeEntry(id)
-  invalidateGroupData(groupId)
+  await invalidateGroupData(groupId)
 }
