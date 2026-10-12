@@ -301,7 +301,7 @@ export const en = {
   },
 
   transactions: {
-    help: { title: 'What is this page?', body: 'This is where you log every payment or deposit: groceries, salary, a transfer between accounts, etc. Tap "Add Transaction", choose the account, a category, and the amount. Use the arrows at the top to look at other months.' },
+    help: { title: 'What is this page?', body: 'This is where you log every payment or deposit: groceries, salary, a transfer between accounts, etc. Tap "Add Transaction", choose the account, a category, and the amount. Use the arrows at the top to look at other months. To repeat a past one, open its ⋮ menu and tap "Duplicate" — it opens a copy you can change before saving.' },
     title:              'Transactions',
     addTransaction:     'Add Transaction',
     noTransactions:     'No transactions this month',

@@ -486,7 +486,7 @@ export const pt: typeof en = {
   },
 
   transactions: {
-    help: { title: 'O que é esta página?', body: 'Aqui registas tudo o que gastas ou recebes: compras, salário, uma transferência entre contas, etc. Toca em "Add Transaction", escolhe a conta, uma categoria e o valor. Usa as setas no topo para ver outros meses.' },
+    help: { title: 'O que é esta página?', body: 'Aqui registas tudo o que gastas ou recebes: compras, salário, uma transferência entre contas, etc. Toca em "Add Transaction", escolhe a conta, uma categoria e o valor. Usa as setas no topo para ver outros meses. Para repetir um movimento antigo, abre o menu ⋮ dessa linha e toca em "Duplicar" — abre uma cópia que podes alterar antes de gravar.' },
     title:              'Movimentos',
     addTransaction:     'Adicionar',
     noTransactions:     'Sem movimentos este mês',

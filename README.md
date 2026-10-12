@@ -152,6 +152,7 @@ Quando o utilizador faz logout:
 - categorias
 - ligação opcional a holdings em contas de investimento
 - despesas pessoais vs partilhadas
+- duplicar um movimento a partir do menu da linha (abre o formulário pré-preenchido e grava como novo)
 
 ### Recurring
 
