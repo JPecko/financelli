@@ -56,11 +56,7 @@ export default function DashboardPage() {
 
       {/* Row 1: Net Worth | Month Summary | Groups (lg) — Account Balances (+ Perks on mobile) below */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <NetWorthCard
-          netWorthTotal={model.netWorthTotal}
-          netWorthByType={model.netWorthByType}
-          positiveTotal={model.positiveTotal}
-        />
+        <NetWorthCard accounts={model.accounts} effectiveBalances={model.effectiveBalances} />
         <MonthSummaryCard
           summary={model.summary}
           savingsRate={model.savingsRate}

@@ -5,12 +5,14 @@ import { useAccountPrefsStore } from '@/shared/store/accountPrefsStore'
 import BottomNav from '@/shared/components/layout/BottomNav'
 import MobileHeader from '@/shared/components/layout/MobileHeader'
 import { useTopbarState } from '@/shared/hooks/useMobileChromeVisibility'
+import { useInvestmentSnapshotSync } from '@/shared/hooks/useInvestmentSnapshots'
 
 export default function Layout() {
   const load = useAccountPrefsStore(s => s.load)
   const { pathname } = useLocation()
   const mainRef = useRef<HTMLElement | null>(null)
   const topbarState = useTopbarState({ pathname, scrollerRef: mainRef })
+  useInvestmentSnapshotSync()
 
   useEffect(() => { void load() }, [load])
 

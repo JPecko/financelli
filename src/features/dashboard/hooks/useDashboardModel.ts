@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { getYear, getMonth } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { useSortedAccounts, useNetWorth } from '@/shared/hooks/useAccounts'
+import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import {
   useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow,
   useMonthlyBenefits, useYearBenefits, isCashFlow, personalDivisorFor,
@@ -15,7 +15,7 @@ import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
 import { useT } from '@/shared/i18n'
 import { computeAccountBalance, computeEffectiveInvestedBase, computeMarketValue } from '@/features/investments/utils/investmentMetrics'
-import type { AccountType, Transaction } from '@/domain/types'
+import type { Transaction } from '@/domain/types'
 
 const now   = new Date()
 export const DASHBOARD_YEAR  = getYear(now)
@@ -38,7 +38,6 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
   const { user } = useAuth()
   const { setFilterCategory, setFilterAccountId } = useTransactionsFilterStore()
 
-  const netWorthFromHook                = useNetWorth()
   const summary                         = useMonthSummary(year, month)
   const { data: transactions = [], isLoading: txLoading  } = useTransactionsByMonth(year, month)
   const { data: accounts     = [], isLoading: accLoading } = useSortedAccounts()
@@ -71,24 +70,6 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
     }
     return result
   }, [accounts, allHoldings, allAssetMap])
-
-  const netWorthByType = useMemo(() => {
-    const map: Partial<Record<AccountType, number>> = {}
-    for (const a of accounts) map[a.type] = (map[a.type] ?? 0) + (effectiveBalances[a.id!] ?? 0)
-    return (Object.entries(map) as [AccountType, number][])
-      .filter(([, v]) => v !== 0)
-      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
-  }, [accounts, effectiveBalances])
-
-  const positiveTotal = useMemo(
-    () => netWorthByType.filter(([, v]) => v > 0).reduce((s, [, v]) => s + v, 0),
-    [netWorthByType],
-  )
-
-  const netWorthTotal = useMemo(
-    () => netWorthByType.reduce((s, [, v]) => s + v, 0) || netWorthFromHook,
-    [netWorthByType, netWorthFromHook],
-  )
 
   const cashbackMonth = useMemo(() =>
     transactions
@@ -198,9 +179,6 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
     isLoading: accLoading || txLoading,
     accounts,
     effectiveBalances,
-    netWorthByType,
-    positiveTotal,
-    netWorthTotal,
     summary,
     savingsRate,
     barData,

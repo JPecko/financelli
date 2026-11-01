@@ -1,5 +1,6 @@
 import { supabase } from '@/data/supabase'
 import type { Transaction } from '@/domain/types'
+import type { BalanceDelta } from '@/domain/netWorth'
 import { accountsRepo } from './accountsRepo'
 import { holdingsRepo } from './holdingsRepo'
 
@@ -149,6 +150,17 @@ export const transactionsRepo = {
       .order('created_at', { ascending: false })
     if (error) throw error
     return (data as TransactionRow[]).map(toTransaction)
+  },
+
+  // Minimal rows needed to undo balance effects dated after a given day (strictly later)
+  getBalanceDeltasAfter: async (date: string): Promise<BalanceDelta[]> => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('account_id, to_account_id, amount, date')
+      .gt('date', date)
+    if (error) throw error
+    return (data as { account_id: number; to_account_id: number | null; amount: number; date: string }[])
+      .map(r => ({ accountId: r.account_id, toAccountId: r.to_account_id, amount: r.amount, date: r.date }))
   },
 
   getByAccount: async (accountId: number): Promise<Transaction[]> => {

@@ -35,6 +35,17 @@ export const purchaseHistoryRepo = {
     return (data as PurchaseHistoryRow[]).map(toPurchaseHistory)
   },
 
+  getByAccounts: async (accountIds: number[]): Promise<PurchaseHistory[]> => {
+    if (accountIds.length === 0) return []
+    const { data, error } = await supabase
+      .from('purchase_history')
+      .select('*')
+      .in('account_id', accountIds)
+      .order('date', { ascending: true })
+    if (error) throw error
+    return (data as PurchaseHistoryRow[]).map(toPurchaseHistory)
+  },
+
   addMany: async (items: Omit<PurchaseHistory, 'id' | 'createdAt'>[]): Promise<void> => {
     if (items.length === 0) return
     const rows = items.map(i => ({

@@ -9,8 +9,16 @@ export interface MonthlyReportAccount {
   name: string
   type: string
   balance: number
-  previousBalance: number
+  previousBalance: number | null
+  delta: number | null
+}
+
+export interface MonthlyReportNetWorthPoint {
+  label: string
+  value: number
   delta: number
+  partial: boolean   // an investment account had no recorded value for this or the previous month
+  estimated: boolean // investment value estimated from purchase/price history
 }
 
 export interface MonthlyReportExpense {
@@ -36,6 +44,9 @@ export interface MonthlyReportLabels {
   netWorthByType: string
   total: string
   excludesInvestments: string
+  netWorthEvolution: string
+  partialMonthNote: string
+  estimatedMonthNote: string
   accountBalances: string
   investmentsSnapshot: string
   investmentsNote: string
@@ -59,6 +70,9 @@ export interface MonthlyReportData {
   accounts: MonthlyReportAccount[]
   netWorthTotal: number
   netWorthByType: MonthlyReportNetWorthGroup[]
+  netWorthMissingInvestments: boolean
+  netWorthEstimatedInvestments: boolean
+  netWorthEvolution: MonthlyReportNetWorthPoint[]
   comparisonLabel: string
   netWorthDelta: number
   investment: { totalInvested: number; totalMarketValue: number; totalPnl: number }

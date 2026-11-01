@@ -13,6 +13,14 @@ export function usePurchaseHistoryByAccount(accountId: number | undefined) {
   })
 }
 
+export function usePurchaseHistoryByAccounts(accountIds: number[]) {
+  return useQuery({
+    queryKey: queryKeys.purchaseHistory.byAccounts(accountIds),
+    queryFn:  () => purchaseHistoryRepo.getByAccounts(accountIds),
+    enabled:  accountIds.length > 0,
+  })
+}
+
 export function useAssetPricesByAssets(assetIds: number[]) {
   return useQuery({
     queryKey: queryKeys.assetPrices.byAssets(assetIds),
@@ -28,5 +36,5 @@ export async function replacePurchaseHistory(
 ): Promise<void> {
   await purchaseHistoryRepo.clearByAccountAndAsset(accountId, assetId)
   await purchaseHistoryRepo.addMany(items)
-  queryClient.invalidateQueries({ queryKey: queryKeys.purchaseHistory.byAccount(accountId) })
+  queryClient.invalidateQueries({ queryKey: queryKeys.purchaseHistory.all() })
 }

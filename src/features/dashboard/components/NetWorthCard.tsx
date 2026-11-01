@@ -1,20 +1,22 @@
-import { Wallet } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
 import { formatMoney } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import PageHelpInfo from '@/shared/components/PageHelpInfo'
-import { ACCOUNT_TYPE_META } from '../utils/dashboardHelpers'
 import BalanceValue from '@/shared/components/BalanceValue'
-import type { AccountType } from '@/domain/types'
+import NetWorthBreakdown from './NetWorthBreakdown'
+import { useNetWorthNavigator } from '../hooks/useNetWorthNavigator'
+import type { Account } from '@/domain/types'
 
 interface Props {
-  netWorthTotal:  number
-  netWorthByType: [AccountType, number][]
-  positiveTotal:  number
+  accounts:          Account[]
+  effectiveBalances: Record<number, number>
 }
 
-export default function NetWorthCard({ netWorthTotal, netWorthByType, positiveTotal }: Props) {
-  const t = useT()
+export default function NetWorthCard({ accounts, effectiveBalances }: Props) {
+  const t  = useT()
+  const nw = useNetWorthNavigator(accounts, effectiveBalances)
 
   return (
     <Card>
@@ -28,43 +30,48 @@ export default function NetWorthCard({ netWorthTotal, netWorthByType, positiveTo
         </div>
       </CardHeader>
       <CardContent>
-        <BalanceValue><div className="text-2xl font-bold mb-3">{formatMoney(netWorthTotal)}</div></BalanceValue>
-        {netWorthByType.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('dashboard.noAccounts')}</p>
-        ) : (
-          <div className="space-y-2">
-            {netWorthByType.map(([type, balance]) => {
-              const meta = ACCOUNT_TYPE_META[type]
-              const Icon = meta.icon
-              const pct  = positiveTotal > 0 && balance > 0
-                ? Math.round((balance / positiveTotal) * 100) : null
-              return (
-                <div key={type}>
-                  <div className="mb-0.5 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <Icon className="h-3 w-3 shrink-0" style={{ color: meta.color }} />
-                      <span className="text-muted-foreground">{t(('accounts.types.' + type) as Parameters<typeof t>[0])}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <BalanceValue>
-                        <span className={`font-medium ${balance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}>
-                          {formatMoney(balance)}
-                        </span>
-                      </BalanceValue>
-                      {pct != null && <span className="text-muted-foreground w-7 text-right">{pct}%</span>}
-                    </div>
-                  </div>
-                  {pct != null && (
-                    <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: meta.color }} />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <Button variant="ghost" size="icon" className="h-9 w-9" disabled={!nw.canGoBack} onClick={nw.goBack} aria-label={t('dashboard.previousMonth')}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium capitalize">
+            {nw.isCurrent ? t('dashboard.netWorthToday') : nw.label}
+          </span>
+          <Button variant="ghost" size="icon" className="h-9 w-9" disabled={!nw.canGoForward} onClick={nw.goForward} aria-label={t('dashboard.nextMonth')}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <BalanceValue><div className="text-2xl font-bold">{formatMoney(nw.total)}</div></BalanceValue>
+        {nw.delta != null && <GrowthLine delta={nw.delta} deltaPct={nw.deltaPct} label={t('dashboard.vsPreviousMonth')} />}
+        {nw.missingInvestments && <CardNote>{t('dashboard.netWorthMissingInvestments')}</CardNote>}
+        {nw.estimatedInvestments && <CardNote>{t('dashboard.netWorthEstimatedInvestments')}</CardNote>}
+
+        <div className="mt-3">
+          {nw.byType.length === 0
+            ? <p className="text-sm text-muted-foreground">{t('dashboard.noAccounts')}</p>
+            : <NetWorthBreakdown byType={nw.byType} positiveTotal={nw.positiveTotal} />}
+        </div>
       </CardContent>
     </Card>
   )
+}
+
+function GrowthLine({ delta, deltaPct, label }: { delta: number; deltaPct: number | null; label: string }) {
+  const tone = delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+  const sign = delta >= 0 ? '+' : ''
+  return (
+    <p className="mt-0.5 text-sm text-muted-foreground">
+      <BalanceValue>
+        <span className={`font-medium ${tone}`}>
+          {sign}{formatMoney(delta)}{deltaPct != null && ` (${sign}${deltaPct}%)`}
+        </span>
+      </BalanceValue>{' '}
+      {label}
+    </p>
+  )
+}
+
+function CardNote({ children }: { children: React.ReactNode }) {
+  return <p className="mt-1 text-xs text-muted-foreground">{children}</p>
 }

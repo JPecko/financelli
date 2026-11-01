@@ -58,6 +58,12 @@ export interface AssetPrice {
   createdAt: string
 }
 
+export interface InvestmentSnapshot {
+  accountId:    number
+  snapshotDate: string   // YYYY-MM-DD — last day of the month the value belongs to
+  valueCents:   number   // market value of the account, in cents
+}
+
 export interface Holding {
   id?: number
   accountId: number

@@ -17,6 +17,11 @@ export const queryKeys = {
       ['transactions', 'investmentHistory', accountId, year, month, months] as const,
     capitalAdjustments: (accountIdsKey: string) => ['transactions', 'capitalAdjustments', accountIdsKey] as const,
     byAccount: (accountId: number) => ['transactions', 'byAccount', accountId] as const,
+    balanceDeltasAfter: (date: string) => ['transactions', 'balanceDeltasAfter', date] as const,
+  },
+  investmentSnapshots: {
+    all:   ()                 => ['investmentSnapshots']                as const,
+    since: (fromDate: string) => ['investmentSnapshots', 'since', fromDate] as const,
   },
   rules: {
     all: () => ['rules'] as const,
@@ -47,6 +52,7 @@ export const queryKeys = {
   purchaseHistory: {
     all:       ()                   => ['purchaseHistory']                       as const,
     byAccount: (accountId: number)  => ['purchaseHistory', 'byAccount', accountId] as const,
+    byAccounts: (ids: number[])     => ['purchaseHistory', 'byAccounts', ...ids]  as const,
   },
   userSettings: {
     all: () => ['userSettings'] as const,

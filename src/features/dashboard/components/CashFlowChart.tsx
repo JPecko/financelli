@@ -21,11 +21,16 @@ interface Props {
 export default function CashFlowChart({ barData }: Props) {
   const t = useT()
 
-  const { avgIncome, avgOutcome } = useMemo(() => {
-    if (barData.length === 0) return { avgIncome: 0, avgOutcome: 0 }
-    const income  = barData.reduce((s, m) => s + m.income, 0) / barData.length
-    const outcome = barData.reduce((s, m) => s + m.expenses + m.investing + m.roundup, 0) / barData.length
-    return { avgIncome: income, avgOutcome: outcome }
+  const { avgIncome, avgOutcome, monthIncome, monthOutcome } = useMemo(() => {
+    if (barData.length === 0) return { avgIncome: 0, avgOutcome: 0, monthIncome: 0, monthOutcome: 0 }
+    const outcomeOf = (m: Props['barData'][number]) => m.expenses + m.investing + m.roundup
+    const current   = barData[barData.length - 1]
+    return {
+      avgIncome:    barData.reduce((s, m) => s + m.income, 0) / barData.length,
+      avgOutcome:   barData.reduce((s, m) => s + outcomeOf(m), 0) / barData.length,
+      monthIncome:  current.income,
+      monthOutcome: outcomeOf(current),
+    }
   }, [barData])
 
   return (
@@ -34,6 +39,10 @@ export default function CashFlowChart({ barData }: Props) {
         <div className="flex items-center gap-1.5">
           <CardTitle className="text-sm font-medium">{t('dashboard.incomeVsOutcome')}</CardTitle>
           <PageHelpInfo title={t('dashboard.sections.cashFlow.title')} body={t('dashboard.sections.cashFlow.body')} />
+        </div>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <MonthTotal label={t('dashboard.incomeThisMonth')} value={monthIncome} tone="text-emerald-600" />
+          <MonthTotal label={t('dashboard.outcomeThisMonth')} value={monthOutcome} tone="text-rose-500" />
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-sm text-muted-foreground">
           <span>{t('dashboard.avgIncome')}: <span className="font-medium text-emerald-600">{formatMoney(avgIncome)}</span></span>
@@ -62,5 +71,14 @@ export default function CashFlowChart({ barData }: Props) {
         </ResponsiveContainer>
       </CardContent>
     </Card>
+  )
+}
+
+function MonthTotal({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <div className="rounded-md bg-muted/50 px-3 py-2">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`text-lg font-semibold tabular-nums ${tone}`}>{formatMoney(value)}</p>
+    </div>
   )
 }

@@ -3,7 +3,7 @@ import { formatMoney } from '@/domain/money'
 import { reportPdfStyles as s } from './reportPdf.styles'
 import type {
   MonthlyReportData, MonthlyReportCategory, MonthlyReportExpense,
-  MonthlyReportAccount, MonthlyReportNetWorthGroup, MonthlyReportLabels,
+  MonthlyReportAccount, MonthlyReportNetWorthGroup, MonthlyReportLabels, MonthlyReportNetWorthPoint,
 } from './monthlyReport.types'
 
 interface Props {
@@ -55,8 +55,18 @@ export default function MonthlyReportDocument({ data }: Props) {
               <DeltaLabel delta={data.netWorthDelta} comparisonLabel={data.comparisonLabel} vsLabel={l.vs} />
             </View>
           </View>
-          <Text style={s.note}>{l.excludesInvestments}</Text>
+          {data.netWorthMissingInvestments && <Text style={s.note}>{l.excludesInvestments}</Text>}
+          {data.netWorthEstimatedInvestments && <Text style={s.note}>{l.estimatedMonthNote}</Text>}
         </View>
+
+        {data.netWorthEvolution.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>{l.netWorthEvolution}</Text>
+            {data.netWorthEvolution.map(point => <EvolutionRow key={point.label} point={point} />)}
+            {data.netWorthEvolution.some(p => p.estimated) && <Text style={s.note}>~ {l.estimatedMonthNote}</Text>}
+            {data.netWorthEvolution.some(p => p.partial) && <Text style={s.note}>* {l.partialMonthNote}</Text>}
+          </View>
+        )}
 
         <View style={s.section}>
           <Text style={s.sectionTitle}>{l.accountBalances}</Text>
@@ -107,7 +117,8 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone?:
   )
 }
 
-function DeltaLabel({ delta, comparisonLabel, vsLabel }: { delta: number; comparisonLabel: string; vsLabel: string }) {
+function DeltaLabel({ delta, comparisonLabel, vsLabel }: { delta: number | null; comparisonLabel: string; vsLabel: string }) {
+  if (delta == null) return null
   const tone = delta === 0 ? {} : delta > 0 ? s.positive : s.negative
   return (
     <Text style={[s.rowSublabel, tone]}>
@@ -121,6 +132,19 @@ function NetWorthRow({ group }: { group: MonthlyReportNetWorthGroup }) {
     <View style={s.row}>
       <Text style={s.rowLabel}>{group.label}</Text>
       <Text style={s.rowValue}>{formatMoney(group.value)}</Text>
+    </View>
+  )
+}
+
+function EvolutionRow({ point }: { point: MonthlyReportNetWorthPoint }) {
+  const tone = point.delta === 0 ? {} : point.delta > 0 ? s.positive : s.negative
+  return (
+    <View style={s.row}>
+      <Text style={s.rowLabel}>{point.estimated ? '~ ' : ''}{point.label}{point.partial ? ' *' : ''}</Text>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={s.rowValue}>{formatMoney(point.value)}</Text>
+        <Text style={[s.rowSublabel, tone]}>{point.delta >= 0 ? '+' : ''}{formatMoney(point.delta)}</Text>
+      </View>
     </View>
   )
 }

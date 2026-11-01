@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { format, getYear, getMonth } from 'date-fns'
 import { useDashboardModel } from './useDashboardModel'
-import { useLaterSums } from '@/shared/hooks/useTransactions'
+import { useNetWorthHistory } from './useNetWorthHistory'
 import { useT } from '@/shared/i18n'
+import { useLanguageStore } from '@/shared/store/languageStore'
+import { getDateFnsLocale } from '@/shared/utils/dateLocale'
 import { tCategory } from '@/domain/categories'
-import type { Account } from '@/domain/types'
+import { buildNetWorthEvolution, buildReportAccounts, groupReportAccountsByType } from '../utils/reportNetWorth'
 import type { MonthlyReportData } from '../pdf/monthlyReport.types'
 
 const now = new Date()
+const EVOLUTION_MONTHS = 6
 
 function isCurrentMonth(year: number, month: number) {
   return year === getYear(now) && month === getMonth(now) + 1
@@ -23,53 +26,34 @@ function getComparisonPeriod(year: number, month: number) {
 
 export function useMonthlyReportExport(year: number, month: number) {
   const t = useT()
+  const locale = getDateFnsLocale(useLanguageStore(s => s.lang))
   const model = useDashboardModel(year, month)
   const comparison = getComparisonPeriod(year, month)
 
-  // Cash accounts store a running balance — reconstruct the end-of-month value by undoing
-  // transactions dated after the target month. Investment accounts have no holdings history,
-  // so they always show today's market value (their delta is reported as unavailable).
-  const { data: laterSums,           isLoading: laterSumsLoading           } = useLaterSums(year, month)
-  const { data: laterSumsComparison, isLoading: laterSumsComparisonLoading } = useLaterSums(comparison.year, comparison.month)
+  // Cash accounts are reconstructed from transactions; investments come from their month-end snapshot
+  const history = useNetWorthHistory(model.accounts, model.effectiveBalances, { year, month }, EVOLUTION_MONTHS + 1)
   const [isGenerating, setIsGenerating] = useState(false)
-
-  const balanceAt = (a: Account, laterSumsMap: Record<number, number> | undefined) =>
-    a.balance - (laterSumsMap?.[a.id!] ?? 0)
 
   const generate = async () => {
     setIsGenerating(true)
     try {
-      const monthLabel      = format(new Date(year, month - 1), 'MMMM yyyy')
-      const comparisonLabel = format(new Date(comparison.year, comparison.month - 1), 'MMMM yyyy')
+      const monthLabel      = format(new Date(year, month - 1), 'MMMM yyyy', { locale })
+      const comparisonLabel = format(new Date(comparison.year, comparison.month - 1), 'MMMM yyyy', { locale })
       const isCurrent        = isCurrentMonth(year, month)
+      const months           = history.months
+      const target           = months[months.length - 1]
+      // Current month compares with the previous month-end; a past month compares with today
+      const comparisonBalances = isCurrent ? months[months.length - 2]?.balances : model.effectiveBalances
 
-      // Investment accounts have no holdings history — they can't be reconstructed for a past
-      // month, so they're excluded from Net Worth/balances and shown separately as a snapshot.
-      const accounts = model.accounts
-        .filter(a => a.type !== 'investment')
-        .map(a => {
-          const balance         = balanceAt(a, laterSums)
-          const previousBalance = balanceAt(a, laterSumsComparison)
-          return {
-            name: a.name,
-            type: t(('accounts.types.' + a.type) as Parameters<typeof t>[0]),
-            balance,
-            previousBalance,
-            delta: balance - previousBalance,
-          }
-        })
-
-      const netWorthByType = Object.entries(
-        accounts.reduce<Record<string, number>>((map, a) => {
-          map[a.type] = (map[a.type] ?? 0) + a.balance
-          return map
-        }, {}),
+      const accounts = buildReportAccounts(
+        model.accounts,
+        target?.balances ?? {},
+        comparisonBalances,
+        a => t(('accounts.types.' + a.type) as Parameters<typeof t>[0]),
       )
-        .map(([label, value]) => ({ label, value }))
-        .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
-
-      const netWorthTotal    = accounts.reduce((sum, a) => sum + a.balance, 0)
-      const previousNetWorth = accounts.reduce((sum, a) => sum + a.previousBalance, 0)
+      const netWorthByType = groupReportAccountsByType(accounts)
+      const netWorthTotal  = accounts.reduce((sum, a) => sum + a.balance, 0)
+      const netWorthDelta  = accounts.reduce((sum, a) => sum + (a.delta ?? 0), 0)
 
       const categories = model.categoryData.map(c => ({
         name:  c.name,
@@ -90,8 +74,11 @@ export function useMonthlyReportExport(year: number, month: number) {
         accounts,
         netWorthTotal,
         netWorthByType,
+        netWorthMissingInvestments: target?.missingInvestments ?? false,
+        netWorthEstimatedInvestments: target?.estimatedInvestments ?? false,
+        netWorthEvolution: buildNetWorthEvolution(months, locale),
         comparisonLabel,
-        netWorthDelta: netWorthTotal - previousNetWorth,
+        netWorthDelta,
         investment:    model.investmentSummary,
         topExpenses:   model.topExpenses.slice(0, 5).map(e => ({
           description: e.description,
@@ -112,6 +99,9 @@ export function useMonthlyReportExport(year: number, month: number) {
           netWorthByType:      t('dashboard.report.netWorthByType'),
           total:               t('dashboard.total'),
           excludesInvestments: t('dashboard.report.excludesInvestments'),
+          netWorthEvolution:   t('dashboard.report.netWorthEvolution'),
+          partialMonthNote:    t('dashboard.report.partialMonthNote'),
+          estimatedMonthNote:  t('dashboard.report.estimatedMonthNote'),
           accountBalances:     t('dashboard.accountBalances'),
           investmentsSnapshot: t('dashboard.report.investmentsSnapshot'),
           investmentsNote:     isCurrent
@@ -145,6 +135,6 @@ export function useMonthlyReportExport(year: number, month: number) {
   return {
     generate,
     isGenerating,
-    isLoading: model.isLoading || laterSumsLoading || laterSumsComparisonLoading,
+    isLoading: model.isLoading || history.isLoading,
   }
 }
