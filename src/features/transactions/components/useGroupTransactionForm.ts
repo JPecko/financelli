@@ -33,17 +33,30 @@ function makeSharedExpenseDefaults(sharedExpense: SharedExpense, fallbackAccount
   }
 }
 
+// Drops carried ids/categories the group form can't offer
+function validOverride(
+  override: SharedFormOverride | undefined, accounts: Account[], groups: { id: number }[],
+): SharedFormOverride | undefined {
+  if (!override) return undefined
+  return {
+    ...override,
+    accountId: accounts.some(a => String(a.id) === override.accountId) ? override.accountId : undefined,
+    groupId:   groups.some(g => String(g.id) === override.groupId) ? override.groupId : undefined,
+    category:  GROUP_EXPENSE_CATS.some(c => c.id === override.category) ? override.category : undefined,
+  }
+}
+
 function makeTransactionDefaults(
   transaction: Transaction | undefined, fallbackAccountId: string, override?: SharedFormOverride,
 ): GrpFormValues {
   return {
-    groupId: '',
+    groupId: override?.groupId ?? '',
     payerType: 'me',
     payerMemberId: '',
-    accountId: transaction ? String(transaction.accountId) : fallbackAccountId,
+    accountId: transaction ? String(transaction.accountId) : (override?.accountId ?? fallbackAccountId),
     description: transaction?.description ?? override?.description ?? '',
-    date: transaction?.date ?? override?.date ?? isoToday(),
-    category: transaction?.category ?? 'food',
+    date: transaction?.date ?? (override?.date || isoToday()),
+    category: transaction?.category ?? override?.category ?? 'food',
     totalAmount: transaction ? fromCents(Math.abs(transaction.amount)).toFixed(2) : (override?.amount ?? ''),
   }
 }
@@ -159,27 +172,32 @@ export function useGroupTransactionForm({
     if (sharedExpense) {
       reset(makeSharedExpenseDefaults(sharedExpense, fallbackAccountId))
     } else {
-      reset(makeTransactionDefaults(transaction, fallbackAccountId, initialOverride))
+      reset(makeTransactionDefaults(transaction, fallbackAccountId, validOverride(initialOverride, accounts, groups)))
     }
     setMembers([])
     resetEven([], 0)
     // Default to creating a real bank transaction when the user is the payer
     setCreateTx(!sharedExpense && !transaction)
-    setRoundupEnabled(true)
-    // initialOverride excluded: it's rebuilt every keystroke and would loop the reset forever
+    setRoundupEnabled(initialOverride?.roundupEnabled ?? true)
+    // initialOverride/groups excluded: only discrete open/entity changes should reset the form
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, reset, transaction, sharedExpense, fallbackAccountId])
+  }, [open, reset, transaction, sharedExpense, fallbackAccountId, groups.length])
 
-  // Report description/totalAmount/date to the parent modal so switching to the Personal tab can carry them over
+  // Report shared fields to the parent modal so switching tabs can carry them over
   useEffect(() => {
     if (!onValuesChange) return
-    const sub = watch(values => onValuesChange({
-      description: values.description ?? '',
-      amount:      values.totalAmount ?? '',
-      date:        values.date ?? '',
+    const sub = watch((values, { name }) => onValuesChange({
+      description: values.description,
+      amount:      values.totalAmount,
+      date:        values.date,
+      accountId:   values.accountId || undefined,
+      groupId:     values.groupId || undefined,
+      category:    name === 'category' ? values.category : undefined,
     }))
     return () => sub.unsubscribe()
   }, [watch, onValuesChange])
+
+  useEffect(() => { onValuesChange?.({ roundupEnabled }) }, [roundupEnabled, onValuesChange])
 
   // ── Auto-select the only group when there's just one ─────────────────────
   useEffect(() => {

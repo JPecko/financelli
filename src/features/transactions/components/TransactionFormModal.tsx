@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import styles from './TransactionFormModal.module.scss'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
@@ -36,7 +36,20 @@ function resolveInitialViewType({
 }
 
 function carryOverFrom(tx: Transaction): SharedFormOverride {
-  return { description: tx.description, amount: Math.abs(fromCents(tx.amount)).toFixed(2), date: tx.date }
+  return {
+    description: tx.description,
+    amount:      Math.abs(fromCents(tx.amount)).toFixed(2),
+    date:        tx.date,
+    accountId:   String(tx.accountId),
+    toAccountId: tx.toAccountId != null ? String(tx.toAccountId) : undefined,
+    category:    tx.category,
+  }
+}
+
+// Partial reports from a tab only overwrite the fields they actually carry
+function mergeCarryOver(prev: SharedFormOverride, next: SharedFormOverride): SharedFormOverride {
+  const defined = Object.entries(next).filter(([, value]) => value !== undefined)
+  return { ...prev, ...Object.fromEntries(defined) }
 }
 
 export default function TransactionFormModal({
@@ -58,8 +71,12 @@ export default function TransactionFormModal({
   const editedTx = duplicate ? undefined : transaction
 
   const [viewType, setViewType] = useState<ViewType>('expense')
-  // Carries description/amount/date between the Personal and Group tabs while creating a new entry
+  // Live values are tracked in a ref; the snapshot handed to the next tab is only taken on tab switch
+  const liveValues = useRef<SharedFormOverride>({})
   const [carryOver, setCarryOver] = useState<SharedFormOverride>({})
+  const handleValuesChange = useCallback((values: SharedFormOverride) => {
+    liveValues.current = mergeCarryOver(liveValues.current, values)
+  }, [])
   const linkedGroup = useLinkedGroupEntry({
     open,
     transactionId: editedTx?.id,
@@ -67,9 +84,11 @@ export default function TransactionFormModal({
   })
 
   useLayoutEffect(() => {
-    if (!open) return
-    setViewType(resolveInitialViewType({ transaction, sharedExpense, defaultType }))
-    setCarryOver(duplicate && transaction ? carryOverFrom(transaction) : {})
+    // Cleared on close too, so a reopened form never mounts with the previous entry's values
+    const initial = open && duplicate && transaction ? carryOverFrom(transaction) : {}
+    liveValues.current = initial
+    setCarryOver(initial)
+    if (open) setViewType(resolveInitialViewType({ transaction, sharedExpense, defaultType }))
   }, [open, transaction, sharedExpense, defaultType, duplicate])
 
   useLayoutEffect(() => {
@@ -79,6 +98,7 @@ export default function TransactionFormModal({
 
   const handleViewTypeChange = (nextViewType: ViewType) => {
     ;(document.activeElement as HTMLElement | null)?.blur()
+    setCarryOver(liveValues.current)
     setViewType(nextViewType)
   }
 
@@ -86,10 +106,7 @@ export default function TransactionFormModal({
 
   return (
     <Dialog open={open} onOpenChange={isOpen => !isOpen && onClose()}>
-      <DialogContent
-        className={`${styles.dialog} max-h-[90vh] overflow-y-auto`}
-        aria-describedby={undefined}
-      >
+      <DialogContent className={styles.dialog} aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>
             {isEditTx ? t('transactions.editTitle') : duplicate ? t('transactions.duplicateTitle') : t('transactions.newTitle')}
@@ -113,7 +130,7 @@ export default function TransactionFormModal({
             groups={groups}
             currentUserId={user?.id}
             initialOverride={isEditTx ? undefined : carryOver}
-            onValuesChange={isEditTx ? undefined : setCarryOver}
+            onValuesChange={isEditTx ? undefined : handleValuesChange}
           />
         ) : (
           <StandardTransactionTab
@@ -127,7 +144,7 @@ export default function TransactionFormModal({
             isEditTx={isEditTx}
             currentUserId={user?.id}
             initialOverride={isEditTx ? undefined : carryOver}
-            onValuesChange={isEditTx ? undefined : setCarryOver}
+            onValuesChange={isEditTx ? undefined : handleValuesChange}
           />
         )}
       </DialogContent>

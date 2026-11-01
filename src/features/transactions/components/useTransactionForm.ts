@@ -10,11 +10,16 @@ import type { Transaction, TransactionType } from '@/domain/types'
 
 export const EXTERNAL = '__external__'
 
-// Fields carried over when switching between the Personal and Group tabs of the same modal
+// Fields carried over when switching tabs (expense/income/transfer/groups) of the same modal
 export interface SharedFormOverride {
-  description?: string
-  amount?:      string
-  date?:        string
+  description?:    string
+  amount?:         string
+  date?:           string
+  accountId?:      string
+  toAccountId?:    string
+  category?:       string
+  groupId?:        string
+  roundupEnabled?: boolean
 }
 
 export interface TransactionFormValues {
@@ -32,6 +37,31 @@ export interface TransactionFormValues {
   holdingId:      string   // '' = no link, '123' = holding ID (investment accounts)
   units:          string   // units bought/sold (investment accounts)
   roundupEnabled: boolean  // false = skip roundup generation for this expense
+}
+
+export function categoriesFor(type: TransactionType) {
+  if (type === 'income')   return INCOME_CATEGORIES
+  if (type === 'transfer') return CATEGORIES.filter(c => ['invest-move', 'transfer', 'capital', 'other'].includes(c.id))
+  return EXPENSE_CATEGORIES
+}
+
+// A carried category only applies when the target type offers it
+function carriedCategory(type: TransactionType, category?: string) {
+  return category && categoriesFor(type).some(c => c.id === category) ? category : undefined
+}
+
+function toCarryOver(v: Partial<TransactionFormValues>, changed?: string): SharedFormOverride {
+  const accountId = v.fromId !== EXTERNAL ? v.fromId : v.toId
+  return {
+    description:    v.description,
+    amount:         v.amount,
+    date:           v.date,
+    accountId:      accountId !== EXTERNAL ? accountId : undefined,
+    toAccountId:    v.type === 'transfer' && v.toId !== EXTERNAL ? v.toId : undefined,
+    // Only an explicit pick is carried, so a type's default category doesn't leak into another tab
+    category:       changed === 'category' ? v.category : undefined,
+    roundupEnabled: v.roundupEnabled,
+  }
 }
 
 // ── Payload builder ────────────────────────────────────────────────────────────
@@ -68,21 +98,22 @@ function makeDefaults(
   type: TransactionType, firstId: string, secondId: string, splitN: number, isShared: boolean,
   override?: SharedFormOverride,
 ): TransactionFormValues {
+  const carriedTo = override?.toAccountId && override.toAccountId !== firstId ? override.toAccountId : undefined
   return {
     type,
     fromId:         type === 'income'   ? EXTERNAL : firstId,
-    toId:           type === 'income'   ? firstId  : type === 'transfer' ? secondId : EXTERNAL,
+    toId:           type === 'income'   ? firstId  : type === 'transfer' ? carriedTo ?? secondId : EXTERNAL,
     amount:         override?.amount ?? '',
-    category:       type === 'transfer' ? 'transfer' : 'other',
+    category:       carriedCategory(type, override?.category) ?? (type === 'transfer' ? 'transfer' : 'other'),
     description:    override?.description ?? '',
-    date:           override?.date ?? isoToday(),
+    date:           override?.date || isoToday(),
     isShared:       type !== 'income' && isShared,
     splitN,
     isReimbursable: false,
     personalUserId: '',
     holdingId:      '',
     units:          '',
-    roundupEnabled: true,
+    roundupEnabled: override?.roundupEnabled ?? true,
   }
 }
 
@@ -205,9 +236,15 @@ export function useTransactionForm({
   const { user } = useAuth()
   const { data: accounts = [] } = useSortedAccounts()
 
-  const firstId     = defaultAccountId ?? (accounts[0]?.id != null ? String(accounts[0].id) : '')
+  const isKnownAccount = (id?: string) => id != null && accounts.some(a => String(a.id) === id)
+  const carriedId   = isKnownAccount(initialOverride?.accountId) ? initialOverride!.accountId : undefined
+  const firstId     = carriedId ?? defaultAccountId ?? (accounts[0]?.id != null ? String(accounts[0].id) : '')
   const secondId    = accounts.find(a => String(a.id) !== firstId)?.id != null
     ? String(accounts.find(a => String(a.id) !== firstId)!.id) : EXTERNAL
+  const override    = initialOverride && {
+    ...initialOverride,
+    toAccountId: isKnownAccount(initialOverride.toAccountId) ? initialOverride.toAccountId : undefined,
+  }
   const primary     = accounts.find(a => String(a.id) === firstId)
   const isSharedDef = (primary?.participants ?? 1) > 1
   const splitNDef   = isSharedDef ? primary!.participants! : 2
@@ -223,14 +260,14 @@ export function useTransactionForm({
       splitNDef,
       isSharedDef,
       editParticipants,
-      initialOverride,
+      override,
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [transaction, editParticipants, defaultType, firstId, secondId, splitNDef, isSharedDef],
   )
 
   const form = useForm<TransactionFormValues>({
-    defaultValues: makeDefaults(defaultType, firstId, secondId, splitNDef, isSharedDef, initialOverride),
+    defaultValues: makeDefaults(defaultType, firstId, secondId, splitNDef, isSharedDef, override),
   })
   const { setValue, watch, reset, handleSubmit } = form
 
@@ -255,10 +292,7 @@ export function useTransactionForm({
   const isTransfer = selectedType === 'transfer'
   const isValid    = !isTransfer || selectedFrom !== EXTERNAL || selectedTo !== EXTERNAL
 
-  const categories =
-    selectedType === 'income'   ? INCOME_CATEGORIES :
-    selectedType === 'transfer' ? CATEGORIES.filter(c => ['invest-move', 'transfer', 'capital', 'other'].includes(c.id)) :
-    EXPENSE_CATEGORIES
+  const categories = categoriesFor(selectedType)
 
   const accountOptions = (exclude?: string) => accounts.filter(a => String(a.id) !== exclude)
 
@@ -289,14 +323,10 @@ export function useTransactionForm({
     reset(resetValues)
   }, [open, reset, resetValues])
 
-  // Report description/amount/date to the parent modal so switching to the Group tab can carry them over
+  // Report shared fields to the parent modal so switching tabs can carry them over
   useEffect(() => {
     if (!onValuesChange) return
-    const sub = watch(values => onValuesChange({
-      description: values.description ?? '',
-      amount:      values.amount ?? '',
-      date:        values.date ?? '',
-    }))
+    const sub = watch((values, { name }) => onValuesChange(toCarryOver(values, name)))
     return () => sub.unsubscribe()
   }, [watch, onValuesChange])
 
