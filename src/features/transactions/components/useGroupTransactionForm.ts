@@ -78,6 +78,7 @@ interface Props {
   open:             boolean
   onClose:          () => void
   transaction?:     Transaction
+  duplicateFrom?:   Transaction  // template whose group entry and splits are copied into a new entry
   sharedExpense?:   SharedExpense
   accounts:         Account[]
   groups:           { id: number; name: string }[]
@@ -88,7 +89,7 @@ interface Props {
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useGroupTransactionForm({
-  open, onClose, transaction, sharedExpense, accounts, groups, initialOverride, onValuesChange,
+  open, onClose, transaction, duplicateFrom, sharedExpense, accounts, groups, initialOverride, onValuesChange,
 }: Props) {
   const t        = useT()
   const { user } = useAuth()
@@ -114,8 +115,11 @@ export function useGroupTransactionForm({
 
   const txAccount = accounts.find(a => String(a.id) === accountId)
 
-  const [linkedEntry,  setLinkedEntry]  = useState<GroupEntry | null>(null)
+  // When duplicating, the source entry only pre-fills the form; there's no entry to update
+  const [sourceEntry,  setSourceEntry]  = useState<GroupEntry | null>(null)
   const [linkedSplits, setLinkedSplits] = useState<GroupEntrySplit[]>([])
+  const linkedEntry = duplicateFrom ? null : sourceEntry
+  const sourceTx    = transaction ?? duplicateFrom
 
   const myMember = members.find(m => m.userId === user?.id)
   const {
@@ -126,45 +130,45 @@ export function useGroupTransactionForm({
   // ── Load linked group entry ────────────────────────────────────────────────
   useEffect(() => {
     if (!open) {
-      setLinkedEntry(null)
+      setSourceEntry(null)
       setLinkedSplits([])
       return
     }
 
     let cancelled = false
-    const lookup = transaction?.id
-      ? groupsRepo.getEntryByTransactionId(transaction.id)
+    const lookup = sourceTx?.id
+      ? groupsRepo.getEntryByTransactionId(sourceTx.id)
       : sharedExpense?.id
         ? groupsRepo.getEntryBySharedExpenseId(sharedExpense.id)
         : Promise.resolve(null)
     lookup
       .then(result => {
         if (cancelled) return
-        setLinkedEntry(result?.entry ?? null)
+        setSourceEntry(result?.entry ?? null)
         setLinkedSplits(result?.splits ?? [])
       })
       .catch(() => {
         if (cancelled) return
-        setLinkedEntry(null)
+        setSourceEntry(null)
         setLinkedSplits([])
       })
 
     return () => { cancelled = true }
-  }, [open, transaction?.id, sharedExpense?.id])
+  }, [open, sourceTx?.id, sharedExpense?.id])
 
   // ── Pre-fill form from linked entry ───────────────────────────────────────
   useEffect(() => {
-    if (!linkedEntry || !open) return
+    if (!sourceEntry || !open) return
     reset(prev => ({
       ...prev,
-      groupId:     String(linkedEntry.groupId),
-      description: linkedEntry.description,
-      date:        linkedEntry.date,
-      category:    linkedEntry.category,
-      totalAmount: fromCents(linkedEntry.totalAmount).toFixed(2),
-      accountId:   transaction ? String(transaction.accountId) : prev.accountId,
+      groupId:     String(sourceEntry.groupId),
+      description: sourceEntry.description,
+      date:        duplicateFrom ? isoToday() : sourceEntry.date,
+      category:    sourceEntry.category,
+      totalAmount: fromCents(sourceEntry.totalAmount).toFixed(2),
+      accountId:   sourceTx ? String(sourceTx.accountId) : prev.accountId,
     }))
-  }, [linkedEntry, open])
+  }, [sourceEntry, open])
 
   // ── Reset on open ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -218,13 +222,13 @@ export function useGroupTransactionForm({
         if (cancelled) return
         setMembers(ms)
         const myM      = ms.find(m => m.userId === user?.id)
-        const isLinked = linkedEntry && linkedEntry.groupId === parseInt(groupId)
+        const isLinked = sourceEntry && sourceEntry.groupId === parseInt(groupId)
         if (isLinked && linkedSplits.length > 0) {
           applyCustomSplits(linkedSplits)
-          if (myM && linkedEntry!.paidByMemberId === myM.id) {
+          if (myM && sourceEntry!.paidByMemberId === myM.id) {
             setValue('payerType', 'me'); setValue('payerMemberId', '')
           } else {
-            setValue('payerType', 'member'); setValue('payerMemberId', String(linkedEntry!.paidByMemberId))
+            setValue('payerType', 'member'); setValue('payerMemberId', String(sourceEntry!.paidByMemberId))
           }
         } else {
           resetEven(ms.map(m => m.id!), toCents(parseMoney(total)))
@@ -240,7 +244,7 @@ export function useGroupTransactionForm({
 
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId, linkedEntry, linkedSplits, setValue, user?.id])
+  }, [groupId, sourceEntry, linkedSplits, setValue, user?.id])
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const onSubmit = handleSubmit(async (values) => {

@@ -11,6 +11,7 @@ import GroupTransactionTab from './GroupTransactionTab'
 import { useLinkedGroupEntry } from './useLinkedGroupEntry'
 import type { SharedFormOverride } from './useTransactionForm'
 import { fromCents } from '@/domain/money'
+import { isoToday } from '@/shared/utils/format'
 import type { SharedExpense, Transaction, TransactionType } from '@/domain/types'
 
 type ViewType = TransactionType | 'groups'
@@ -39,7 +40,7 @@ function carryOverFrom(tx: Transaction): SharedFormOverride {
   return {
     description: tx.description,
     amount:      Math.abs(fromCents(tx.amount)).toFixed(2),
-    date:        tx.date,
+    date:        isoToday(),
     accountId:   String(tx.accountId),
     toAccountId: tx.toAccountId != null ? String(tx.toAccountId) : undefined,
     category:    tx.category,
@@ -79,7 +80,8 @@ export default function TransactionFormModal({
   }, [])
   const linkedGroup = useLinkedGroupEntry({
     open,
-    transactionId: editedTx?.id,
+    // A duplicate looks up the source's group entry too, so a group expense opens on the Groups tab
+    transactionId: transaction?.id,
     sharedExpenseId: sharedExpense?.id,
   })
 
@@ -102,7 +104,7 @@ export default function TransactionFormModal({
     setViewType(nextViewType)
   }
 
-  const activeTabs = linkedGroup.entry ? (['groups'] as const) : []
+  const activeTabs = linkedGroup.entry && !duplicate ? (['groups'] as const) : []
 
   return (
     <Dialog open={open} onOpenChange={isOpen => !isOpen && onClose()}>
@@ -125,6 +127,7 @@ export default function TransactionFormModal({
             open={open}
             onClose={onClose}
             transaction={editedTx}
+            duplicateFrom={duplicate ? transaction : undefined}
             sharedExpense={sharedExpense}
             accounts={accounts}
             groups={groups}

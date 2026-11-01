@@ -174,8 +174,8 @@ export default function TransactionRow({
   const groupAmount = groupDisplayAmount(tx, linkedGroup)
   const amountColor = amountClassName(tx)
   const accountCell = accountLabel(tx, accountsById)
-  // Auto-generated roundups and group-linked rows can't be copied as a plain transaction
-  const canDuplicate = tx.category !== 'roundup' && !linkedGroup
+  // Auto-generated roundups can't be copied; group-linked rows duplicate their group entry too
+  const canDuplicate = tx.category !== 'roundup'
 
   return (
     <div

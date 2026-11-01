@@ -46,14 +46,15 @@ interface Props {
   members:         GroupMember[]
   entry?:          GroupEntry
   existingSplits?: GroupEntrySplit[]
+  duplicate?:      boolean  // entry is only a template — submit creates a new one dated today
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function GroupEntryModal({ open, onClose, groupId, members, entry, existingSplits }: Props) {
+export default function GroupEntryModal({ open, onClose, groupId, members, entry, existingSplits, duplicate = false }: Props) {
   const t        = useT()
   const { user } = useAuth()
-  const isEdit   = !!entry
+  const isEdit   = !!entry && !duplicate
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     defaultValues: {
@@ -101,11 +102,11 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
     const defaultPayerMemberId = memberOptions[0]?.value ?? ''
     const memberIds = members.map(m => m.id!)
 
-    if (isEdit && entry) {
+    if (entry) {
       const entryPaidByMe = myMember != null && entry.paidByMemberId === myMember.id
       reset({
         description:   entry.description,
-        date:          entry.date,
+        date:          duplicate ? isoToday() : entry.date,
         category:      entry.category,
         totalAmount:   fromCents(entry.totalAmount).toFixed(2),
         payerType:     entryPaidByMe ? 'me' : 'member',
@@ -148,7 +149,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
       setRoundupEnabled(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, entry, existingSplits, members, isEdit, reset, accounts, myMember])
+  }, [open, entry, existingSplits, members, duplicate, reset, accounts, myMember])
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
     }
 
     const splitsData: Omit<GroupEntrySplit, 'id'>[] = splitCents.map(s => ({
-      entryId:  entry?.id ?? 0,
+      entryId:  isEdit ? entry?.id ?? 0 : 0,
       memberId: s.memberId,
       amount:   s.amount,
     }))
@@ -226,7 +227,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t('groups.editEntry') : t('groups.newEntry')}</DialogTitle>
+          <DialogTitle>{isEdit ? t('groups.editEntry') : duplicate ? t('groups.duplicateEntry') : t('groups.newEntry')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">

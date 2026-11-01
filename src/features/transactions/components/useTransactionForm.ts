@@ -215,6 +215,11 @@ function makeResetValues(
   }
 }
 
+// A duplicate is a new entry, so it defaults to today instead of the source's date
+function withDuplicateDate(duplicate: boolean, values: TransactionFormValues): TransactionFormValues {
+  return duplicate ? { ...values, date: isoToday() } : values
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 interface UseTransactionFormProps {
@@ -252,7 +257,7 @@ export function useTransactionForm({
   const editParticipants = editAccount?.participants
 
   const resetValues = useMemo(
-    () => makeResetValues(
+    () => withDuplicateDate(duplicate, makeResetValues(
       transaction,
       defaultType,
       firstId,
@@ -261,9 +266,9 @@ export function useTransactionForm({
       isSharedDef,
       editParticipants,
       override,
-    ),
+    )),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transaction, editParticipants, defaultType, firstId, secondId, splitNDef, isSharedDef],
+    [transaction, duplicate, editParticipants, defaultType, firstId, secondId, splitNDef, isSharedDef],
   )
 
   const form = useForm<TransactionFormValues>({

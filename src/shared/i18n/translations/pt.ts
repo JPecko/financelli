@@ -135,6 +135,7 @@ export const pt: typeof en = {
     deleteGroup:      'Eliminar Grupo',
     deleteGroupConfirm: 'Eliminar este grupo e todas as suas despesas? Esta ação não pode ser desfeita.',
     editEntry:        'Editar Despesa',
+    duplicateEntry:   'Duplicar Despesa',
     deleteEntry:      'Eliminar Despesa',
     deleteEntryConfirm: 'Eliminar esta despesa?',
     newEntry:         'Nova Despesa',

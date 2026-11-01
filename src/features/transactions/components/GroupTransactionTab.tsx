@@ -7,6 +7,7 @@ interface Props {
   open: boolean
   onClose: () => void
   transaction?: Transaction
+  duplicateFrom?: Transaction
   sharedExpense?: SharedExpense
   accounts: Account[]
   groups: { id: number; name: string }[]
@@ -19,6 +20,7 @@ export default function GroupTransactionTab({
   open,
   onClose,
   transaction,
+  duplicateFrom,
   sharedExpense,
   accounts,
   groups,
@@ -27,7 +29,7 @@ export default function GroupTransactionTab({
   onValuesChange,
 }: Props) {
   const grpHook = useGroupTransactionForm({
-    open, onClose, transaction, sharedExpense, accounts, groups, initialOverride, onValuesChange,
+    open, onClose, transaction, duplicateFrom, sharedExpense, accounts, groups, initialOverride, onValuesChange,
   })
 
   return (

@@ -455,6 +455,7 @@ export const en = {
     deleteGroup:      'Delete Group',
     deleteGroupConfirm: 'Delete this group and all its expenses? This cannot be undone.',
     editEntry:        'Edit Expense',
+    duplicateEntry:   'Duplicate Expense',
     deleteEntry:      'Delete Expense',
     deleteEntryConfirm: 'Delete this expense?',
     newEntry:         'New Expense',

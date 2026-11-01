@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Plus, Pencil, Trash2, UserPlus, UserMinus,
+  ArrowLeft, Plus, Pencil, Copy, Trash2, UserPlus, UserMinus,
   TrendingUp, TrendingDown, Minus, ArrowRight, Receipt, BadgeCheck, CheckCheck, ChevronUp,
   Wallet, Banknote, PiggyBank, BarChart2, HandCoins, CreditCard,
 } from 'lucide-react'
@@ -214,6 +214,7 @@ export default function GroupDetailPage() {
   const [entryModalOpen,   setEntryModalOpen]   = useState(false)
   const [editEntry,        setEditEntry]        = useState<GroupEntry | undefined>()
   const [editSplits,       setEditSplits]       = useState<GroupEntrySplit[]>([])
+  const [duplicateEntry,   setDuplicateEntry]   = useState(false)
   const [deleteGroupOpen,  setDeleteGroupOpen]  = useState(false)
   const [settleUpOpen,     setSettleUpOpen]     = useState(false)
   const [settlingUp,       setSettlingUp]       = useState(false)
@@ -309,15 +310,17 @@ export default function GroupDetailPage() {
     navigate('/groups')
   }
 
-  function openEditEntry(entry: GroupEntry) {
+  function openEditEntry(entry: GroupEntry, duplicate = false) {
     setEditEntry(entry)
     setEditSplits(splitsByEntry[entry.id!] ?? [])
+    setDuplicateEntry(duplicate)
     setEntryModalOpen(true)
   }
 
   function openAddEntry() {
     setEditEntry(undefined)
     setEditSplits([])
+    setDuplicateEntry(false)
     setEntryModalOpen(true)
   }
 
@@ -325,6 +328,7 @@ export default function GroupDetailPage() {
     setEntryModalOpen(false)
     setEditEntry(undefined)
     setEditSplits([])
+    setDuplicateEntry(false)
   }
 
   if (isLoading) return <PageLoader message={t('groups.loading')} />
@@ -604,6 +608,12 @@ export default function GroupDetailPage() {
                           <DropdownMenuItem onClick={() => openEditEntry(entry)}>
                             <Pencil className="h-3.5 w-3.5 mr-2" /> {t('groups.editEntry')}
                           </DropdownMenuItem>
+                          {/* Settle-up entries are transfers between members, not expenses to copy */}
+                          {entry.category !== 'transfer' && (
+                            <DropdownMenuItem onClick={() => openEditEntry(entry, true)}>
+                              <Copy className="h-3.5 w-3.5 mr-2" /> {t('common.duplicate')}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
@@ -643,6 +653,7 @@ export default function GroupDetailPage() {
         members={members}
         entry={editEntry}
         existingSplits={editSplits}
+        duplicate={duplicateEntry}
       />
 
       {/* Settle Up dialog */}
