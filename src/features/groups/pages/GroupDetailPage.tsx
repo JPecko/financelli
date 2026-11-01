@@ -647,7 +647,7 @@ export default function GroupDetailPage() {
 
       {/* Settle Up dialog */}
       <Dialog open={settleUpOpen} onOpenChange={v => !settlingUp && setSettleUpOpen(v)}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('groups.settleUp')}</DialogTitle>
           </DialogHeader>

@@ -224,7 +224,7 @@ export default function GroupEntryModal({ open, onClose, groupId, members, entry
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? t('groups.editEntry') : t('groups.newEntry')}</DialogTitle>
         </DialogHeader>

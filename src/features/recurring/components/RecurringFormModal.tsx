@@ -26,7 +26,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+      <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{isEdit ? t('recurring.editRule') : t('recurring.addRule')}</DialogTitle>
         </DialogHeader>

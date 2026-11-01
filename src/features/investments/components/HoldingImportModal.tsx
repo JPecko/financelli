@@ -36,7 +36,7 @@ export default function HoldingImportModal({ open, onClose, accountId, broker, a
 
   return (
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Import Holdings from CSV / XLSX</DialogTitle>
         </DialogHeader>
