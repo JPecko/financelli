@@ -36,12 +36,12 @@ export default function HoldingImportModal({ open, onClose, accountId, broker, a
 
   return (
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
-      <DialogContent className="sm:max-w-2xl flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Import Holdings from CSV / XLSX</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-2">
+        <div className="space-y-4 py-2">
           {step === 'upload' && (
             <UploadStep
               brokerLabel={brokerLabel}

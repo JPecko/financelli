@@ -4,6 +4,7 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/shared/components/ui/button"
+import { useOverflowsBelow } from "@/shared/hooks/useOverflowsBelow"
 
 function Dialog({
   ...props
@@ -93,6 +94,14 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+// Sticks to the dialog's bottom edge; the shadow shows only while content is hidden below it
+const FOOTER_CLASS = cn(
+  "sticky bottom-0 z-10 -mx-6 -mb-6 rounded-b-lg bg-background px-6 pt-3 pb-6",
+  "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+  "transition-shadow data-[floating=true]:shadow-[0_-8px_16px_-8px_rgb(0_0_0/0.18)]",
+  "dark:data-[floating=true]:shadow-[0_-8px_16px_-8px_rgb(0_0_0/0.6)]",
+)
+
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -101,13 +110,13 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const { ref, overflows } = useOverflowsBelow<HTMLDivElement>('[data-slot="dialog-content"]')
   return (
     <div
+      ref={ref}
       data-slot="dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      )}
+      data-floating={overflows}
+      className={cn(FOOTER_CLASS, className)}
       {...props}
     >
       {children}
