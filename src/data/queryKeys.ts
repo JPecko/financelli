@@ -19,6 +19,9 @@ export const queryKeys = {
     byAccount: (accountId: number) => ['transactions', 'byAccount', accountId] as const,
     balanceDeltasAfter: (date: string) => ['transactions', 'balanceDeltasAfter', date] as const,
   },
+  budgets: {
+    all: () => ['budgets'] as const,
+  },
   investmentSnapshots: {
     all:   ()                 => ['investmentSnapshots']                as const,
     since: (fromDate: string) => ['investmentSnapshots', 'since', fromDate] as const,

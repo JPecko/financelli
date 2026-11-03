@@ -9,6 +9,7 @@ import {
 } from '@/shared/hooks/useTransactions'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useSharedExpensesByMonth } from '@/shared/hooks/useSharedExpenses'
+import { computeCategorySpending } from '@/shared/utils/categorySpending'
 import { getCategoryById, tCategory } from '@/domain/categories'
 import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
 import { useHoldings } from '@/shared/hooks/useHoldings'
@@ -99,35 +100,10 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
   [summary])
 
   const categoryData = useMemo<CategoryDataItem[]>(() => {
-    const txSeMap: Record<number, typeof sharedExpenses[0]> = {}
-    for (const se of sharedExpenses) {
-      if (se.payer === 'me' && se.transactionId != null) txSeMap[se.transactionId] = se
-    }
-    const map: Record<string, number> = {}
-    for (const tx of transactions) {
-      if (!isCashFlow(tx) || tx.amount >= 0) continue
-      let amount: number
-      if (tx.id != null && txSeMap[tx.id] != null) {
-        amount = txSeMap[tx.id].myShare
-      } else {
-        const divisor = personalDivisorFor(tx, user?.id, accounts)
-        if (divisor === Infinity) continue
-        amount = Math.abs(tx.amount) / divisor
-      }
-      map[tx.category] = (map[tx.category] ?? 0) + amount
-    }
-    for (const se of sharedExpenses.filter(e => e.payer === 'other' && e.status !== 'ignored')) {
-      map[se.category] = (map[se.category] ?? 0) + se.myShare
-    }
-    for (const g of summary.groupExpenses) {
-      if (g.myShare > 0 && !INVESTING_CATS.has(g.category)) map[g.category] = (map[g.category] ?? 0) + g.myShare
-    }
-    for (const tx of transactions.filter(tx => tx.type === 'transfer' && tx.category === 'invest-move' && tx.amount < 0)) {
-      const divisor = personalDivisorFor(tx, user?.id, accounts)
-      if (divisor === Infinity) continue
-      map['invest-move'] = (map['invest-move'] ?? 0) + Math.abs(tx.amount) / divisor
-    }
-    return Object.entries(map)
+    const spending = computeCategorySpending({
+      transactions, sharedExpenses, groupExpenses: summary.groupExpenses, accounts, userId: user?.id,
+    })
+    return Object.entries(spending)
       .map(([id, value]) => { const cat = getCategoryById(id); return { id, name: tCategory(id, t), value, color: cat.color } })
       .sort((a, b) => b.value - a.value)
   }, [transactions, sharedExpenses, summary, accounts, user, t])

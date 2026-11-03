@@ -7,6 +7,7 @@ import { useThemeStore } from '@/shared/store/themeStore'
 import { useT } from '@/shared/i18n'
 import LanguageSelect from '@/shared/components/LanguageSelect'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card'
+import MobileNavOrderCard from './components/MobileNavOrderCard'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
@@ -381,6 +382,8 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <MobileNavOrderCard />
 
       {/* Maintenance */}
       <Card>

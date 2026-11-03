@@ -97,7 +97,8 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 // Sticks to the dialog's bottom edge; the shadow shows only while content is hidden below it
 const FOOTER_CLASS = cn(
   "sticky bottom-0 z-10 -mx-6 -mb-6 rounded-b-lg bg-background px-6 pt-3 pb-6",
-  "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+  // Mobile: full-width buttons stacked (primary on top); desktop: buttons share the row equally
+  "flex flex-col-reverse gap-2 sm:flex-row sm:[&>*]:flex-1",
   "transition-shadow data-[floating=true]:shadow-[0_-8px_16px_-8px_rgb(0_0_0/0.18)]",
   "dark:data-[floating=true]:shadow-[0_-8px_16px_-8px_rgb(0_0_0/0.6)]",
 )

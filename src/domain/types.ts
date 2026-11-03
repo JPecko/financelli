@@ -58,6 +58,12 @@ export interface AssetPrice {
   createdAt: string
 }
 
+export interface Budget {
+  id?:         number
+  category:    string
+  amountCents: number  // monthly limit, compared against the user's personal share of spending
+}
+
 export interface InvestmentSnapshot {
   accountId:    number
   snapshotDate: string   // YYYY-MM-DD — last day of the month the value belongs to

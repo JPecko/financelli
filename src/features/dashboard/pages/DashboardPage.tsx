@@ -12,6 +12,7 @@ import PerksCard from '../components/PerksCard'
 import CashFlowChart from '../components/CashFlowChart'
 import SpendingByCategoryCard from '../components/SpendingByCategoryCard'
 import TopExpensesCard from '../components/TopExpensesCard'
+import BudgetsCard from '../components/BudgetsCard'
 import DashboardInvestmentsSection from '../components/DashboardInvestmentsSection'
 import ExportReportModal from '../components/ExportReportModal'
 import { useDashboardModel } from '../hooks/useDashboardModel'
@@ -54,7 +55,7 @@ export default function DashboardPage() {
 
       {exportOpen && <ExportReportModal open={exportOpen} onClose={() => setExportOpen(false)} />}
 
-      {/* Row 1: Net Worth | Month Summary | Groups (lg) — Account Balances (+ Perks on mobile) below */}
+      {/* Row 1: Net Worth | Month Summary | Groups (lg) — Account Balances, Budgets (+ Perks on mobile) below */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <NetWorthCard accounts={model.accounts} effectiveBalances={model.effectiveBalances} />
         <MonthSummaryCard
@@ -66,6 +67,7 @@ export default function DashboardPage() {
           effectiveBalances={model.effectiveBalances}
           className="sm:col-span-2 lg:col-span-3 lg:order-4"
         />
+        <BudgetsCard className="sm:col-span-2 lg:col-span-3 lg:order-5" />
         {model.hasBenefits && (
           <PerksCard {...perksProps} className="lg:hidden sm:col-span-2 xl:col-span-1" />
         )}

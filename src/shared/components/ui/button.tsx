@@ -74,8 +74,8 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     >
-      {loading && <Loader2 className="animate-spin" />}
-      {children}
+      {/* Slot needs exactly one child, so asChild never gets the spinner slot */}
+      {asChild ? children : <>{loading && <Loader2 className="animate-spin" />}{children}</>}
     </Comp>
   )
 }

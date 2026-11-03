@@ -6,6 +6,7 @@ import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import TransactionsPage from '@/features/transactions/pages/TransactionsPage'
 import AccountsPage from '@/features/accounts/pages/AccountsPage'
 import RecurringPage from '@/features/recurring/pages/RecurringPage'
+import BudgetsPage from '@/features/budgets/pages/BudgetsPage'
 import SettingsPage from '@/features/settings/SettingsPage'
 import GroupsPage from '@/features/groups/pages/GroupsPage'
 import GroupDetailPage from '@/features/groups/pages/GroupDetailPage'
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
           { path: 'accounts',         element: <AccountsPage /> },
           { path: 'transactions',     element: <TransactionsPage /> },
           { path: 'recurring',        element: <RecurringPage /> },
+          { path: 'budgets',          element: <BudgetsPage /> },
           { path: 'groups',           element: <GroupsPage /> },
           { path: 'groups/:id',       element: <GroupDetailPage /> },
           { path: 'investments',      element: <InvestmentsPage /> },
