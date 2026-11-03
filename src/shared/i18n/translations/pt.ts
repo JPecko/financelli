@@ -444,6 +444,17 @@ export const pt: typeof en = {
     invested:           'Investido',
     portfolioValue:     'Valor da carteira',
     exportReport:       'Exportar PDF',
+    upcoming: {
+      title:        'Próximos pagamentos',
+      days:         '{{count}} dias',
+      today:        'Hoje',
+      tomorrow:     'Amanhã',
+      empty:        'Nada recorrente nos próximos {{count}} dias.',
+      nextLater:    'Próximo: {{name}}, {{date}}.',
+      alert:        '{{account}} fica com {{amount}} a {{date}} com estes pagamentos.',
+      totalOut:     'A sair:',
+      seeRecurring: 'Recorrentes',
+    },
     report: {
       title:               'Relatório Mensal',
       subtitleCurrent:     '{{month}} · valores atuais (hoje)',

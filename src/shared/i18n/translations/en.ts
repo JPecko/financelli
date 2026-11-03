@@ -230,6 +230,17 @@ export const en = {
     invested:           'Invested',
     portfolioValue:     'Portfolio value',
     exportReport:       'Export PDF',
+    upcoming: {
+      title:        'Upcoming payments',
+      days:         '{{count}} days',
+      today:        'Today',
+      tomorrow:     'Tomorrow',
+      empty:        'Nothing recurring in the next {{count}} days.',
+      nextLater:    'Next: {{name}}, {{date}}.',
+      alert:        '{{account}} drops to {{amount}} on {{date}} with these payments.',
+      totalOut:     'Going out:',
+      seeRecurring: 'Recurring',
+    },
     report: {
       title:               'Monthly Report',
       subtitleCurrent:     '{{month}} · values as of today',

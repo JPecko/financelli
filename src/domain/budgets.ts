@@ -1,5 +1,5 @@
 import { CATEGORIES } from './categories'
-import { advanceOccurrence } from './recurringDate'
+import { ruleOccurrencesBetween } from './recurringOccurrences'
 import type { Account, Budget, RecurringRule } from './types'
 
 // Investing, roundups and cashback are savings/perks, not spending to cap
@@ -56,16 +56,8 @@ export function pendingRecurringByCategory(
     if (!rule.active || rule.type !== 'expense' || rule.amount >= 0) continue
     const amount = personalRuleAmount(rule, accounts)
     if (amount === 0) continue
-    let anchor = rule.anchorDate ?? rule.nextDue
-    let due    = rule.nextDue
-    // Bounded loop: weekly rules fire at most ~5 times in a month
-    for (let i = 0; i < 6 && due <= toIso && (!rule.endDate || due <= rule.endDate); i++) {
-      if (due >= fromIso) result[rule.category] = (result[rule.category] ?? 0) + amount
-      if (rule.frequency === 'once') break
-      const next = advanceOccurrence(anchor, rule.frequency, rule.dateRule ?? 'exact', rule.adjustToBusinessDay ?? false)
-      anchor = next.anchorDate
-      due    = next.nextDue
-    }
+    const count = ruleOccurrencesBetween(rule, fromIso, toIso).length
+    if (count > 0) result[rule.category] = (result[rule.category] ?? 0) + amount * count
   }
   return result
 }
