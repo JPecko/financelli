@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { format, getYear, getMonth } from 'date-fns'
 import { useDashboardModel } from './useDashboardModel'
 import { useNetWorthHistory } from './useNetWorthHistory'
+import { useBudgetOverview } from '@/features/budgets/hooks/useBudgetOverview'
 import { useT } from '@/shared/i18n'
 import { useLanguageStore } from '@/shared/store/languageStore'
 import { getDateFnsLocale } from '@/shared/utils/dateLocale'
 import { tCategory } from '@/domain/categories'
 import { buildNetWorthEvolution, buildReportAccounts, groupReportAccountsByType } from '../utils/reportNetWorth'
+import { buildReportBudgets } from '../utils/reportBudgets'
 import type { MonthlyReportData } from '../pdf/monthlyReport.types'
 
 const now = new Date()
@@ -32,6 +34,7 @@ export function useMonthlyReportExport(year: number, month: number) {
 
   // Cash accounts are reconstructed from transactions; investments come from their month-end snapshot
   const history = useNetWorthHistory(model.accounts, model.effectiveBalances, { year, month }, EVOLUTION_MONTHS + 1)
+  const budgetOverview = useBudgetOverview({ year, month })
   const [isGenerating, setIsGenerating] = useState(false)
 
   const generate = async () => {
@@ -80,6 +83,7 @@ export function useMonthlyReportExport(year: number, month: number) {
         comparisonLabel,
         netWorthDelta,
         investment:    model.investmentSummary,
+        budgets:       buildReportBudgets(budgetOverview.rows, budgetOverview.summary, id => tCategory(id, t)),
         topExpenses:   model.topExpenses.slice(0, 5).map(e => ({
           description: e.description,
           category:    tCategory(e.category, t),
@@ -113,6 +117,8 @@ export function useMonthlyReportExport(year: number, month: number) {
           vs:                  t('dashboard.report.vs'),
           page:                t('dashboard.report.page'),
           noExpenses:          t('dashboard.noExpenses'),
+          budgetVsActual:      t('dashboard.report.budgetVsActual'),
+          budgetNote:          t('dashboard.report.budgetNote'),
         },
       }
 
@@ -135,6 +141,6 @@ export function useMonthlyReportExport(year: number, month: number) {
   return {
     generate,
     isGenerating,
-    isLoading: model.isLoading || history.isLoading,
+    isLoading: model.isLoading || history.isLoading || budgetOverview.isLoading,
   }
 }

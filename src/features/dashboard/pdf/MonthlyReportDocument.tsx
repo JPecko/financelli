@@ -1,6 +1,7 @@
 import { Document, Page, View, Text } from '@react-pdf/renderer'
 import { formatMoney } from '@/domain/money'
 import { reportPdfStyles as s } from './reportPdf.styles'
+import BudgetSection from './BudgetSection'
 import type {
   MonthlyReportData, MonthlyReportCategory, MonthlyReportExpense,
   MonthlyReportAccount, MonthlyReportNetWorthGroup, MonthlyReportLabels, MonthlyReportNetWorthPoint,
@@ -30,6 +31,8 @@ export default function MonthlyReportDocument({ data }: Props) {
             ? <Text>{l.noExpenses}</Text>
             : data.categories.map(cat => <CategoryRow key={cat.name} category={cat} />)}
         </View>
+
+        {data.budgets && <BudgetSection budgets={data.budgets} labels={l} />}
 
         <View style={s.section}>
           <Text style={s.sectionTitle}>{l.topExpenses}</Text>

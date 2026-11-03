@@ -1,3 +1,5 @@
+import type { BudgetStatus } from '@/domain/budgets'
+
 export interface MonthlyReportCategory {
   name: string
   color: string
@@ -19,6 +21,20 @@ export interface MonthlyReportNetWorthPoint {
   delta: number
   partial: boolean   // an investment account had no recorded value for this or the previous month
   estimated: boolean // investment value estimated from purchase/price history
+}
+
+export interface MonthlyReportBudget {
+  name:   string
+  color:  string
+  limit:  number
+  spent:  number
+  pct:    number
+  status: BudgetStatus
+}
+
+export interface MonthlyReportBudgets {
+  rows:  MonthlyReportBudget[]
+  total: Omit<MonthlyReportBudget, 'name' | 'color'>
 }
 
 export interface MonthlyReportExpense {
@@ -56,6 +72,8 @@ export interface MonthlyReportLabels {
   vs: string
   page: string
   noExpenses: string
+  budgetVsActual: string
+  budgetNote: string
 }
 
 export interface MonthlyReportData {
@@ -77,5 +95,6 @@ export interface MonthlyReportData {
   netWorthDelta: number
   investment: { totalInvested: number; totalMarketValue: number; totalPnl: number }
   topExpenses: MonthlyReportExpense[]
+  budgets:     MonthlyReportBudgets | null  // null when the user has no budgets
   labels: MonthlyReportLabels
 }

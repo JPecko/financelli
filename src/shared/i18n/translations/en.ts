@@ -239,6 +239,8 @@ export const en = {
       netWorthEvolution:   'Net Worth Evolution',
       partialMonthNote:    'Investment value not recorded for this month (or the previous one) — total excludes those accounts.',
       estimatedMonthNote:  'Investment value estimated from purchase history and recorded prices (no month-end value saved).',
+      budgetVsActual:      'Budget vs Actual',
+      budgetNote:          'Your own share of spending per category against its monthly limit.',
       investmentsSnapshot: 'Investments (current snapshot)',
       investmentsNotePast: 'Reflects today\'s market data, not {{month}} — no historical holdings snapshot is available.',
       investmentsNoteNow:  'Reflects current market data.',

@@ -453,6 +453,8 @@ export const pt: typeof en = {
       netWorthEvolution:   'Evolução do Património',
       partialMonthNote:    'Valor de investimentos não guardado neste mês (ou no anterior) — o total exclui essas contas.',
       estimatedMonthNote:  'Valor de investimentos estimado a partir do histórico de compras e preços guardados (sem valor de fim de mês guardado).',
+      budgetVsActual:      'Orçamento vs Real',
+      budgetNote:          'A tua parte dos gastos em cada categoria face ao limite mensal.',
       investmentsSnapshot: 'Investimentos (valores atuais)',
       investmentsNotePast: 'Reflete os dados de mercado de hoje, não de {{month}} — não há histórico de posições guardado.',
       investmentsNoteNow:  'Reflete os dados de mercado atuais.',
