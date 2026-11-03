@@ -112,6 +112,7 @@ O projeto usa `createBrowserRouter` com rotas protegidas por autenticação.
 - `/accounts`
 - `/transactions`
 - `/recurring`
+- `/budgets`
 - `/groups`
 - `/groups/:id`
 - `/investments`
@@ -140,6 +141,13 @@ Quando o utilizador faz logout:
 
 ## Funcionalidades principais
 
+### Dashboard
+
+- Net Worth com navegação por meses (até 12 para trás) e crescimento face ao mês anterior. Os investimentos usam o valor guardado no fim de cada mês (`investment_snapshots`) ou, se não houver, uma estimativa a partir do histórico de compras e preços
+- income vs outcome com os totais do mês
+- card de orçamentos e card de próximos pagamentos (recorrências dos próximos 7/30 dias, com alerta quando uma conta vai ficar negativa)
+- relatório mensal em PDF: evolução do Net Worth e orçamento vs real
+
 ### Accounts
 
 - criação e edição de contas
@@ -152,18 +160,25 @@ Quando o utilizador faz logout:
 - categorias
 - ligação opcional a holdings em contas de investimento
 - despesas pessoais vs partilhadas
-- duplicar um movimento a partir do menu da linha (abre o formulário pré-preenchido e grava como novo)
+- duplicar um movimento a partir do menu da linha (abre o formulário pré-preenchido, com a data de hoje, e grava como novo); movimentos ligados a um grupo duplicam também a despesa de grupo
+- ao trocar de tab (despesa/receita/transferência/grupo) mantêm-se conta, valor, data, descrição, categoria e grupo
 
 ### Recurring
 
 - regras recorrentes
 - aplicação automática de regras vencidas após login
 
+### Budgets
+
+- limite mensal por categoria (tabela `budgets`), comparado com a tua parte dos gastos
+- previsto = gasto + recorrências que ainda faltam no mês; valor sugerido pela média dos últimos 3 meses
+
 ### Groups
 
 - grupos com membros
 - entradas de grupo e divisão de valores
 - detalhe por grupo
+- duplicar uma despesa de grupo (copia quem pagou e a divisão)
 
 ### Investments
 
@@ -174,7 +189,8 @@ Quando o utilizador faz logout:
 ## UI e experiência
 
 - layout responsivo com sidebar em desktop
-- header e bottom nav em mobile
+- header e bottom nav em mobile; a ordem da bottom nav é configurável em Settings (por dispositivo) e, com mais de 5 menus, o último lugar abre um menu "Mais"
+- modais: altura máxima e scroll definidos no `DialogContent` base; os botões (`DialogFooter`) ficam fixos no fundo, com sombra quando há conteúdo por baixo
 - suporte de i18n com `pt` e `en`
 - PWA configurada com `vite-plugin-pwa`
 
