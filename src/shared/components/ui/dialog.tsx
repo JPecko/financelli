@@ -62,7 +62,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid max-h-[90dvh] w-full max-w-[calc(100%-2rem)] overflow-y-auto overscroll-contain translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          "fixed top-[50%] left-[50%] z-50 grid grid-cols-[minmax(0,1fr)] max-h-[90dvh] w-full max-w-[calc(100%-2rem)] overflow-y-auto overscroll-contain translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className
         )}
         onPointerDownOutside={(e) => { e.preventDefault(); onPointerDownOutside?.(e) }}
@@ -94,9 +94,9 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-// Sticks to the dialog's bottom edge; the shadow shows only while content is hidden below it
+// Sticks to the dialog's bottom edge (-bottom-6 offsets the content's p-6); the shadow shows only while content is hidden below it
 const FOOTER_CLASS = cn(
-  "sticky bottom-0 z-10 -mx-6 -mb-6 rounded-b-lg bg-background px-6 pt-3 pb-6",
+  "sticky -bottom-6 z-10 -mx-6 -mb-6 rounded-b-lg bg-background px-6 pt-3 pb-6",
   // Mobile: full-width buttons stacked (primary on top); desktop: buttons share the row equally
   "flex flex-col-reverse gap-2 sm:flex-row sm:[&>*]:flex-1",
   "transition-shadow data-[floating=true]:shadow-[0_-8px_16px_-8px_rgb(0_0_0/0.18)]",
