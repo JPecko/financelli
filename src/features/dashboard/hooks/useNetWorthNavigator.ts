@@ -3,7 +3,7 @@ import { differenceInCalendarMonths, format, parseISO } from 'date-fns'
 import { useLanguageStore } from '@/shared/store/languageStore'
 import { getDateFnsLocale } from '@/shared/utils/dateLocale'
 import { groupBalancesByType, sumBalances, type NetWorthMonth } from '@/domain/netWorth'
-import { useNetWorthHistory } from './useNetWorthHistory'
+import { useNetWorthHistory } from '@/shared/hooks/useNetWorthHistory'
 import type { Account } from '@/domain/types'
 
 const MAX_MONTHS_BACK = 12

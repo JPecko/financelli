@@ -11,6 +11,7 @@ import { useAssetPriceEditor } from './useAssetPriceEditor'
 import { useAuth } from '@/features/auth/AuthContext'
 import { computeMarketValue, computeAccountBalance } from '../utils/investmentMetrics'
 import { computeDefaultMonthlyContribution } from '../utils/forecastHelpers'
+import { investedForAverage } from '@/domain/investmentGrowth'
 import type { Asset, Holding, Account } from '@/domain/types'
 
 export type AccountStats = {
@@ -98,23 +99,8 @@ export function useInvestmentsPageModel() {
   const selPnL          = selMarketValue - selAdjCost
   const selPnLPct       = selAdjCost > 0 ? (selPnL / selAdjCost) * 100 : 0
   const selInvestedBase = (selectedAccount?.investedBase ?? 0) + capitalAmount
-  // Same "Total Invested" the Portfolio History chart shows — cumulative buy cost from purchaseHistory
-  const selPurchasesInvestedCents = selectedPurchases
-    .filter(p => p.quantity > 0)
-    .reduce((sum, p) => sum + p.priceCents * p.quantity, 0)
-  const selFirstPurchaseDate = selectedPurchases.reduce<string | undefined>(
-    (earliest, p) => (!earliest || p.date < earliest ? p.date : earliest),
-    undefined,
-  )
-  const selFirstHoldingDate = selectedHoldings.reduce<string | undefined>(
-    (earliest, h) => (h.date && (!earliest || h.date < earliest) ? h.date : earliest),
-    undefined,
-  )
-  // Prefer purchaseHistory (matches the chart) over investedBase+capital, which only exists for CSV-imported accounts
-  const [selTotalInvestedForAvg, selFirstActivityDate] = selFirstPurchaseDate
-    ? [selPurchasesInvestedCents, selFirstPurchaseDate]
-    : [selInvestedBase, selFirstHoldingDate ?? selectedAccount?.createdAt]
-  const selDefaultMonthlyContribution = computeDefaultMonthlyContribution(selTotalInvestedForAvg, selFirstActivityDate)
+  const selInvestedForAvg = selectedAccount ? investedForAverage(selectedAccount, selectedPurchases, selectedHoldings, capitalAmount) : null
+  const selDefaultMonthlyContribution = computeDefaultMonthlyContribution(selInvestedForAvg?.invested ?? 0, selInvestedForAvg?.firstDate)
 
   // Global totals
   const totalMarketValue  = holdings.reduce((s, h) => s + h.quantity * (assetMap[h.assetId]?.currentPrice ?? 0), 0)

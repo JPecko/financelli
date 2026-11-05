@@ -1,6 +1,6 @@
 // Routes the user can order in the mobile bottom bar (Settings lives in the mobile header)
 export const MOBILE_NAV_DEFAULT_ORDER = [
-  '/dashboard', '/transactions', '/accounts', '/groups', '/budgets', '/investments', '/recurring',
+  '/dashboard', '/transactions', '/accounts', '/groups', '/budgets', '/investments', '/recurring', '/goals',
 ]
 
 // With more than this many items, the last bar slot becomes a "More" menu

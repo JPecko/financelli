@@ -1,4 +1,4 @@
-import { Wallet, LayoutDashboard, ArrowLeftRight, RefreshCw, Settings, Users, TrendingUp, Target } from 'lucide-react'
+import { Wallet, LayoutDashboard, ArrowLeftRight, RefreshCw, Settings, Users, TrendingUp, Target, Flag } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { TKey } from '@/shared/i18n'
 
@@ -14,6 +14,7 @@ export const navItems: NavItem[] = [
   { to: '/transactions', labelKey: 'nav.transactions', icon: ArrowLeftRight },
   { to: '/recurring',    labelKey: 'nav.recurring',    icon: RefreshCw },
   { to: '/budgets',      labelKey: 'nav.budgets',      icon: Target },
+  { to: '/goals',        labelKey: 'nav.goals',        icon: Flag },
   { to: '/groups',       labelKey: 'nav.groups',       icon: Users },
   { to: '/investments',  labelKey: 'nav.investments',  icon: TrendingUp },
   { to: '/settings',     labelKey: 'nav.settings',     icon: Settings },

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { transactionsRepo } from '@/data/repositories/transactionsRepo'
 import { queryKeys } from '@/data/queryKeys'
 import { useInvestmentSnapshots } from '@/shared/hooks/useInvestmentSnapshots'
-import { usePortfolioEstimator } from './usePortfolioEstimator'
+import { usePortfolioEstimator } from '@/shared/hooks/usePortfolioEstimator'
 import {
   buildNetWorthMonth, indexSnapshots, monthEndDate, shiftMonth, sumBalances,
   type NetWorthMonth, type YearMonth,

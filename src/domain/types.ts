@@ -64,6 +64,15 @@ export interface Budget {
   amountCents: number  // monthly limit, compared against the user's personal share of spending
 }
 
+export interface SavingsGoal {
+  id?:         number
+  name:        string
+  targetCents: number | null  // null = forecast only: shows the projected balance at targetDate
+  targetDate?: string | null  // YYYY-MM-DD — optional deadline (required when there is no target amount)
+  accountIds:  number[]       // progress = live balance of these accounts
+  createdAt:   string
+}
+
 export interface InvestmentSnapshot {
   accountId:    number
   snapshotDate: string   // YYYY-MM-DD — last day of the month the value belongs to

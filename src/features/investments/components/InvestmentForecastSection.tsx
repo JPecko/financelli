@@ -7,6 +7,7 @@ import { Input } from '@/shared/components/ui/input'
 import { formatDecimal } from '@/domain/money'
 import { useT } from '@/shared/i18n'
 import { buildForecastData } from '../utils/forecastHelpers'
+import { DEFAULT_ANNUAL_RETURN_PCT } from '@/domain/investmentGrowth'
 import { chartTooltipStyle, chartTooltipLabelStyle } from '@/shared/utils/chartStyle'
 import PageHelpInfo from '@/shared/components/PageHelpInfo'
 
@@ -33,7 +34,7 @@ export default function InvestmentForecastSection({
   const gNominal = `fg-nominal-${chartId}`
   const gReal    = `fg-real-${chartId}`
 
-  const [returnStr,    setReturnStr]    = useState('7')
+  const [returnStr,    setReturnStr]    = useState(String(DEFAULT_ANNUAL_RETURN_PCT))
   const [inflationStr, setInflationStr] = useState('2')
   const [contribStr,   setContribStr]   = useState(() => defaultMonthlyContribution.toFixed(2))
   const [horizon,      setHorizon]      = useState<Horizon>(20)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format, getYear, getMonth } from 'date-fns'
 import { useDashboardModel } from './useDashboardModel'
-import { useNetWorthHistory } from './useNetWorthHistory'
+import { useNetWorthHistory } from '@/shared/hooks/useNetWorthHistory'
 import { useBudgetOverview } from '@/features/budgets/hooks/useBudgetOverview'
 import { useT } from '@/shared/i18n'
 import { useLanguageStore } from '@/shared/store/languageStore'

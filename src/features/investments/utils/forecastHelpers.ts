@@ -1,10 +1,9 @@
-import { differenceInCalendarMonths, parseISO } from 'date-fns'
+import { contributionsFutureValue, monthsSince } from '@/domain/investmentGrowth'
 
 // Total invested / calendar months from the first holding to now (inclusive) — pre-fills the contribution input
 export function computeDefaultMonthlyContribution(investedCents: number, firstDate?: string): number {
   if (investedCents <= 0 || !firstDate) return 0
-  const months = Math.max(1, differenceInCalendarMonths(new Date(), parseISO(firstDate)) + 1)
-  return Math.round((investedCents / 100 / months) * 100) / 100
+  return Math.round((investedCents / 100 / monthsSince(firstDate)) * 100) / 100
 }
 
 export interface ForecastPoint {
@@ -12,11 +11,6 @@ export interface ForecastPoint {
   nominal: number   // euros — raw portfolio value
   real: number      // euros — deflated to today's purchasing power
   invested: number  // euros — total capital put in
-}
-
-function fvContribs(pmt: number, monthlyRate: number, months: number): number {
-  if (monthlyRate === 0) return pmt * months
-  return pmt * (Math.pow(1 + monthlyRate, months) - 1) / monthlyRate
 }
 
 export function buildForecastData(
@@ -38,7 +32,7 @@ export function buildForecastData(
 
   for (let y = 1; y <= horizonYears; y++) {
     const n       = y * 12
-    const nominal = pv * Math.pow(1 + r, y) + fvContribs(pmt, mr, n)
+    const nominal = pv * Math.pow(1 + r, y) + contributionsFutureValue(pmt, mr, n)
     const real    = nominal / Math.pow(1 + inf, y)
     const invested = pv + pmt * n
 

@@ -14,8 +14,9 @@ import { getCategoryById, tCategory } from '@/domain/categories'
 import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
 import { useHoldings } from '@/shared/hooks/useHoldings'
 import { useAssets } from '@/shared/hooks/useAssets'
+import { useEffectiveBalances } from '@/shared/hooks/useEffectiveBalances'
 import { useT } from '@/shared/i18n'
-import { computeAccountBalance, computeEffectiveInvestedBase, computeMarketValue } from '@/features/investments/utils/investmentMetrics'
+import { computeEffectiveInvestedBase, computeMarketValue } from '@/features/investments/utils/investmentMetrics'
 import type { Transaction } from '@/domain/types'
 
 const now   = new Date()
@@ -58,19 +59,7 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
     [allAssets],
   )
 
-  const effectiveBalances = useMemo<Record<number, number>>(() => {
-    const result: Record<number, number> = {}
-    for (const account of accounts) {
-      if (account.id == null) continue
-      if (account.type !== 'investment') {
-        result[account.id] = account.balance
-      } else {
-        const holdings = allHoldings.filter(h => h.accountId === account.id)
-        result[account.id] = computeAccountBalance(account, holdings, allAssetMap)
-      }
-    }
-    return result
-  }, [accounts, allHoldings, allAssetMap])
+  const { balances: effectiveBalances } = useEffectiveBalances(accounts)
 
   const cashbackMonth = useMemo(() =>
     transactions

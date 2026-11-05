@@ -22,6 +22,9 @@ export const queryKeys = {
   budgets: {
     all: () => ['budgets'] as const,
   },
+  savingsGoals: {
+    all: () => ['savingsGoals'] as const,
+  },
   investmentSnapshots: {
     all:   ()                 => ['investmentSnapshots']                as const,
     since: (fromDate: string) => ['investmentSnapshots', 'since', fromDate] as const,
