@@ -40,10 +40,13 @@ interface Props {
   open:        boolean
   onClose:     () => void
   rule?:       RecurringRule
+  prefill?:    RecurringPrefill   // new rule seeded from a detected subscription
   defaultType: TransactionType
 }
 
-export default function RecurringStandardTab({ open, onClose, rule, defaultType }: Props) {
+export type RecurringPrefill = Pick<RecurringRule, 'accountId' | 'name' | 'amount' | 'category' | 'description' | 'frequency'> & { startDate: string }
+
+export default function RecurringStandardTab({ open, onClose, rule, prefill, defaultType }: Props) {
   const t      = useT()
   const isEdit = !!rule && rule.groupId == null
   const { data: accounts = [] } = useSortedAccounts()
@@ -104,20 +107,24 @@ export default function RecurringStandardTab({ open, onClose, rule, defaultType 
         isReimbursable: rule.isReimbursable ?? false,
       })
     } else if (open) {
-      const firstId     = accounts[0]?.id != null ? String(accounts[0].id) : ''
-      const secondId    = accounts[1]?.id != null ? String(accounts[1].id) : ''
+      const firstId     = prefill ? String(prefill.accountId) : accounts[0]?.id != null ? String(accounts[0].id) : ''
+      const secondId    = accounts.find(a => a.id != null && String(a.id) !== firstId)?.id
       const firstAcct   = accounts.find(a => String(a.id) === firstId)
       const firstShared = (firstAcct?.participants ?? 1) > 1
       reset({
-        accountId: firstId, toAccountId: secondId, name: '', amount: '',
-        category: defaultType === 'transfer' ? 'transfer' : 'other', description: '',
-        frequency: 'monthly', startDate: format(new Date(), 'yyyy-MM-dd'),
+        accountId: firstId, toAccountId: secondId != null ? String(secondId) : '',
+        name:        prefill?.name ?? '',
+        amount:      prefill ? Math.abs(fromCents(prefill.amount)).toFixed(2) : '',
+        category:    prefill?.category ?? (defaultType === 'transfer' ? 'transfer' : 'other'),
+        description: prefill?.description ?? '',
+        frequency:   prefill?.frequency ?? 'monthly',
+        startDate:   prefill?.startDate ?? format(new Date(), 'yyyy-MM-dd'),
         dateRule: 'exact', adjustToBusinessDay: false,
         isShared: firstShared, splitN: firstShared ? (firstAcct!.participants ?? 2) : 2,
         isReimbursable: false,
       })
     }
-  }, [open, rule, isEdit, accounts, reset, defaultType])
+  }, [open, rule, prefill, isEdit, accounts, reset, defaultType])
 
   const handleFrequencyChange = (v: RecurringFrequency) => {
     setValue('frequency', v)

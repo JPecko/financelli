@@ -163,6 +163,19 @@ export const transactionsRepo = {
       .map(r => ({ accountId: r.account_id, toAccountId: r.to_account_id, amount: r.amount, date: r.date }))
   },
 
+  // Expenses on or after a date — input for subscription detection
+  getExpensesSince: async (date: string): Promise<Transaction[]> => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('type', 'expense')
+      .lt('amount', 0)
+      .gte('date', date)
+      .order('date')
+    if (error) throw error
+    return (data as TransactionRow[]).map(toTransaction)
+  },
+
   getByAccount: async (accountId: number): Promise<Transaction[]> => {
     const { data, error } = await supabase
       .from('transactions')

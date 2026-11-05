@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import TransactionTypeTabs from '@/features/transactions/components/TransactionTypeTabs'
-import RecurringStandardTab from './RecurringStandardTab'
+import RecurringStandardTab, { type RecurringPrefill } from './RecurringStandardTab'
 import RecurringGroupTab from './RecurringGroupTab'
 import type { RecurringRule, TransactionType } from '@/domain/types'
 import { useT } from '@/shared/i18n'
@@ -12,9 +12,10 @@ interface Props {
   open:    boolean
   onClose: () => void
   rule?:   RecurringRule
+  prefill?: RecurringPrefill
 }
 
-export default function RecurringFormModal({ open, onClose, rule }: Props) {
+export default function RecurringFormModal({ open, onClose, rule, prefill }: Props) {
   const t      = useT()
   const isEdit = !!rule
   const [viewType, setViewType] = useState<ViewType>('expense')
@@ -36,7 +37,7 @@ export default function RecurringFormModal({ open, onClose, rule }: Props) {
         {viewType === 'groups' ? (
           <RecurringGroupTab key={`groups-${rule?.id ?? 'new'}`} open={open} onClose={onClose} rule={rule} />
         ) : (
-          <RecurringStandardTab key={`${viewType}-${rule?.id ?? 'new'}`} open={open} onClose={onClose} rule={rule} defaultType={viewType} />
+          <RecurringStandardTab key={`${viewType}-${rule?.id ?? 'new'}`} open={open} onClose={onClose} rule={rule} prefill={prefill} defaultType={viewType} />
         )}
       </DialogContent>
     </Dialog>

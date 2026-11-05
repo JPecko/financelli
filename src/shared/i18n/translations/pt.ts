@@ -690,5 +690,15 @@ export const pt: typeof en = {
       monthly: 'Mensal',
       yearly:  'Anual',
     },
+    suggestions: {
+      help: { title: 'Como são detetadas?', body: 'Analisamos as tuas despesas dos últimos 13 meses à procura de cobranças que se repetem na mesma conta, com a mesma descrição, num intervalo regular (semanal, mensal ou anual) e com um valor parecido. Não aparecem as que já têm uma recorrência ativa, nem as que pararam há mais de um ciclo e meio. "Criar recorrência" abre uma recorrência já preenchida que começa na próxima cobrança prevista; a partir daí a transação é criada automaticamente e conta nos Pagamentos futuros e na previsão dos Orçamentos. "Ignorar" esconde a sugestão em todos os teus dispositivos.' },
+      title:    'Subscrições detetadas ({{count}})',
+      subtitle: '~{{amount}}/mês em cobranças repetidas sem recorrência',
+      seen:     '{{count}}× · última {{date}}',
+      create:   'Criar recorrência',
+      dismiss:  'Ignorar',
+      showAll:  'Ver todas ({{count}})',
+      showLess: 'Ver menos',
+    },
   },
 }

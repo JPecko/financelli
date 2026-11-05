@@ -14,6 +14,10 @@ import RecurringFilterPopover from '../components/RecurringFilterPopover'
 import RecurringAccountTotals from '../components/RecurringAccountTotals'
 import RecurringTotalPill from '../components/RecurringTotalPill'
 import RecurringRuleRow from '../components/RecurringRuleRow'
+import SubscriptionSuggestions from '../components/SubscriptionSuggestions'
+import { dismissSubscription, toRecurringPrefill, useSubscriptionSuggestions } from '../hooks/useSubscriptionSuggestions'
+import type { RecurringPrefill } from '../components/RecurringStandardTab'
+import type { SubscriptionCandidate } from '@/domain/subscriptionDetection'
 import { computeTotal, computeAccountTotals, groupRulesByMonth } from '../utils/recurringTotals'
 import type { RecurringRule } from '@/domain/types'
 import { useT } from '@/shared/i18n'
@@ -28,6 +32,8 @@ export default function RecurringPage() {
   const [applying, setApplying]               = useState<number | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [filterAccountId, setFilterAccountId] = useState<number | null>(null)
+  const [prefill, setPrefill]                 = useState<RecurringPrefill | undefined>()
+  const subscriptions = useSubscriptionSuggestions()
 
   const accountName = (id: number) => accounts.find(a => a.id === id)?.name ?? '?'
 
@@ -55,6 +61,17 @@ export default function RecurringPage() {
   const handleClose = () => {
     setModalOpen(false)
     setEditing(undefined)
+    setPrefill(undefined)
+  }
+
+  const handleCreateFromSuggestion = (item: SubscriptionCandidate) => {
+    setEditing(undefined)
+    setPrefill(toRecurringPrefill(item))
+    setModalOpen(true)
+  }
+
+  const handleDismissSuggestion = async (item: SubscriptionCandidate) => {
+    try { await dismissSubscription(item.key) } catch (err) { console.warn('[subscriptions] dismiss failed', err) }
   }
 
   const handleDelete = (id: number | undefined) => {
@@ -124,6 +141,16 @@ export default function RecurringPage() {
         </div>
       </div>
 
+      {!isLoading && (
+        <SubscriptionSuggestions
+          suggestions={subscriptions.suggestions}
+          monthlyTotal={subscriptions.monthlyTotal}
+          accountName={accountName}
+          onCreate={handleCreateFromSuggestion}
+          onDismiss={item => void handleDismissSuggestion(item)}
+        />
+      )}
+
       {isLoading ? (
         <PageLoader message={t('recurring.loading')} />
       ) : rules.length === 0 ? (
@@ -181,7 +208,7 @@ export default function RecurringPage() {
         </>
       )}
 
-      <RecurringFormModal open={modalOpen} onClose={handleClose} rule={editing} />
+      <RecurringFormModal open={modalOpen} onClose={handleClose} rule={editing} prefill={prefill} />
 
       <ConfirmDialog
         open={confirmDeleteId != null}

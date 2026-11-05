@@ -18,9 +18,13 @@ export const queryKeys = {
     capitalAdjustments: (accountIdsKey: string) => ['transactions', 'capitalAdjustments', accountIdsKey] as const,
     byAccount: (accountId: number) => ['transactions', 'byAccount', accountId] as const,
     balanceDeltasAfter: (date: string) => ['transactions', 'balanceDeltasAfter', date] as const,
+    expensesSince: (date: string) => ['transactions', 'expensesSince', date] as const,
   },
   budgets: {
     all: () => ['budgets'] as const,
+  },
+  dismissedSubscriptions: {
+    all: () => ['dismissedSubscriptions'] as const,
   },
   savingsGoals: {
     all: () => ['savingsGoals'] as const,

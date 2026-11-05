@@ -434,6 +434,16 @@ export const en = {
       monthly: 'Monthly',
       yearly:  'Yearly',
     },
+    suggestions: {
+      help: { title: 'How are these detected?', body: 'We look at your expenses from the last 13 months for charges that repeat on the same account with the same description, at a steady interval (weekly, monthly or yearly) and a similar amount. Charges already covered by an active recurring rule are not shown, and neither are ones that stopped more than a cycle and a half ago. "Create rule" opens a pre-filled rule starting at the next expected charge, so from then on the transaction is created automatically and counts in Upcoming payments and the Budgets projection. "Dismiss" hides a suggestion on all your devices.' },
+      title:    'Detected subscriptions ({{count}})',
+      subtitle: '~{{amount}}/month in repeating charges without a recurring rule',
+      seen:     '{{count}}× · last {{date}}',
+      create:   'Create rule',
+      dismiss:  'Dismiss',
+      showAll:  'Show all ({{count}})',
+      showLess: 'Show less',
+    },
   },
 
   budgets: {
