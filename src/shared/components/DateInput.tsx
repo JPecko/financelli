@@ -1,10 +1,11 @@
-import { useState, useEffect, forwardRef } from 'react'
+import { useState, useEffect, useMemo, forwardRef } from 'react'
 import { DayPicker } from 'react-day-picker'
 import { format, parseISO } from 'date-fns'
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
+import MonthYearPicker, { type PickerView } from './MonthYearPicker'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,9 +24,9 @@ const cal = {
   month:         'w-full space-y-2',
   month_caption: 'flex justify-center items-center h-10',
   caption_label: 'text-sm font-semibold',
-  nav: [
-    'absolute top-0 inset-x-0 flex justify-between items-center h-10 px-1',
-  ].join(''),
+  caption_button: 'relative z-10 rounded-md px-2 py-1 text-sm font-semibold hover:bg-accent',
+  // The nav row overlays the caption, so only its buttons take clicks (the caption opens the month picker)
+  nav: 'absolute top-0 inset-x-0 flex justify-between items-center h-10 px-1 pointer-events-none [&>button]:pointer-events-auto',
   button_previous: [
     'h-9 w-9 flex items-center justify-center rounded-md',
     'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
@@ -99,20 +100,41 @@ const Trigger = forwardRef<HTMLButtonElement, {
 
 function Calendar({ value, onSelect }: { value: string; onSelect: (d: Date) => void }) {
   const selected = value ? parseISO(value) : undefined
+  const [month, setMonth] = useState(() => selected ?? new Date())
+  const [view, setView]   = useState<'days' | PickerView>('days')
+
+  // Stable so DayPicker doesn't remount the caption on every render
+  const components = useMemo(() => ({
+    Chevron: ({ orientation }: { orientation?: string }) =>
+      orientation === 'left'
+        ? <ChevronLeftIcon className="size-4" />
+        : <ChevronRightIcon className="size-4" />,
+    CaptionLabel: ({ children }: { children?: React.ReactNode }) => (
+      <button type="button" className={cal.caption_button} onClick={() => setView('months')}>{children}</button>
+    ),
+  }), [])
+
+  if (view !== 'days') {
+    return (
+      <MonthYearPicker
+        month={month}
+        view={view}
+        onView={setView}
+        onPick={m => { setMonth(m); setView('days') }}
+      />
+    )
+  }
+
   return (
     <DayPicker
       mode="single"
       selected={selected}
       onSelect={d => d && onSelect(d)}
-      defaultMonth={selected ?? new Date()}
+      month={month}
+      onMonthChange={setMonth}
       weekStartsOn={1}
       classNames={cal}
-      components={{
-        Chevron: ({ orientation }) =>
-          orientation === 'left'
-            ? <ChevronLeftIcon className="size-4" />
-            : <ChevronRightIcon className="size-4" />,
-      }}
+      components={components}
     />
   )
 }
