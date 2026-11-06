@@ -41,3 +41,29 @@ export function computeCategorySpending({
   }
   return map
 }
+
+export type PersonalExpenseItem = {
+  key: string; description: string; category: string; date: string
+  amount: number  // cents, negative: the user's own share
+  sublabel?: string
+}
+
+/** Each expense as the user's own share: bank transactions plus group entries (investing excluded). */
+export function personalExpenseItems({
+  transactions, groupExpenses, accounts, userId,
+}: Omit<SpendingInputs, 'sharedExpenses'>): PersonalExpenseItem[] {
+  return [
+    ...transactions
+      .filter(tx => isCashFlow(tx) && tx.amount < 0 && personalDivisorFor(tx, userId, accounts) !== Infinity)
+      .map(tx => ({
+        key: `tx-${tx.id}`, description: tx.description, category: tx.category, date: tx.date,
+        amount: Math.round(tx.amount / personalDivisorFor(tx, userId, accounts)),
+      })),
+    ...groupExpenses
+      .filter(g => g.myShare > 0 && !INVESTING_CATS.has(g.category))
+      .map(g => ({
+        key: `grp-${g.entryId}`, description: g.description, category: g.category, date: g.date,
+        amount: -g.myShare, sublabel: g.groupName,
+      })),
+  ]
+}

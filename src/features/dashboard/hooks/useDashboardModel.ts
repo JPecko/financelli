@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom'
 import { useSortedAccounts } from '@/shared/hooks/useAccounts'
 import {
   useMonthSummary, useTransactionsByMonth, useMonthlyNetFlow,
-  useMonthlyBenefits, useYearBenefits, isCashFlow, personalDivisorFor,
+  useMonthlyBenefits, useYearBenefits,
   useInvestmentCapitalAdjustments,
 } from '@/shared/hooks/useTransactions'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useSharedExpensesByMonth } from '@/shared/hooks/useSharedExpenses'
-import { computeCategorySpending } from '@/shared/utils/categorySpending'
+import { computeCategorySpending, personalExpenseItems, type PersonalExpenseItem } from '@/shared/utils/categorySpending'
 import { getCategoryById, tCategory } from '@/domain/categories'
 import { useTransactionsFilterStore } from '@/shared/store/transactionsFilterStore'
 import { useHoldings } from '@/shared/hooks/useHoldings'
@@ -23,12 +23,7 @@ const now   = new Date()
 export const DASHBOARD_YEAR  = getYear(now)
 export const DASHBOARD_MONTH = getMonth(now) + 1
 
-const INVESTING_CATS = new Set(['investing', 'invest-move', 'capital'])
-
-export type TopExpenseItem = {
-  key: string; description: string; category: string; date: string
-  amount: number; sublabel?: string
-}
+export type TopExpenseItem = PersonalExpenseItem
 
 export type CategoryDataItem = {
   id: string; name: string; value: number; color: string
@@ -112,27 +107,10 @@ export function useDashboardModel(year: number = DASHBOARD_YEAR, month: number =
     return { totalInvested, totalMarketValue, totalPnl: totalMarketValue - totalInvested }
   }, [investmentAccounts, allHoldings, allAssetMap, capitalAdjustments, effectiveBalances])
 
-  const topExpenses = useMemo<TopExpenseItem[]>(() => [
-    ...transactions
-      .filter(tx => isCashFlow(tx) && tx.amount < 0 && personalDivisorFor(tx, user?.id, accounts) !== Infinity)
-      .map(tx => ({
-        key: `tx-${tx.id}`,
-        description: tx.description,
-        category: tx.category,
-        date: tx.date,
-        amount: Math.round(tx.amount / personalDivisorFor(tx, user?.id, accounts)),
-      })),
-    ...summary.groupExpenses
-      .filter(g => g.myShare > 0 && !INVESTING_CATS.has(g.category))
-      .map(g => ({
-        key: `grp-${g.entryId}`,
-        description: g.description,
-        category: g.category,
-        date: g.date,
-        amount: -g.myShare,
-        sublabel: g.groupName,
-      })),
-  ].sort((a, b) => a.amount - b.amount).slice(0, 5), [transactions, summary, accounts, user])
+  const topExpenses = useMemo<TopExpenseItem[]>(() =>
+    personalExpenseItems({ transactions, groupExpenses: summary.groupExpenses, accounts, userId: user?.id })
+      .sort((a, b) => a.amount - b.amount).slice(0, 5),
+  [transactions, summary, accounts, user])
 
   function handleCategoryClick(catId: string) {
     setFilterAccountId(null)
